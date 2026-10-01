@@ -1,34 +1,17 @@
 import fs from "node:fs";
-import type { AddressInfo } from "node:net";
-import type { Server } from "node:http";
 import os from "node:os";
 import path from "node:path";
 import type { ErrorResponse, HealthResponse } from "@job-tracker/shared";
-import express, { type Express } from "express";
+import express from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, errorHandler } from "./app.ts";
+import { migratedDatabase, startServer as start } from "./testing.ts";
 
-let server: Server | undefined;
-
-async function start(app: Express): Promise<string> {
-  server = await new Promise<Server>((resolve) => {
-    const s = app.listen(0, () => {
-      resolve(s);
-    });
-  });
-  const { port } = server.address() as AddressInfo;
-  return `http://127.0.0.1:${String(port)}`;
-}
-
-afterEach(async () => {
-  const running = server;
-  server = undefined;
-  if (running) await new Promise((resolve) => running.close(resolve));
-});
+const db = migratedDatabase();
 
 describe("GET /api/health", () => {
   it("returns 200 with status ok", async () => {
-    const baseUrl = await start(createApp());
+    const baseUrl = await start(createApp({ db }));
 
     const response = await fetch(`${baseUrl}/api/health`);
 
@@ -40,7 +23,7 @@ describe("GET /api/health", () => {
 
 describe("unknown API routes", () => {
   it("return 404 with an error body", async () => {
-    const baseUrl = await start(createApp());
+    const baseUrl = await start(createApp({ db }));
 
     const response = await fetch(`${baseUrl}/api/nope`);
 
@@ -83,7 +66,7 @@ describe("serving the built client", () => {
   });
 
   it("serves index.html at the root and for client routes", async () => {
-    const baseUrl = await start(createApp({ clientDir }));
+    const baseUrl = await start(createApp({ db, clientDir }));
 
     for (const route of ["/", "/applications/5"]) {
       const response = await fetch(`${baseUrl}${route}`);
@@ -94,7 +77,7 @@ describe("serving the built client", () => {
   });
 
   it("serves built asset files", async () => {
-    const baseUrl = await start(createApp({ clientDir }));
+    const baseUrl = await start(createApp({ db, clientDir }));
 
     const response = await fetch(`${baseUrl}/assets/app.js`);
 
@@ -104,7 +87,7 @@ describe("serving the built client", () => {
   });
 
   it("keeps the API routes and the JSON 404 for unknown API paths", async () => {
-    const baseUrl = await start(createApp({ clientDir }));
+    const baseUrl = await start(createApp({ db, clientDir }));
 
     const health = await fetch(`${baseUrl}/api/health`);
     expect(health.status).toBe(200);
@@ -118,13 +101,13 @@ describe("serving the built client", () => {
   it("refuses to start when the build is missing", () => {
     fs.rmSync(path.join(clientDir, "index.html"));
 
-    expect(() => createApp({ clientDir })).toThrow(
+    expect(() => createApp({ db, clientDir })).toThrow(
       `Client build not found at ${clientDir}. Run \`npm run build\` first.`,
     );
   });
 
   it("doesn't serve pages without a clientDir", async () => {
-    const baseUrl = await start(createApp());
+    const baseUrl = await start(createApp({ db }));
 
     const response = await fetch(`${baseUrl}/`);
 

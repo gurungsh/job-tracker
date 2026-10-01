@@ -1,0 +1,119 @@
+// An in-memory stand-in for the API, installed as the global fetch in UI tests.
+// It mirrors the real routes closely enough for the UI; the real rules are tested on the server.
+import type { Application, ApplicationInput, Company } from "@job-tracker/shared";
+import { vi } from "vitest";
+
+type Handler = (method: string, path: string, body: unknown) => Response | undefined;
+
+export type FakeServer = {
+  applications: Application[];
+  companies: Company[];
+  requests: { method: string; path: string; body: unknown }[];
+  /** Makes the next requests fail as if the server were down, until called again with false. */
+  setOffline: (offline: boolean) => void;
+  /** Overrides the response for matching requests. */
+  override: (handler: Handler) => void;
+};
+
+let nextId = 100;
+
+export function application(fields: Partial<Application> & Pick<Application, "companyName" | "jobTitle">): Application {
+  const now = "2026-10-01T12:00:00.000Z";
+  nextId += 1;
+  return {
+    id: nextId,
+    companyId: nextId,
+    stage: "wishlist",
+    nextStep: null,
+    nextStepDue: null,
+    appliedOn: null,
+    closedOn: null,
+    stageChangedAt: now,
+    createdAt: now,
+    updatedAt: now,
+    ...fields,
+  };
+}
+
+export function installFakeServer(applications: Application[] = [], companyNames: string[] = []): FakeServer {
+  const server: FakeServer = {
+    applications: [...applications],
+    companies: companyNames.map((name, index) => ({ id: index + 1, name })),
+    requests: [],
+    setOffline: (value) => {
+      offline = value;
+    },
+    override: (handler) => {
+      overrides.push(handler);
+    },
+  };
+  let offline = false;
+  const overrides: Handler[] = [];
+
+  function companyFor(name: string): Company {
+    const trimmed = name.trim();
+    let company = server.companies.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (!company) {
+      company = { id: server.companies.length + 1, name: trimmed };
+      server.companies.push(company);
+    }
+    return company;
+  }
+
+  function save(input: ApplicationInput, previous?: Application): Application {
+    const company = companyFor(input.companyName);
+    const stage = input.stage ?? "wishlist";
+    const now = new Date().toISOString();
+    return {
+      ...(previous ?? application({ companyName: company.name, jobTitle: input.jobTitle })),
+      companyId: company.id,
+      companyName: company.name,
+      jobTitle: input.jobTitle.trim(),
+      stage,
+      nextStep: input.nextStep?.trim() || null,
+      nextStepDue: input.nextStepDue || null,
+      appliedOn: input.appliedOn || null,
+      stageChangedAt: previous && previous.stage === stage ? previous.stageChangedAt : now,
+      updatedAt: now,
+    };
+  }
+
+  const fetchMock = vi.fn((path: string, init?: RequestInit) => {
+    const method = init?.method ?? "GET";
+    const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
+    server.requests.push({ method, path, body });
+    if (offline) return Promise.reject(new TypeError("Failed to fetch"));
+    for (const handler of overrides) {
+      const response = handler(method, path, body);
+      if (response) return Promise.resolve(response);
+    }
+
+    const id = Number(/^\/api\/applications\/(\d+)$/.exec(path)?.[1]);
+    const index = server.applications.findIndex((a) => a.id === id);
+
+    if (method === "GET" && path === "/api/applications") return json(server.applications);
+    if (method === "GET" && path === "/api/companies") return json(server.companies);
+    if (method === "POST" && path === "/api/applications") {
+      const created = save(body as ApplicationInput);
+      server.applications.push(created);
+      return json(created, 201);
+    }
+    if (method === "PUT" && index >= 0) {
+      const updated = save(body as ApplicationInput, server.applications[index]);
+      server.applications[index] = updated;
+      return json(updated);
+    }
+    if (method === "DELETE" && index >= 0) {
+      server.applications.splice(index, 1);
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+    return json({ error: "Not found" }, 404);
+  });
+
+  vi.stubGlobal("fetch", fetchMock);
+  return server;
+}
+
+export function json(body: unknown, status = 200): Promise<Response> {
+  return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));
+}

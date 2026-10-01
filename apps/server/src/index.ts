@@ -15,10 +15,9 @@ function fail(message: string, error?: unknown): never {
 
 function prepare() {
   const config = loadConfig(process.env);
-  // Create the app first, so a missing client build fails before the database is touched.
-  const app = createApp({ clientDir: config.clientDir });
   const db = openDatabase(config.databasePath);
   for (const name of migrate(db, migrationsDir)) console.log(`Applied migration ${name}`);
+  const app = createApp({ db, clientDir: config.clientDir });
   return { config, app, db };
 }
 

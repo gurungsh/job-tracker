@@ -6,6 +6,13 @@ A personal tracker for job applications, built with spec-driven development.
 - Process: every feature starts as a spec in `docs/specs/`. See `docs/specs/README.md`.
 - Plan: the planned features and their order are in `docs/roadmap.md`.
 
+## What it does
+
+- A board with one column per stage: Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, and Withdrawn.
+- Add, edit, and delete applications in a side panel. Each has a company, a job title, a stage, and a next step with a due date. Overdue next steps are highlighted.
+- The applied date, the closed date, and the time in the current stage are recorded automatically.
+- Company names are suggested as you type and are matched regardless of case.
+
 ## Setup
 
 Requires Node.js 24 or later.
@@ -61,6 +68,23 @@ npm start
 | --------------- | ---------------------- | --------------------------------------------- |
 | `PORT`          | `3000`                 | The API's port. The client's dev proxy expects `3000`. |
 | `DATABASE_PATH` | `data/job-tracker.db`  | The SQLite file. The `data/` folder is gitignored. |
+
+## API
+
+The client talks to a small JSON API under `/api`:
+
+| Method and path | What it does |
+| --------------- | ------------ |
+| `GET /api/health` | Health check |
+| `GET /api/applications` | Lists applications in board order |
+| `POST /api/applications` | Creates an application |
+| `PUT /api/applications/:id` | Replaces an application's editable fields |
+| `DELETE /api/applications/:id` | Deletes an application |
+| `GET /api/companies` | Lists companies by name |
+
+Writes accept an optional `X-Time-Zone` header with an IANA time zone, such as `America/Chicago`. The server uses it to work out "today" for the applied and closed dates. The browser always sends it. Without it, the server's own time zone is used (UTC in Docker).
+
+Invalid input returns `400` with `{ "error": "...", "fields": { "<field>": "<message>" } }`.
 
 ## Layout
 
