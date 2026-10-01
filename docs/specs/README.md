@@ -1,6 +1,6 @@
 # Specs
 
-Every feature in job-tracker begins here, before any code is written. The rules behind this process are in [`../constitution.md`](../constitution.md).
+Every feature in job-tracker begins here, before any code is written. The rules behind this process are in [`../constitution.md`](../constitution.md), and the planned order of specs is in [`../roadmap.md`](../roadmap.md).
 
 ## The loop
 

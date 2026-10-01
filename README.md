@@ -4,6 +4,7 @@ A personal tracker for job applications, built with spec-driven development.
 
 - Stack: TypeScript, Express, React, and SQLite in an npm workspaces monorepo.
 - Process: every feature starts as a spec in `docs/specs/`. See `docs/specs/README.md`.
+- Plan: the planned features and their order are in `docs/roadmap.md`.
 
 ## Setup
 

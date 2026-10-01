@@ -1,0 +1,71 @@
+# Roadmap
+
+| Field   | Value      |
+| ------- | ---------- |
+| Status  | Approved   |
+| Updated | 2026-10-01 |
+
+This is the big picture: what job-tracker will become, and the order in which specs will build it. It is a guide, not a contract. Each feature still gets its own approved `spec.md`, `plan.md`, and `tasks.md` before any code, and this page changes whenever what we learn changes the plan.
+
+The vision is in [constitution §1](constitution.md#1-product-vision): a personal, local app for tracking where I applied, what stage each application is at, and what happens next.
+
+## Domain sketch
+
+These are the things the app tracks and how they relate. Fields and table designs are decided in each spec's `plan.md`, not here.
+
+```
+Company ──< Application ──< Requirement
+   │             │
+   │             └──< Activity
+   │                     │  (optional: the contact it involved)
+   └──< Contact <────────┘
+```
+
+`A ──< B` means one A has many B.
+
+- **Company:** an employer. For now it is only a name, which is unique and case-insensitive, picked or created while adding an application. One company can have many applications and many contacts.
+- **Application:** one job I'm tracking at a company. It has a job title, a stage, and a next step with an optional due date. Its details are the job link, location, work mode (onsite, hybrid, or remote), salary range (annual or hourly), employment type (full-time, contract, or part-time) with a contract length for contracts, where I found it, and the job description. It is the card on the board.
+- **Stage:** one of eight, in board order: **Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, Withdrawn**. The last three close the application.
+- **Activity:** something that happened on an application, such as a note, email, call, or interview, plus an automatic entry whenever the stage changes. Together they form the application's timeline.
+- **Contact:** a person at a company, such as a recruiter or hiring manager. Contacts belong to the company, not to one application, so the same person can be reused across every application at that company. An activity can name the contact it involved.
+- **Requirement:** an item from the job posting, marked required or preferred, and met or not met.
+
+Money is in USD only (per `CLAUDE.md`).
+
+## Planned specs
+
+Each spec is usable on its own once it's done. The numbers are reserved in this order, but the order can change if priorities do.
+
+| #   | Spec | What I can do when it's done | Depends on |
+| --- | ---- | ---------------------------- | ---------- |
+| 000 | Project foundation | *(Implemented)* Run, test, lint, and typecheck the app. | — |
+| 001 | Run the app in Docker | *(Implemented)* Run the production app with one Docker command. | 000 |
+| 002 | Applications board | Add, edit, and delete applications with all the details above, each tied to a company by name. See them on a board with one column per stage, and change the stage from the edit form. | 000 |
+| 003 | Board drag and drop | Move cards between columns, and reorder them within a column, by dragging. The order is kept. | 002 |
+| 004 | Activity timeline | Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
+| 005 | Contacts | Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 004 |
+| 006 | Requirements checklist | List a posting's required and preferred items, and check off the ones I meet. | 002 |
+
+## Later, maybe
+
+These ideas aren't scheduled. They will get a number only when they're picked up.
+
+- Archiving closed applications, so the board stays focused on active ones
+- Search and filtering on the board
+- A "what's next" view that lists upcoming next steps by due date
+- Editing company details, such as website, industry, and notes
+
+## Decided
+
+- 2026-10-01: The main screen is a Kanban board.
+- 2026-10-01: The eight stages above are kept from the earlier version of the app.
+- 2026-10-01: The old app's data (`data/legacy/jobs.db`) is sample data. It stays backed up, and no import is planned.
+- 2026-10-01: Contacts belong to a company and are reused across its applications.
+- 2026-10-01: A company is only a name for now. A company details screen stays under "Later, maybe".
+- 2026-10-01: Spec 002 includes every application field listed in the domain sketch.
+- 2026-10-01: The spec order stays as listed. The "what's next" view stays under "Later, maybe".
+
+## Changelog
+
+- 2026-10-01: Draft created.
+- 2026-10-01: Resolved the open questions (see Decided) and approved.
