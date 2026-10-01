@@ -1,6 +1,7 @@
+import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { createApp } from "./app.ts";
-import { type Config, loadConfig } from "./config.ts";
+import { loadConfig } from "./config.ts";
 import { openDatabase } from "./db.ts";
 import { migrate } from "./migrate.ts";
 
@@ -12,18 +13,37 @@ function fail(message: string, error?: unknown): never {
   process.exit(1);
 }
 
-let config: Config;
-try {
-  config = loadConfig(process.env);
+function prepare() {
+  const config = loadConfig(process.env);
+  // Create the app first, so a missing client build fails before the database is touched.
+  const app = createApp({ clientDir: config.clientDir });
   const db = openDatabase(config.databasePath);
   for (const name of migrate(db, migrationsDir)) console.log(`Applied migration ${name}`);
+  return { config, app, db };
+}
+
+let prepared: ReturnType<typeof prepare>;
+try {
+  prepared = prepare();
 } catch (error) {
   fail("Server failed to start.", error);
 }
 
-const { port, databasePath } = config;
-createApp().listen(port, (error?: NodeJS.ErrnoException) => {
-  if (error?.code === "EADDRINUSE") fail(`Port ${String(port)} is already in use. Stop the other process or set PORT.`);
+const { config, app, db } = prepared;
+const server = app.listen(config.port, (error?: NodeJS.ErrnoException) => {
+  if (error?.code === "EADDRINUSE") fail(`Port ${String(config.port)} is already in use. Stop the other process or set PORT.`);
   if (error) fail("Server failed to start.", error);
-  console.log(`Server listening on http://localhost:${String(port)} (database: ${databasePath})`);
+  const { port } = server.address() as AddressInfo;
+  console.log(`Server listening on http://localhost:${String(port)} (database: ${config.databasePath})`);
 });
+
+function shutdown(signal: NodeJS.Signals): void {
+  console.log(`Received ${signal}, shutting down.`);
+  server.close();
+  server.closeAllConnections();
+  db.close();
+  process.exit(0);
+}
+
+process.once("SIGTERM", shutdown);
+process.once("SIGINT", shutdown);

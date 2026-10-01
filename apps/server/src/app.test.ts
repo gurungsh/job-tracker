@@ -1,8 +1,11 @@
+import fs from "node:fs";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
+import os from "node:os";
+import path from "node:path";
 import type { ErrorResponse, HealthResponse } from "@job-tracker/shared";
 import express, { type Express } from "express";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, errorHandler } from "./app.ts";
 
 let server: Server | undefined;
@@ -18,8 +21,9 @@ async function start(app: Express): Promise<string> {
 }
 
 afterEach(async () => {
-  await new Promise((resolve) => server?.close(resolve));
+  const running = server;
   server = undefined;
+  if (running) await new Promise((resolve) => running.close(resolve));
 });
 
 describe("GET /api/health", () => {
@@ -61,5 +65,69 @@ describe("errorHandler", () => {
     expect(await response.json()).toEqual({ error: "Internal server error" } satisfies ErrorResponse);
     expect(log).toHaveBeenCalledWith(expect.objectContaining({ message: "secret details" }));
     log.mockRestore();
+  });
+});
+
+describe("serving the built client", () => {
+  let clientDir: string;
+
+  beforeEach(() => {
+    clientDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-client-"));
+    fs.writeFileSync(path.join(clientDir, "index.html"), "<title>Job Tracker</title>");
+    fs.mkdirSync(path.join(clientDir, "assets"));
+    fs.writeFileSync(path.join(clientDir, "assets", "app.js"), "console.log('app');");
+  });
+
+  afterEach(() => {
+    fs.rmSync(clientDir, { recursive: true, force: true });
+  });
+
+  it("serves index.html at the root and for client routes", async () => {
+    const baseUrl = await start(createApp({ clientDir }));
+
+    for (const route of ["/", "/applications/5"]) {
+      const response = await fetch(`${baseUrl}${route}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toMatch(/text\/html/);
+      expect(await response.text()).toBe("<title>Job Tracker</title>");
+    }
+  });
+
+  it("serves built asset files", async () => {
+    const baseUrl = await start(createApp({ clientDir }));
+
+    const response = await fetch(`${baseUrl}/assets/app.js`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toMatch(/javascript/);
+    expect(await response.text()).toBe("console.log('app');");
+  });
+
+  it("keeps the API routes and the JSON 404 for unknown API paths", async () => {
+    const baseUrl = await start(createApp({ clientDir }));
+
+    const health = await fetch(`${baseUrl}/api/health`);
+    expect(health.status).toBe(200);
+    expect(await health.json()).toEqual({ status: "ok" } satisfies HealthResponse);
+
+    const unknown = await fetch(`${baseUrl}/api/nope`);
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({ error: "Not found" } satisfies ErrorResponse);
+  });
+
+  it("refuses to start when the build is missing", () => {
+    fs.rmSync(path.join(clientDir, "index.html"));
+
+    expect(() => createApp({ clientDir })).toThrow(
+      `Client build not found at ${clientDir}. Run \`npm run build\` first.`,
+    );
+  });
+
+  it("doesn't serve pages without a clientDir", async () => {
+    const baseUrl = await start(createApp());
+
+    const response = await fetch(`${baseUrl}/`);
+
+    expect(response.status).toBe(404);
   });
 });

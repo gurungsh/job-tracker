@@ -14,7 +14,9 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "eslint .",
     "test": "vitest run",
-    "dev": "concurrently --kill-others --names server,client --prefix-colors blue,magenta \"npm run dev -w @job-tracker/server\" \"npm run dev -w @job-tracker/client\""
+    "dev": "concurrently --kill-others --names server,client --prefix-colors blue,magenta \"npm run dev -w @job-tracker/server\" \"npm run dev -w @job-tracker/client\"",
+    "build": "npm run build -w @job-tracker/client",
+    "start": "npm run start -w @job-tracker/server"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -22,6 +22,7 @@ job-tracker is a **personal, single-user** app for tracking job applications: wh
 | Database | SQLite                                                              |
 | Frontend | React, built with Vite                                              |
 | Testing  | Vitest                                                              |
+| Packaging | Docker Compose, single image, run locally only                     |
 
 Library-level choices, such as the SQLite driver, validation, and test helpers, are made in a feature's `plan.md` and recorded there.
 Adding a new runtime dependency requires a line in the plan explaining why.

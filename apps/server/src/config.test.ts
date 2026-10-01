@@ -9,6 +9,7 @@ describe("loadConfig", () => {
     expect(loadConfig({})).toEqual({
       port: 3000,
       databasePath: path.join(repoRoot, "data", "job-tracker.db"),
+      clientDir: undefined,
     });
   });
 
@@ -24,5 +25,10 @@ describe("loadConfig", () => {
   it("rejects a PORT that isn't a valid port number", () => {
     expect(() => loadConfig({ PORT: "abc" })).toThrow(/PORT/);
     expect(() => loadConfig({ PORT: "70000" })).toThrow(/PORT/);
+  });
+
+  it("serves the built client only when NODE_ENV is production", () => {
+    expect(loadConfig({ NODE_ENV: "production" }).clientDir).toBe(path.join(repoRoot, "apps", "client", "dist"));
+    expect(loadConfig({ NODE_ENV: "development" }).clientDir).toBeUndefined();
   });
 });

@@ -17,4 +17,6 @@ This project practices **spec-driven development**. Read `docs/constitution.md` 
 ## Commands
 
 - `npm run dev`: start the API and web app
+- `npm run build`, then `npm start`: build and run the production app on port 3000
+- `docker compose up --build --force-recreate`: run the production app in Docker on port 8080
 - `npm test`, `npm run lint`, and `npm run typecheck`: these must pass before a task is marked done
