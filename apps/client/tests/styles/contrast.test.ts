@@ -136,6 +136,26 @@ describe("the table styles", () => {
   });
 });
 
+// The detail page and the application dialog (spec 013, AC-14) add no colors of their own either. Every text color they
+// use is one whose pairings with the page, card, and tint backgrounds are checked above.
+describe("the detail page styles", () => {
+  const checkedTextTokens = ["--text", "--text-muted", "--accent", "--danger", "--overdue", "--stage"];
+
+  it.each(["ApplicationDetailPage.css", "ApplicationDialog.css", "ApplicationForm.css"])("%s uses only color tokens (AC-14)", (file) => {
+    const source = fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", file), "utf8");
+
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it("sets text only in colors whose contrast is checked (AC-14)", () => {
+    const source = fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", "ApplicationDetailPage.css"), "utf8");
+    const used = [...source.matchAll(/(?<![-\w])color:\s*var\((--[\w-]+)\)/g)].map((match) => match[1] as string);
+
+    expect(used.length).toBeGreaterThan(0);
+    for (const token of used) expect(checkedTextTokens, token).toContain(token);
+  });
+});
+
 describe("the theme rules", () => {
   it("set the browser's color scheme for each theme, so native controls follow (AC-9)", () => {
     expect(css).toMatch(/:root\s*{[^}]*color-scheme:\s*light;/);

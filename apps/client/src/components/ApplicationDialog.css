@@ -1,0 +1,29 @@
+.application-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(36rem, 100%);
+  /* The backdrop is a grid that grows with its content, so cap the height here. The form body scrolls inside. */
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+
+.application-dialog:focus {
+  outline: none;
+}
+
+.application-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.application-dialog-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}

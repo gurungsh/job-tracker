@@ -4,7 +4,12 @@ import { ApiError, api } from "../lib/api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import "./Contacts.css";
 
-type ContactsProps = { companyId: number; companyName: string };
+type ContactsProps = {
+  companyId: number;
+  companyName: string;
+  /** Called after a contact is added, changed, or deleted, so a timeline that offers the contacts can reload (spec 013, AC-12). */
+  onChange?: () => void;
+};
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; contacts: Contact[] };
 
@@ -16,7 +21,7 @@ function sortContacts(contacts: Contact[]): Contact[] {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** The people at an application's company, shared by every application there (spec 008). */
-export function Contacts({ companyId, companyName }: ContactsProps) {
+export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -42,6 +47,7 @@ export function Contacts({ companyId, companyName }: ContactsProps) {
     setState((current) =>
       current.status === "ready" ? { status: "ready", contacts: sortContacts(change(current.contacts)) } : current,
     );
+    onChange?.();
   }
 
   async function remove(contact: Contact) {

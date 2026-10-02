@@ -15,31 +15,21 @@ afterEach(() => {
 
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 
-async function openTab(tab: "Contacts" | "Timeline", server = installFakeServer([acme])) {
-  render(<AppAt />);
-  await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-  await userEvent.click(screen.getByRole("tab", { name: tab }));
+/** Opens Acme's page, where the contacts and the timeline are sections (spec 013, AC-12). */
+async function openPage(server = installFakeServer([acme])) {
+  render(<AppAt path={`/applications/${String(acme.id)}`} />);
+  await screen.findByRole("region", { name: "Contacts" });
   return server;
 }
 
+const contactsSection = () => within(screen.getByRole("region", { name: "Contacts" }));
+
 const addForm = () => screen.getByRole("form", { name: "Add contact" });
-const cardsText = () => screen.getAllByRole("listitem").map((item) => item.textContent);
+const cardsText = () => contactsSection().getAllByRole("listitem").map((item) => item.textContent);
 
-describe("the Contacts tab", () => {
-  it("is offered for an existing application, after Details and Timeline, and not for a new one (AC-1; spec 009 adds a tab after it)", async () => {
-    installFakeServer([acme]);
-    render(<AppAt />);
-
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Details", "Timeline", "Contacts", "Requirements"]);
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
-
-    await userEvent.click(screen.getByRole("button", { name: "Add application" }));
-    expect(screen.queryByRole("tab")).toBeNull();
-  });
-
+describe("the Contacts section", () => {
   it("says there are no contacts yet, and names the company (AC-2, AC-12)", async () => {
-    await openTab("Contacts");
+    await openPage();
 
     expect(await screen.findByRole("heading", { name: "People at Acme Corp" })).toBeTruthy();
     expect(screen.getByText(/No contacts yet/)).toBeTruthy();
@@ -53,7 +43,7 @@ describe("the Contacts tab", () => {
       contact({ companyId: acme.companyId + 1, name: "Someone else" }),
     );
 
-    await openTab("Contacts", server);
+    await openPage(server);
     await screen.findAllByRole("listitem");
 
     const [first, second] = cardsText();
@@ -68,7 +58,7 @@ describe("the Contacts tab", () => {
   });
 
   it("adds a contact, shows it, and clears the form (AC-3)", async () => {
-    const server = await openTab("Contacts");
+    const server = await openPage();
     await screen.findByRole("form", { name: "Add contact" });
     const form = within(addForm());
 
@@ -96,20 +86,17 @@ describe("the Contacts tab", () => {
     // The fake server numbers companies on its own, so give the two Acme applications one company.
     second.companyId = acme.companyId;
     server.contacts.push(contact({ companyId: acme.companyId, name: "Shared Sam" }));
-    render(<AppAt />);
+    const { unmount } = render(<AppAt path={`/applications/${String(second.id)}`} />);
 
-    await userEvent.click(await screen.findByRole("button", { name: /Designer/ }));
-    await userEvent.click(screen.getByRole("tab", { name: "Contacts" }));
-    expect(await screen.findByText("Shared Sam")).toBeTruthy();
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(await within(await screen.findByRole("region", { name: "Contacts" })).findByText("Shared Sam")).toBeTruthy();
+    unmount();
 
-    await userEvent.click(screen.getByRole("button", { name: /Analyst/ }));
-    await userEvent.click(screen.getByRole("tab", { name: "Contacts" }));
+    render(<AppAt path={`/applications/${String(other.id)}`} />);
     expect(await screen.findByText(/No contacts yet/)).toBeTruthy();
   });
 
   it("explains a missing name and a bad email next to the field, and sends nothing (AC-4)", async () => {
-    const server = await openTab("Contacts");
+    const server = await openPage();
     await screen.findByRole("form", { name: "Add contact" });
     const form = within(addForm());
 
@@ -124,7 +111,7 @@ describe("the Contacts tab", () => {
   });
 
   it("keeps what I typed when adding fails, and says why (AC-13)", async () => {
-    const server = await openTab("Contacts");
+    const server = await openPage();
     await screen.findByRole("form", { name: "Add contact" });
     const form = within(addForm());
     await userEvent.type(form.getByLabelText("Name"), "Sam");
@@ -140,29 +127,22 @@ describe("the Contacts tab", () => {
 
   it("shows an error with a way to try again when loading fails (AC-13)", async () => {
     const server = installFakeServer([acme]);
-    render(<AppAt />);
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-    server.setOffline(true);
-    await userEvent.click(screen.getByRole("tab", { name: "Contacts" }));
+    let down = true;
+    server.override((method, path) =>
+      down && method === "GET" && path.endsWith("/contacts")
+        ? new Response(JSON.stringify({ error: "Service down" }), { status: 503 })
+        : undefined,
+    );
+    render(<AppAt path={`/applications/${String(acme.id)}`} />);
 
-    const alert = await screen.findByRole("alert");
+    const section = await screen.findByRole("region", { name: "Contacts" });
+    const alert = await within(section).findByRole("alert");
     expect(alert.textContent).toContain("Couldn't load the contacts");
 
-    server.setOffline(false);
+    down = false;
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("form", { name: "Add contact" })).toBeTruthy();
-  });
-
-  it("keeps unsaved Details changes when switching to Contacts and back (AC-14)", async () => {
-    await openTab("Contacts");
-    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
-    await userEvent.type(screen.getByLabelText("Job title"), " II");
-    await userEvent.click(screen.getByRole("tab", { name: "Contacts" }));
-    expect(screen.queryByRole("textbox", { name: "Job title" })).toBeNull();
-    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
-
-    expect(screen.getByLabelText<HTMLInputElement>("Job title").value).toBe("Engineer II");
+    expect(await within(section).findByRole("form", { name: "Add contact" })).toBeTruthy();
   });
 });
 
@@ -176,15 +156,15 @@ describe("editing and deleting contacts", () => {
 
   it("changes a contact's details, and Cancel discards (AC-6)", async () => {
     const { server } = withContact();
-    await openTab("Contacts", server);
-    await screen.findByText("Sam");
+    await openPage(server);
+    await contactsSection().findByText("Sam");
 
-    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    await userEvent.click(contactsSection().getByRole("button", { name: "Edit" }));
     await userEvent.type(within(screen.getByRole("form", { name: "Edit contact" })).getByLabelText("Name"), " cancelled");
     await userEvent.click(within(screen.getByRole("form", { name: "Edit contact" })).getByRole("button", { name: "Cancel" }));
     expect(server.contacts[0]?.name).toBe("Sam");
 
-    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
+    await userEvent.click(contactsSection().getByRole("button", { name: "Edit" }));
     const form = within(screen.getByRole("form", { name: "Edit contact" }));
     expect(form.getByLabelText<HTMLInputElement>("Email").value).toBe("sam@acme.com");
     await userEvent.clear(form.getByLabelText("Name"));
@@ -206,21 +186,21 @@ describe("editing and deleting contacts", () => {
       activity({ applicationId: acme.id, contactId: sam.id, contactName: "Sam" }),
       activity({ applicationId: acme.id, contactId: sam.id, contactName: "Sam" }),
     );
-    await openTab("Contacts", server);
-    await screen.findByText("Sam");
+    await openPage(server);
+    await contactsSection().findByText("Sam");
 
-    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await userEvent.click(contactsSection().getByRole("button", { name: "Delete" }));
     const dialog = screen.getByRole("alertdialog");
     expect(dialog.textContent).toContain("2 timeline entries mention them");
     expect(dialog.textContent).toContain("They will stay, but no longer name anyone");
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(server.contacts).toHaveLength(1);
 
-    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await userEvent.click(contactsSection().getByRole("button", { name: "Delete" }));
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
-      expect(screen.queryByText("Sam")).toBeNull();
+      expect(contactsSection().queryByText("Sam")).toBeNull();
     });
     expect(server.contacts).toHaveLength(0);
     expect(server.activities.every((entry) => entry.contactId === null)).toBe(true);
@@ -228,26 +208,26 @@ describe("editing and deleting contacts", () => {
 
   it("doesn't mention entries when there are none (AC-7)", async () => {
     const { server } = withContact();
-    await openTab("Contacts", server);
-    await screen.findByText("Sam");
+    await openPage(server);
+    await contactsSection().findByText("Sam");
 
-    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await userEvent.click(contactsSection().getByRole("button", { name: "Delete" }));
 
     expect(screen.getByRole("alertdialog").textContent).not.toContain("timeline");
   });
 
   it("says why a delete failed and keeps the contact (AC-13)", async () => {
     const { server } = withContact();
-    await openTab("Contacts", server);
-    await screen.findByText("Sam");
-    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await openPage(server);
+    await contactsSection().findByText("Sam");
+    await userEvent.click(contactsSection().getByRole("button", { name: "Delete" }));
     server.setOffline(true);
 
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn't delete Sam");
-    expect(screen.getByText("Sam")).toBeTruthy();
+    expect(contactsSection().getByText("Sam")).toBeTruthy();
   });
 });
 
@@ -266,7 +246,7 @@ describe("a contact on a timeline entry", () => {
 
   it("offers None and the company's contacts when adding, and saves the choice (AC-8)", async () => {
     const { server, pat } = withEntries();
-    await openTab("Timeline", server);
+    await openPage(server);
     const form = within(await screen.findByRole("form", { name: "Add entry" }));
 
     const options = within(form.getByLabelText("Contact")).getAllByRole("option").map((option) => option.textContent);
@@ -286,7 +266,7 @@ describe("a contact on a timeline entry", () => {
 
   it("shows who an entry involved, and nothing for entries with no contact (AC-8, AC-12)", async () => {
     const { server } = withEntries();
-    await openTab("Timeline", server);
+    await openPage(server);
 
     const items = await screen.findAllByRole("listitem");
     expect(items[0]?.textContent).toContain("with Sam");
@@ -295,7 +275,7 @@ describe("a contact on a timeline entry", () => {
 
   it("changes or removes the contact when editing (AC-8)", async () => {
     const { server, pat } = withEntries();
-    await openTab("Timeline", server);
+    await openPage(server);
     const items = await screen.findAllByRole("listitem");
 
     await userEvent.click(within(items[0] as HTMLElement).getByRole("button", { name: "Edit" }));
@@ -320,7 +300,7 @@ describe("a contact on a timeline entry", () => {
 
   it("lets an automatic entry take a contact too (AC-9)", async () => {
     const { server, sam } = withEntries();
-    await openTab("Timeline", server);
+    await openPage(server);
     const items = await screen.findAllByRole("listitem");
 
     await userEvent.click(within(items[1] as HTMLElement).getByRole("button", { name: "Edit" }));
@@ -336,8 +316,8 @@ describe("a contact on a timeline entry", () => {
 
   it("shows a renamed contact's new name on its entries (AC-6)", async () => {
     const { server } = withEntries();
-    await openTab("Contacts", server);
-    await userEvent.click(await screen.findAllByRole("button", { name: "Edit" }).then((buttons) => buttons[1] as HTMLElement));
+    await openPage(server);
+    await userEvent.click(await contactsSection().findAllByRole("button", { name: "Edit" }).then((buttons) => buttons[1] as HTMLElement));
     const form = within(screen.getByRole("form", { name: "Edit contact" }));
     await userEvent.clear(form.getByLabelText("Name"));
     await userEvent.type(form.getByLabelText("Name"), "Samantha");
@@ -345,8 +325,6 @@ describe("a contact on a timeline entry", () => {
     await waitFor(() => {
       expect(screen.queryByRole("form", { name: "Edit contact" })).toBeNull();
     });
-
-    await userEvent.click(screen.getByRole("tab", { name: "Timeline" }));
 
     expect(await screen.findByText("with Samantha")).toBeTruthy();
   });

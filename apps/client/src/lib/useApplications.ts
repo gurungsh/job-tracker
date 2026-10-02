@@ -54,11 +54,8 @@ export function useApplications() {
 export type ApplicationsContext = {
   applications: Application[];
   replaceApplication: (replacement: Application) => void;
-  /** The application open in the side panel, if there is one. */
-  panelApplicationId: number | undefined;
-  /** Opens the side panel on an application, or on a new one when none is given. */
-  openPanel: (application?: Application) => void;
-  closePanel: () => void;
+  /** Opens the dialog for adding an application (spec 013, AC-13). */
+  openAdd: () => void;
 };
 
 export function useApplicationsContext(): ApplicationsContext {

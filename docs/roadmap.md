@@ -51,7 +51,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 010 | Light and dark themes | *(Implemented)* Switch between a light and a dark theme from the header. It starts from the device's setting and never flashes the wrong theme on load. | 000 |
 | 011 | Stage colors and richer cards | *(Implemented)* See each stage in its own color and icon. Cards also show a company initials badge, location, work mode, employment type, pay, and time in stage. | 010 |
 | 012 | Table view | *(Implemented)* See all applications in a table with search, filters for stage, work mode and employment type, and sortable columns. Filters live in the page address. A Kanban/Table switch moves between the two views. | 011 |
-| 013 | Application detail page | Click a card to open that application on its own page, with a link back to the board. The page shows the job's details, requirements, timeline, and contacts together, and I can change the stage, edit the application, or delete it from there. It replaces the side panel. | 011, 012 |
+| 013 | Application detail page | *(Implemented)* Click a card to open that application on its own page, with a link back to the board. The page shows the job's details, requirements, timeline, and contacts together, and I can change the stage, edit the application, or delete it from there. It replaces the side panel. | 011, 012 |
 | 014 | App shell and sidebar | Use a sidebar that lists every stage with a live count. Each one opens the table filtered to that stage. The header carries the app name. | 012 |
 | 015 | Board stage filter and card menu | Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
 | 016 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 015 |
@@ -84,6 +84,7 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: The table's filters live in the page address, so a filtered view can be reloaded or bookmarked. That needs a router, which spec 012 adds as a dependency.
 - 2026-10-02: Stage icons come from an icon library, which spec 011 adds as a dependency.
 - 2026-10-02: Clicking a card opens the application on its own page instead of the side panel, so spec 013 replaces the panel for existing applications. It comes after the table view because it needs the router that spec 012 adds.
+- 2026-10-02: Spec 013 removes the side panel entirely. Cards and rows open the application's page, adding and editing use a dialog, and the timeline, contacts, and requirements are sections of the page. The page's back link and delete go back to the view it was opened from, and to the board when that is unknown.
 - 2026-10-02: Keyboard dragging is in scope from spec 016, which changes spec 006's "mouse only" decision.
 - 2026-10-02: Still out of scope for specs 010 to 017: currencies other than USD, archiving, fetching company logos from the internet, and accounts or a profile menu.
 - 2026-10-02: Requirements are managed in a Requirements tab in the side panel. Each has text, a required or preferred kind, and a met checkbox. They list required first, then preferred, in the order added. A count shows at the top of the tab, not on cards.
@@ -109,3 +110,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 010 implemented.
 - 2026-10-02: Marked 011 implemented.
 - 2026-10-02: Marked 012 implemented.
+- 2026-10-02: Marked 013 implemented.

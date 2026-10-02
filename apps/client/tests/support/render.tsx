@@ -1,10 +1,10 @@
-import { MemoryRouter } from "react-router";
+import { type InitialEntry, MemoryRouter } from "react-router";
 import { App } from "../../src/App.tsx";
 
-/** The whole app in a router that starts at `path`. */
-export function AppAt({ path = "/" }: { path?: string }) {
+/** The whole app in a router that starts at `path`, or at `entry` when it needs router state (spec 013). */
+export function AppAt({ path = "/", entry }: { path?: string; entry?: InitialEntry }) {
   return (
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[entry ?? path]}>
       <App />
     </MemoryRouter>
   );

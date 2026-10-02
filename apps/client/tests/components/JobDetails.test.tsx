@@ -15,9 +15,15 @@ afterEach(() => {
 
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer" });
 
+/** Opens the application's page from its card, then its edit dialog (spec 013, AC-1, AC-6). */
 async function openCard(name: RegExp) {
   await userEvent.click(await screen.findByRole("button", { name }));
-  return screen.getByRole("dialog", { name: "Edit application" });
+  return openEditDialog();
+}
+
+async function openEditDialog() {
+  await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
+  return screen.findByRole("dialog", { name: "Edit application" });
 }
 
 function details(panel: HTMLElement) {
@@ -68,8 +74,9 @@ describe("job details section", () => {
     await userEvent.type(job.getByLabelText("Job description"), "Line one{Enter}{Enter}Line two");
     await userEvent.click(within(panel).getByRole("button", { name: "Save" }));
 
-    await screen.findByRole("button", { name: /Acme Corp/ });
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
     expect(server.applications[0]).toMatchObject({
       jobLink: "https://jobs.acme.com/123",
       location: "Austin, TX",
@@ -83,7 +90,7 @@ describe("job details section", () => {
       jobDescription: "Line one\n\nLine two",
     });
 
-    panel = await openCard(/Acme Corp/);
+    panel = await openEditDialog();
     const reopened = details(panel);
     expect(reopened.getByLabelText<HTMLInputElement>("Job link").value).toBe("https://jobs.acme.com/123");
     expect(reopened.getByLabelText<HTMLSelectElement>("Work mode").value).toBe("hybrid");
@@ -105,7 +112,9 @@ describe("job details section", () => {
 
     expect(job.queryByLabelText("Contract length (months)")).toBeNull();
     await userEvent.click(within(panel).getByRole("button", { name: "Save" }));
-    await screen.findByRole("button", { name: /Acme Corp/ });
+    await vi.waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
     expect(server.applications[0]).toMatchObject({ employmentType: "full_time", contractLengthMonths: null });
   });
 

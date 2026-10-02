@@ -28,6 +28,7 @@ export class ApiError extends Error {
 export const api = {
   listApplications: () => request<Application[]>("GET", "/api/applications"),
   listCompanies: () => request<Company[]>("GET", "/api/companies"),
+  getApplication: (id: number) => request<Application>("GET", `/api/applications/${String(id)}`),
   createApplication: (input: ApplicationInput) => request<Application>("POST", "/api/applications", input),
   updateApplication: (id: number, input: ApplicationInput) =>
     request<Application>("PUT", `/api/applications/${String(id)}`, input),

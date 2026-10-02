@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId } from "react";
+import { useDialogFocus } from "../lib/useDialogFocus.ts";
 import "./ConfirmDialog.css";
 
 type ConfirmDialogProps = {
@@ -9,15 +10,12 @@ type ConfirmDialogProps = {
   onCancel: () => void;
 };
 
-/** A modal yes-or-no question. Focus starts on Cancel, and Escape cancels. */
+/** A modal yes-or-no question. Focus starts on Cancel and stays inside, and Escape cancels. */
 export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCancel }: ConfirmDialogProps) {
   const titleId = useId();
   const messageId = useId();
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    cancelRef.current?.focus();
-  }, []);
+  // Focus starts on Cancel, the first control, and Tab stays inside (spec 013, AC-16).
+  const focus = useDialogFocus<HTMLDivElement>();
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -34,11 +32,11 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
 
   return (
     <div className="dialog-backdrop">
-      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={messageId}>
+      <div className="dialog" {...focus} role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={messageId}>
         <h2 id={titleId}>{title}</h2>
         <p id={messageId}>{message}</p>
         <div className="dialog-actions">
-          <button ref={cancelRef} type="button" onClick={onCancel}>
+          <button type="button" onClick={onCancel}>
             Cancel
           </button>
           <button type="button" className="danger" onClick={onConfirm}>

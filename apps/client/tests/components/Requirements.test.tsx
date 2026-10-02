@@ -15,16 +15,17 @@ afterEach(() => {
 
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 
-async function openTab(server = installFakeServer([acme])) {
-  render(<AppAt />);
-  await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-  await userEvent.click(screen.getByRole("tab", { name: "Requirements" }));
+/** Opens Acme's page, where the requirements are a section (spec 013, AC-12). */
+async function openPage(server = installFakeServer([acme])) {
+  render(<AppAt path={`/applications/${String(acme.id)}`} />);
   await screen.findByRole("form", { name: "Add requirement" });
   return server;
 }
 
+const section = () => within(screen.getByRole("region", { name: "Requirements" }));
+
 const addForm = () => within(screen.getByRole("form", { name: "Add requirement" }));
-const items = () => screen.queryAllByRole("listitem");
+const items = () => section().queryAllByRole("listitem");
 const texts = () => items().map((item) => item.querySelector(".requirement-text")?.textContent);
 const summary = () => document.querySelector(".requirements-summary")?.textContent;
 
@@ -35,21 +36,9 @@ async function addItem(text: string, kind?: "Required" | "Preferred") {
   await userEvent.click(form.getByRole("button", { name: "Add requirement" }));
 }
 
-describe("the Requirements tab", () => {
-  it("is the fourth tab for an existing application, and absent for a new one (AC-1)", async () => {
-    installFakeServer([acme]);
-    render(<AppAt />);
-
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Details", "Timeline", "Contacts", "Requirements"]);
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
-
-    await userEvent.click(screen.getByRole("button", { name: "Add application" }));
-    expect(screen.queryByRole("tab")).toBeNull();
-  });
-
+describe("the Requirements section", () => {
   it("says there are no requirements, shows no counts, and offers the form (AC-2, AC-12)", async () => {
-    await openTab();
+    await openPage();
 
     expect(screen.getByText(/No requirements yet/)).toBeTruthy();
     expect(summary()).toBeUndefined();
@@ -65,8 +54,8 @@ describe("the Requirements tab", () => {
       requirement({ applicationId: acme.id + 1, text: "someone else's" }),
     );
 
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
 
     expect(texts()).toEqual(["req 1", "req 2", "pref 1"]);
     expect(summary()).toBe("Required: 1 of 2 met · Preferred: 1 of 1 met");
@@ -75,7 +64,7 @@ describe("the Requirements tab", () => {
   });
 
   it("adds an item unmet in its group, clears the text, and keeps the kind (AC-3)", async () => {
-    const server = await openTab();
+    const server = await openPage();
 
     await addItem("Rust", "Preferred");
 
@@ -90,7 +79,7 @@ describe("the Requirements tab", () => {
   });
 
   it("puts a new required item above the preferred ones (AC-3, AC-4)", async () => {
-    await openTab();
+    await openPage();
 
     await addItem("Nice to have", "Preferred");
     await waitFor(() => {
@@ -107,7 +96,7 @@ describe("the Requirements tab", () => {
   });
 
   it("explains empty and too-long text next to the field, and sends nothing (AC-9)", async () => {
-    const server = await openTab();
+    const server = await openPage();
 
     await userEvent.click(addForm().getByRole("button", { name: "Add requirement" }));
     expect(addForm().getByText("Text is required")).toBeTruthy();
@@ -120,7 +109,7 @@ describe("the Requirements tab", () => {
   });
 
   it("keeps what I typed when adding fails, and says why (AC-13)", async () => {
-    const server = await openTab();
+    const server = await openPage();
     await userEvent.type(addForm().getByLabelText("Text"), "Keep me");
     server.setOffline(true);
 
@@ -134,30 +123,23 @@ describe("the Requirements tab", () => {
 
   it("shows an error with a way to try again when loading fails (AC-13)", async () => {
     const server = installFakeServer([acme]);
-    render(<AppAt />);
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-    server.setOffline(true);
-    await userEvent.click(screen.getByRole("tab", { name: "Requirements" }));
+    let down = true;
+    server.override((method, path) =>
+      down && method === "GET" && path.endsWith("/requirements")
+        ? new Response(JSON.stringify({ error: "Service down" }), { status: 503 })
+        : undefined,
+    );
+    render(<AppAt path={`/applications/${String(acme.id)}`} />);
 
-    const alert = await screen.findByRole("alert");
+    const alert = await within(await screen.findByRole("region", { name: "Requirements" })).findByRole("alert");
     expect(alert.textContent).toContain("Couldn't load the requirements");
 
-    server.setOffline(false);
+    down = false;
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
 
     expect(await screen.findByRole("form", { name: "Add requirement" })).toBeTruthy();
   });
 
-  it("keeps unsaved Details changes when switching to Requirements and back (AC-14)", async () => {
-    await openTab();
-    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
-    await userEvent.type(screen.getByLabelText("Job title"), " II");
-    await userEvent.click(screen.getByRole("tab", { name: "Requirements" }));
-    expect(screen.queryByRole("textbox", { name: "Job title" })).toBeNull();
-    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
-
-    expect(screen.getByLabelText<HTMLInputElement>("Job title").value).toBe("Engineer II");
-  });
 });
 
 describe("checking items", () => {
@@ -173,8 +155,8 @@ describe("checking items", () => {
 
   it("checks and unchecks an item, keeps it in place, and updates the summary (AC-5, AC-6)", async () => {
     const server = withItems();
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
     expect(summary()).toBe("Required: 0 of 2 met · Preferred: 0 of 1 met");
 
     await userEvent.click(screen.getByRole("checkbox", { name: "First" }));
@@ -194,7 +176,7 @@ describe("checking items", () => {
 
   it("sends the whole item when checking, so the text and kind are kept (AC-5)", async () => {
     const server = withItems();
-    await openTab(server);
+    await openPage(server);
 
     await userEvent.click(await screen.findByRole("checkbox", { name: "Third" }));
 
@@ -205,7 +187,7 @@ describe("checking items", () => {
 
   it("leaves the box as it was, and says why, when saving fails (AC-13)", async () => {
     const server = withItems();
-    await openTab(server);
+    await openPage(server);
     const box = await screen.findByRole<HTMLInputElement>("checkbox", { name: "First" });
     server.setOffline(true);
 
@@ -231,8 +213,8 @@ describe("editing and deleting", () => {
 
   it("changes the text and kind, keeps whether it is met, and moves it to the other group (AC-7)", async () => {
     const server = withItems();
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
 
     await userEvent.click(within(items()[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     const form = within(screen.getByRole("form", { name: "Edit requirement" }));
@@ -253,8 +235,8 @@ describe("editing and deleting", () => {
 
   it("discards changes on Cancel (AC-7)", async () => {
     const server = withItems();
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
 
     await userEvent.click(within(items()[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     await userEvent.type(within(screen.getByRole("form", { name: "Edit requirement" })).getByLabelText("Text"), " more");
@@ -266,8 +248,8 @@ describe("editing and deleting", () => {
 
   it("explains an emptied text when editing (AC-9)", async () => {
     const server = withItems();
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
 
     await userEvent.click(within(items()[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     const form = within(screen.getByRole("form", { name: "Edit requirement" }));
@@ -280,8 +262,8 @@ describe("editing and deleting", () => {
 
   it("deletes only after I confirm, and updates the counts (AC-8)", async () => {
     const server = withItems();
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
     const deleteFirst = () => userEvent.click(within(items()[0] as HTMLElement).getByRole("button", { name: "Delete" }));
 
     await deleteFirst();
@@ -300,8 +282,8 @@ describe("editing and deleting", () => {
 
   it("says why a delete failed and keeps the item (AC-13)", async () => {
     const server = withItems();
-    await openTab(server);
-    await screen.findAllByRole("listitem");
+    await openPage(server);
+    await section().findAllByRole("listitem");
     await userEvent.click(within(items()[0] as HTMLElement).getByRole("button", { name: "Delete" }));
     server.setOffline(true);
 

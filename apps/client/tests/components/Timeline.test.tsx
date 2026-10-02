@@ -15,52 +15,16 @@ afterEach(() => {
 
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 
+/** Opens Acme's page, where the timeline is a section (spec 013, AC-12). */
 async function openTimeline(server = installFakeServer([acme])) {
-  render(<AppAt />);
-  await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-  await userEvent.click(screen.getByRole("tab", { name: "Timeline" }));
+  render(<AppAt path={`/applications/${String(acme.id)}`} />);
   await screen.findByRole("form", { name: "Add entry" });
-  return { server, panel: screen.getByRole("dialog", { name: "Edit application" }) };
+  return { server, panel: screen.getByRole("region", { name: "Timeline" }) };
 }
 
+const section = () => within(screen.getByRole("region", { name: "Timeline" }));
+
 const addForm = () => screen.getByRole("form", { name: "Add entry" });
-
-describe("tabs", () => {
-  it("shows Details and Timeline for an existing application, with Details selected (AC-1)", async () => {
-    installFakeServer([acme]);
-    render(<AppAt />);
-
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-
-    expect(screen.getByRole("tab", { name: "Details" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tab", { name: "Timeline" }).getAttribute("aria-selected")).toBe("false");
-    expect(screen.getByLabelText("Company")).toBeTruthy();
-  });
-
-  it("has no tabs when adding a new application (AC-1)", async () => {
-    installFakeServer([]);
-    render(<AppAt />);
-
-    await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
-
-    expect(screen.queryByRole("tab")).toBeNull();
-    expect(screen.getByLabelText("Company")).toBeTruthy();
-  });
-
-  it("keeps unsaved form changes when switching tabs and back, and still asks before closing (AC-14)", async () => {
-    await openTimeline();
-    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
-    await userEvent.type(screen.getByLabelText("Job title"), " II");
-    await userEvent.click(screen.getByRole("tab", { name: "Timeline" }));
-    // Hidden, not removed: role queries skip hidden elements.
-    expect(screen.queryByRole("textbox", { name: "Job title" })).toBeNull();
-    await userEvent.click(screen.getByRole("tab", { name: "Details" }));
-
-    expect(screen.getByLabelText<HTMLInputElement>("Job title").value).toBe("Engineer II");
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(screen.getByRole("alertdialog", { name: "Discard changes?" })).toBeTruthy();
-  });
-});
 
 describe("the timeline", () => {
   it("says there are no entries yet for an application without any (AC-10)", async () => {
@@ -79,7 +43,7 @@ describe("the timeline", () => {
 
     await openTimeline(server);
 
-    const items = within(screen.getByRole("list")).getAllByRole("listitem");
+    const items = section().getAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(items[0]?.textContent).toContain("Call");
     expect(items[0]?.textContent).toContain("Oct 9, 2026");
@@ -99,7 +63,7 @@ describe("the timeline", () => {
     await userEvent.type(form.getByLabelText("Text"), "Onsite with the team");
     await userEvent.click(form.getByRole("button", { name: "Add entry" }));
 
-    const item = await screen.findByRole("listitem");
+    const item = await section().findByRole("listitem");
     expect(item.textContent).toContain("Interview");
     expect(item.textContent).toContain("Oct 20, 2026");
     expect(item.textContent).toContain("Onsite with the team");
@@ -123,9 +87,9 @@ describe("the timeline", () => {
     await userEvent.click(form.getByRole("button", { name: "Add entry" }));
 
     await waitFor(() => {
-      expect(within(screen.getByRole("list")).getAllByRole("listitem")).toHaveLength(3);
+      expect(section().getAllByRole("listitem")).toHaveLength(3);
     });
-    const texts = within(screen.getByRole("list")).getAllByRole("listitem").map((i) => i.querySelector(".timeline-text")?.textContent);
+    const texts = section().getAllByRole("listitem").map((i) => i.querySelector(".timeline-text")?.textContent);
     expect(texts).toEqual(["later", "middle", "earlier"]);
   });
 
@@ -170,15 +134,18 @@ describe("the timeline", () => {
 
   it("shows an error with a way to try again when loading fails (AC-13)", async () => {
     const server = installFakeServer([acme]);
-    render(<AppAt />);
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-    server.setOffline(true);
-    await userEvent.click(screen.getByRole("tab", { name: "Timeline" }));
+    let down = true;
+    server.override((method, path) =>
+      down && method === "GET" && path.endsWith("/activities")
+        ? new Response(JSON.stringify({ error: "Service down" }), { status: 503 })
+        : undefined,
+    );
+    render(<AppAt path={`/applications/${String(acme.id)}`} />);
 
-    const alert = await screen.findByRole("alert");
+    const alert = await within(await screen.findByRole("region", { name: "Timeline" })).findByRole("alert");
     expect(alert.textContent).toContain("Couldn't load the timeline");
 
-    server.setOffline(false);
+    down = false;
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
 
     expect(await screen.findByRole("form", { name: "Add entry" })).toBeTruthy();
@@ -199,7 +166,7 @@ describe("editing and deleting", () => {
     const server = withEntries();
     await openTimeline(server);
 
-    await userEvent.click(within(screen.getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Edit" }));
+    await userEvent.click(within(section().getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     const form = within(screen.getByRole("form", { name: "Edit entry" }));
     await userEvent.selectOptions(form.getByLabelText("Type"), "email");
     await userEvent.clear(form.getByLabelText("Text"));
@@ -209,7 +176,7 @@ describe("editing and deleting", () => {
     await waitFor(() => {
       expect(screen.queryByRole("form", { name: "Edit entry" })).toBeNull();
     });
-    const first = screen.getAllByRole("listitem")[0] as HTMLElement;
+    const first = section().getAllByRole("listitem")[0] as HTMLElement;
     expect(first.textContent).toContain("Email");
     expect(first.textContent).toContain("Sent a thank-you");
     expect(server.activities[0]).toMatchObject({ type: "email", text: "Sent a thank-you" });
@@ -219,7 +186,7 @@ describe("editing and deleting", () => {
     const server = withEntries();
     await openTimeline(server);
 
-    await userEvent.click(within(screen.getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Edit" }));
+    await userEvent.click(within(section().getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     await userEvent.type(within(screen.getByRole("form", { name: "Edit entry" })).getByLabelText("Text"), " more");
     await userEvent.click(within(screen.getByRole("form", { name: "Edit entry" })).getByRole("button", { name: "Cancel" }));
 
@@ -231,7 +198,7 @@ describe("editing and deleting", () => {
     const server = withEntries();
     await openTimeline(server);
 
-    await userEvent.click(within(screen.getAllByRole("listitem")[1] as HTMLElement).getByRole("button", { name: "Edit" }));
+    await userEvent.click(within(section().getAllByRole("listitem")[1] as HTMLElement).getByRole("button", { name: "Edit" }));
     const form = within(screen.getByRole("form", { name: "Edit entry" }));
     expect(form.queryByLabelText("Type")).toBeNull();
     await userEvent.clear(form.getByLabelText("Text"));
@@ -248,7 +215,7 @@ describe("editing and deleting", () => {
     const server = withEntries();
     await openTimeline(server);
     const deleteFirst = () =>
-      userEvent.click(within(screen.getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Delete" }));
+      userEvent.click(within(section().getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Delete" }));
 
     await deleteFirst();
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
@@ -266,7 +233,7 @@ describe("editing and deleting", () => {
   it("says why a delete failed and keeps the entry (AC-13)", async () => {
     const server = withEntries();
     await openTimeline(server);
-    await userEvent.click(within(screen.getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Delete" }));
+    await userEvent.click(within(section().getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Delete" }));
     server.setOffline(true);
 
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));

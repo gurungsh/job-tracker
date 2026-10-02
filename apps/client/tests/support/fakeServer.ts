@@ -12,6 +12,7 @@ import {
   applicationInputSchema,
   contactInputSchema,
   fieldErrors,
+  movedText,
   requirementInputSchema,
 } from "@job-tracker/shared";
 import { vi } from "vitest";
@@ -252,6 +253,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
     }
 
     if (method === "GET" && path === "/api/applications") return json(server.applications);
+    if (method === "GET" && index >= 0) return json(server.applications[index]);
     if (method === "GET" && path === "/api/companies") return json(server.companies);
     if (method === "POST" && path === "/api/client-errors") return Promise.resolve(new Response(null, { status: 204 }));
     if (method === "POST" && path === "/api/applications") {
@@ -260,8 +262,13 @@ export function installFakeServer(applications: Application[] = [], companyNames
       return json(created, 201);
     }
     if (method === "PUT" && index >= 0) {
-      const updated = save(body as ApplicationInput, server.applications[index]);
+      const previous = server.applications[index] as Application;
+      const updated = save(body as ApplicationInput, previous);
       server.applications[index] = updated;
+      // The real server records a timeline entry whenever the stage changes (spec 007).
+      if (previous.stage !== updated.stage) {
+        server.activities.push(activity({ applicationId: id, type: "stage_change", text: movedText(previous.stage, updated.stage) }));
+      }
       return json(updated);
     }
     if (method === "DELETE" && index >= 0) {

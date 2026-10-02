@@ -12,6 +12,7 @@ import {
   type Clock,
   createApplication,
   deleteApplication,
+  getApplication,
   listApplications,
   updateApplication,
 } from "./store.ts";
@@ -21,6 +22,13 @@ export function applicationsRouter(db: DatabaseSync): Router {
 
   router.get("/", (_req, res) => {
     res.json(listApplications(db));
+  });
+
+  router.get("/:id", (req, res) => {
+    const id = parseId(req.params.id);
+    const application = id === undefined ? undefined : getApplication(db, id);
+    if (application) res.json(application);
+    else notFound(res);
   });
 
   router.post("/", (req, res) => {

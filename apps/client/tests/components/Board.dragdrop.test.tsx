@@ -190,20 +190,4 @@ describe("Board drag and drop", () => {
       expect(screen.getByRole("button", { name: /Acme/ }).getAttribute("draggable")).toBe("true");
     });
   });
-
-  it("closes the side panel when its application is moved (AC-8)", async () => {
-    installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "wishlist" })]);
-    render(<AppAt />);
-
-    await userEvent.click(await card(/Acme/));
-    expect(await screen.findByRole("dialog")).toBeTruthy();
-
-    fireEvent.dragStart(screen.getByRole("button", { name: /Acme/ }), { dataTransfer: dataTransfer() });
-    fireEvent.drop(column("Applied"), { dataTransfer: dataTransfer() });
-
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).toBeNull();
-    });
-    expect(within(column("Applied")).getByRole("button", { name: /Acme/ })).toBeTruthy();
-  });
 });

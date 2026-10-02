@@ -145,7 +145,8 @@ function detailValues(input: ValidApplicationInput) {
   ];
 }
 
-function getApplication(db: DatabaseSync, id: number): Application | undefined {
+/** Returns undefined if the application doesn't exist. */
+export function getApplication(db: DatabaseSync, id: number): Application | undefined {
   const row = db.prepare(`${selectApplications} WHERE a.id = ?`).get(id);
   return row ? toApplication(row) : undefined;
 }

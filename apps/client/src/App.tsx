@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router";
+import { ApplicationDetailPage } from "./components/ApplicationDetailPage.tsx";
 import { ApplicationsPage } from "./components/ApplicationsPage.tsx";
 import { Board } from "./components/Board.tsx";
 import { TableView } from "./components/TableView.tsx";
@@ -18,6 +19,7 @@ export function App() {
             <Route index element={<Board />} />
             <Route path="table" element={<TableView />} />
           </Route>
+          <Route path="applications/:id" element={<ApplicationDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -1,21 +1,16 @@
-import type { Application } from "@job-tracker/shared";
 import { useCallback, useState } from "react";
 import { Outlet } from "react-router";
 import { type ApplicationsContext, useApplications } from "../lib/useApplications.ts";
-import { ApplicationPanel } from "./ApplicationPanel.tsx";
+import { ApplicationDialog } from "./ApplicationDialog.tsx";
 import { ViewSwitch } from "./ViewSwitch.tsx";
 import "./Board.css";
 
-/** Loads the applications once for the board and the table, and owns the side panel they both open. */
+/** Loads the applications once for the board and the table, and owns the dialog for adding an application. */
 export function ApplicationsPage() {
   const { state, reload, retry, replaceApplication } = useApplications();
-  // The side panel: closed, adding, or editing one application.
-  const [panel, setPanel] = useState<{ application?: Application } | null>(null);
-  const openPanel = useCallback((application?: Application) => {
-    setPanel(application ? { application } : {});
-  }, []);
-  const closePanel = useCallback(() => {
-    setPanel(null);
+  const [adding, setAdding] = useState(false);
+  const openAdd = useCallback(() => {
+    setAdding(true);
   }, []);
 
   if (state.status === "loading") return <p className="board-status">Loading…</p>;
@@ -30,13 +25,7 @@ export function ApplicationsPage() {
     );
   }
 
-  const context: ApplicationsContext = {
-    applications: state.applications,
-    replaceApplication,
-    panelApplicationId: panel?.application?.id,
-    openPanel,
-    closePanel,
-  };
+  const context: ApplicationsContext = { applications: state.applications, replaceApplication, openAdd };
 
   return (
     <>
@@ -44,20 +33,16 @@ export function ApplicationsPage() {
         <ViewSwitch />
       </div>
       <Outlet context={context} />
-      {panel && (
-        <ApplicationPanel
-          key={panel.application?.id ?? "new"}
-          application={panel.application}
+      {adding && (
+        <ApplicationDialog
           companies={state.companies}
           onSaved={() => {
-            setPanel(null);
+            setAdding(false);
             reload();
           }}
-          onDeleted={() => {
-            setPanel(null);
-            reload();
+          onClose={() => {
+            setAdding(false);
           }}
-          onClose={closePanel}
         />
       )}
     </>

@@ -4,12 +4,14 @@ import { api } from "../lib/api.ts";
 import { applicationToInput } from "../lib/applicationInput.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { useApplicationsContext } from "../lib/useApplications.ts";
+import { useOpenApplication } from "../lib/useOpenApplication.ts";
 import { Card } from "./Card.tsx";
 import { localToday } from "../lib/dates.ts";
 import "./Board.css";
 
 export function Board() {
-  const { applications, replaceApplication, panelApplicationId, openPanel, closePanel } = useApplicationsContext();
+  const { applications, replaceApplication, openAdd } = useApplicationsContext();
+  const openApplication = useOpenApplication();
   // Drag and drop (spec 006): the card being dragged, the column it's over, applications being saved, and the last failure.
   const [dragging, setDragging] = useState<number | null>(null);
   const [overStage, setOverStage] = useState<Stage | null>(null);
@@ -20,7 +22,6 @@ export function Board() {
   const moveApplication = (application: Application, stage: Stage) => {
     setMoveError(null);
     setPendingIds((ids) => [...ids, application.id]);
-    if (panelApplicationId === application.id) closePanel();
     replaceApplication({ ...application, stage });
     api.updateApplication(application.id, applicationToInput(application, { stage })).then(
       (saved) => {
@@ -44,9 +45,6 @@ export function Board() {
     setDragging(null);
     setOverStage(null);
   };
-  const openApplication = (application: Application) => {
-    openPanel(application);
-  };
 
   return (
     <>
@@ -55,7 +53,7 @@ export function Board() {
           type="button"
           className="primary"
           onClick={() => {
-            openPanel();
+            openAdd();
           }}
         >
           Add application

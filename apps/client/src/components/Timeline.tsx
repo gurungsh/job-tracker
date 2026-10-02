@@ -13,7 +13,12 @@ import { formatDate, localToday } from "../lib/dates.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import "./Timeline.css";
 
-type TimelineProps = { applicationId: number; companyId: number };
+type TimelineProps = {
+  applicationId: number;
+  companyId: number;
+  /** Changing this loads the entries and contacts again without clearing what's typed in the form (spec 013, AC-5, AC-12). */
+  reloadKey?: number;
+};
 
 type LoadState =
   | { status: "loading" }
@@ -28,7 +33,7 @@ function sortEntries(entries: Activity[]): Activity[] {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** An application's history: entries I log, and the stage changes the server records (spec 007). */
-export function Timeline({ applicationId, companyId }: TimelineProps) {
+export function Timeline({ applicationId, companyId, reloadKey }: TimelineProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -43,13 +48,14 @@ export function Timeline({ applicationId, companyId }: TimelineProps) {
         if (current) setState({ status: "ready", entries: sortEntries(entries), contacts });
       },
       (error: unknown) => {
-        if (current) setState({ status: "error", message: errorText(error) });
+        // A reload that fails keeps what is showing, so a half-typed entry isn't lost to an error message.
+        if (current) setState((shown) => (shown.status === "ready" ? shown : { status: "error", message: errorText(error) }));
       },
     );
     return () => {
       current = false;
     };
-  }, [applicationId, companyId, loadCount]);
+  }, [applicationId, companyId, loadCount, reloadKey]);
 
   function changeEntries(change: (entries: Activity[]) => Activity[]) {
     setState((current) =>

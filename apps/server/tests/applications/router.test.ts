@@ -125,6 +125,26 @@ describe("GET /api/applications", () => {
   });
 });
 
+describe("GET /api/applications/:id", () => {
+  it("returns one application, the same as the list does (spec 013, AC-1)", async () => {
+    const created = await create({ companyName: "Acme Corp", jobTitle: "Engineer", location: "Austin, TX" });
+    await create({ companyName: "Other", jobTitle: "Designer" });
+
+    const response = await send("GET", `/api/applications/${String(created.id)}`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(created);
+  });
+
+  it("returns 404 for an application that doesn't exist or an id that isn't a number (spec 013, AC-11)", async () => {
+    for (const id of ["999", "abc", "1.5", "-1"]) {
+      const response = await send("GET", `/api/applications/${id}`);
+      expect(response.status, id).toBe(404);
+      expect(await response.json()).toEqual({ error: "Not found" });
+    }
+  });
+});
+
 describe("PUT /api/applications/:id", () => {
   it("saves edits and sets the stage dates when the stage changes (AC-10, AC-12, AC-14)", async () => {
     const created = await create({ companyName: "Acme", jobTitle: "Engineer", stage: "offer", appliedOn: "2026-09-01" });

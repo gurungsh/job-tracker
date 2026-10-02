@@ -45,4 +45,15 @@ describe("ConfirmDialog", () => {
     expect(onCancel).toHaveBeenCalledTimes(2);
     expect(onConfirm).not.toHaveBeenCalled();
   });
+
+  it("keeps Tab on its two buttons (spec 013, AC-16)", async () => {
+    renderDialog();
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Delete" }));
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+    await userEvent.tab({ shift: true });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Delete" }));
+  });
 });

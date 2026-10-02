@@ -17,6 +17,7 @@ import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { type SortColumn, type TableQuery, parseTableQuery, toSearchParams } from "../lib/tableQuery.ts";
 import { filterApplications, sortApplications } from "../lib/tableRows.ts";
 import { useApplicationsContext } from "../lib/useApplications.ts";
+import { useOpenApplication } from "../lib/useOpenApplication.ts";
 import { FilterDropdown } from "./FilterDropdown.tsx";
 import "./TableView.css";
 
@@ -115,7 +116,8 @@ const WORK_MODE_OPTIONS = WORK_MODES.map((value) => ({ value, label: WORK_MODE_L
 const EMPLOYMENT_OPTIONS = EMPLOYMENT_TYPES.map((value) => ({ value, label: EMPLOYMENT_TYPE_LABELS[value] }));
 
 export function TableView() {
-  const { applications, openPanel } = useApplicationsContext();
+  const { applications } = useApplicationsContext();
+  const openApplication = useOpenApplication();
   const [params, setParams] = useSearchParams();
   const query = parseTableQuery(params);
   const today = localToday();
@@ -220,7 +222,7 @@ export function TableView() {
             </thead>
             <tbody>
               {rows.map((application) => (
-                <Row key={application.id} application={application} today={today} onOpen={openPanel} />
+                <Row key={application.id} application={application} today={today} onOpen={openApplication} />
               ))}
             </tbody>
           </table>

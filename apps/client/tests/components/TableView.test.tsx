@@ -368,8 +368,8 @@ describe("TableView sorting (spec 012, AC-11, AC-12, AC-13)", () => {
   });
 });
 
-describe("TableView opens the side panel (spec 012, AC-16, AC-17, AC-22)", () => {
-  it("opens the panel for a row I click, and leaves the search, filters, and sort alone when it closes (AC-16)", async () => {
+describe("TableView opens the application's page (spec 013, AC-1, AC-8)", () => {
+  it("opens the page for a row I click, and the link back leaves the search, filters, and sort as they were (AC-1, AC-8)", async () => {
     installFakeServer(SAMPLE());
     const user = userEvent.setup();
     openTableWithAddress("/table?q=acme&sort=company&dir=asc");
@@ -377,15 +377,16 @@ describe("TableView opens the side panel (spec 012, AC-16, AC-17, AC-22)", () =>
 
     await user.click(screen.getByText("Globex"));
 
-    const panel = screen.getByRole("dialog", { name: "Edit application" });
-    expect(within(panel).getByLabelText<HTMLInputElement>("Company").value).toBe("Globex");
-    await user.click(within(panel).getByRole("button", { name: "Close" }));
+    expect(await screen.findByRole("heading", { level: 2, name: "Acme liaison" })).toBeTruthy();
+    expect(screen.getByTestId("where").textContent).toMatch(/^\/applications\/\d+$/);
     expect(screen.queryByRole("dialog")).toBeNull();
+    await user.click(screen.getByRole("link", { name: "Back to table" }));
+    await screen.findByRole("table");
     expect(screen.getByTestId("where").textContent).toBe("/table?q=acme&sort=company&dir=asc");
     expect(companies()).toEqual(["Acme Corp", "Globex"]);
   });
 
-  it("opens the panel from the keyboard, on the job title button (AC-16, AC-22)", async () => {
+  it("opens the page from the keyboard, on the job title button (AC-1)", async () => {
     installFakeServer(SAMPLE());
     const user = userEvent.setup();
     openTableWithAddress("/table");
@@ -394,58 +395,55 @@ describe("TableView opens the side panel (spec 012, AC-16, AC-17, AC-22)", () =>
     screen.getByRole("button", { name: "Engineer" }).focus();
     await user.keyboard("{Enter}");
 
-    expect(within(screen.getByRole("dialog", { name: "Edit application" })).getByLabelText<HTMLInputElement>("Company").value).toBe("Acme Corp");
+    expect(await screen.findByRole("heading", { level: 2, name: "Engineer" })).toBeTruthy();
+    expect(screen.getByText("Acme Corp")).toBeTruthy();
   });
 
-  it("closes the panel on save, and shows the new values in the row (AC-17)", async () => {
-    const server = installFakeServer(SAMPLE());
+  it("shows the new values in the row after an edit and going back (AC-8)", async () => {
+    installFakeServer(SAMPLE());
     const user = userEvent.setup();
     openTableWithAddress("/table");
     await screen.findByRole("table");
     await user.click(screen.getByText("Acme Corp"));
-    const panel = screen.getByRole("dialog", { name: "Edit application" });
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    const dialog = await screen.findByRole("dialog", { name: "Edit application" });
 
-    const title = within(panel).getByLabelText("Job title");
+    const title = within(dialog).getByLabelText("Job title");
     await user.clear(title);
     await user.type(title, "Staff Engineer");
-    await user.click(within(panel).getByRole("button", { name: "Save" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    await user.click(await screen.findByRole("link", { name: "Back to table" }));
 
     expect(await screen.findByText("Staff Engineer")).toBeTruthy();
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(server.requests.some((r) => r.method === "PUT")).toBe(true);
   });
 
-  it("removes the row when a save makes it stop matching the filters (AC-17)", async () => {
+  it("leaves out a row that stops matching the filters after an edit (AC-8)", async () => {
     installFakeServer(SAMPLE());
     const user = userEvent.setup();
     openTableWithAddress("/table?stage=applied");
     await screen.findByRole("table");
     expect(companies()).toEqual(["Acme Corp", "Initech"]);
     await user.click(screen.getByText("Acme Corp"));
-    const panel = screen.getByRole("dialog", { name: "Edit application" });
 
-    await user.selectOptions(within(panel).getByLabelText("Stage"), "Interviewing");
-    await user.click(within(panel).getByRole("button", { name: "Save" }));
+    await user.selectOptions(await screen.findByRole("combobox", { name: "Stage" }), "interviewing");
+    await user.click(await screen.findByRole("link", { name: "Back to table" }));
 
     await screen.findByText("1 of 3");
-    expect(screen.queryByRole("dialog")).toBeNull();
     expect(companies()).toEqual(["Initech"]);
   });
 
-  it("removes the row when the application is deleted (AC-17)", async () => {
+  it("goes back to the filtered table without the row after a delete (AC-7, AC-8)", async () => {
     installFakeServer(SAMPLE());
     const user = userEvent.setup();
-    openTableWithAddress("/table");
+    openTableWithAddress("/table?stage=applied");
     await screen.findByRole("table");
     await user.click(screen.getByText("Initech"));
-    const panel = screen.getByRole("dialog", { name: "Edit application" });
+    await user.click(await screen.findByRole("button", { name: "Delete" }));
 
-    await user.click(within(panel).getByRole("button", { name: "Delete" }));
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
-    await vi.waitFor(() => {
-      expect(companies()).toEqual(["Acme Corp", "Globex"]);
-    });
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await screen.findByRole("table");
+    expect(screen.getByTestId("where").textContent).toBe("/table?stage=applied");
+    expect(companies()).toEqual(["Acme Corp"]);
   });
 });

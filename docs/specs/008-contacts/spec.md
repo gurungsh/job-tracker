@@ -139,3 +139,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Implemented.
 - 2026-10-02: Spec 009 added a Requirements tab after Contacts, so an existing application now shows four tabs. AC-1 holds with that tab added after the ones it names.
 - 2026-10-02: Spec 011 added to the board cards: a company badge, a line with location, work mode, and employment type, the pay, a stage badge, and the time in stage. Where this spec says cards show only the earlier content, spec 011's content is now expected too. Nothing else about the cards changed.
+- 2026-10-02: Spec 013 replaced the side panel and its tabs. Contacts are now a Contacts section on the application's page and work as before. AC-1 (the tab) and AC-14 (the form surviving a tab switch) no longer apply.

@@ -34,6 +34,19 @@ describe("api", () => {
     });
   });
 
+  it("loads one application by its number (spec 013, AC-1)", async () => {
+    const fetchMock = stubFetch(json({ id: 7 }));
+
+    await expect(api.getApplication(7)).resolves.toEqual({ id: 7 });
+    expect(fetchMock).toHaveBeenCalledWith("/api/applications/7", undefined);
+  });
+
+  it("throws an ApiError with status 404 when the application doesn't exist (spec 013, AC-11)", async () => {
+    stubFetch(json({ error: "Not found" }, 404));
+
+    await expect(api.getApplication(7)).rejects.toMatchObject({ message: "Not found", status: 404 });
+  });
+
   it("returns nothing for a 204 response", async () => {
     stubFetch(new Response(null, { status: 204 }));
 

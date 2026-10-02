@@ -177,3 +177,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: AC-17 now says the panel closes on save, as it does today, and the row leaves the table if it stops matching. AC-12 lists Next step only under its due-date sort.
 - 2026-10-02: Implementation started.
 - 2026-10-02: Implemented.
+- 2026-10-02: Spec 013 replaced the side panel. Clicking a row opens the application's page, with a link back to the table as it was left, so AC-16 and AC-17 now describe the page: an edit or delete made there shows in the table when I go back, and a row that no longer matches the filters is gone.
