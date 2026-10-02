@@ -40,15 +40,23 @@ Adding a new runtime dependency requires a line in the plan explaining why.
 
 ## 4. Spec-driven workflow
 
-Every feature lives in `docs/specs/NNN-short-name/` with three documents:
+The process scales to the size of the change. There are three tiers, and `CLAUDE.md` says how to pick one:
+
+| Tier             | What it covers                                                          | Documents                                        |
+| ---------------- | ----------------------------------------------------------------------- | ------------------------------------------------ |
+| 1. Tweak         | A bug fix, visual polish, a copy or rename change, a test or docs fix. No new behavior, no new stored data. | None. The commit message says what and why. |
+| 2. Feature       | New or changed behavior, or new stored data, in about ten tasks or fewer. | `spec.md`, then one `plan.md` ending in a Tasks checklist |
+| 3. Large feature | A data migration, or more than about ten tasks.                          | `spec.md`, `plan.md`, and `tasks.md`             |
+
+A feature (Tier 2 or 3) lives in `docs/specs/NNN-short-name/`:
 
 | File       | Answers         | Written when                 |
 | ---------- | --------------- | ---------------------------- |
 | `spec.md`  | What and why?   | First. No implementation details. |
-| `plan.md`  | How?            | After the spec is approved.  |
-| `tasks.md` | In what steps?  | After the plan is approved.  |
+| `plan.md`  | How?            | After the spec is approved. In Tier 2 it ends with the Tasks checklist. |
+| `tasks.md` | In what steps?  | Tier 3 only, after the plan is approved. |
 
-**Gates:** no plan before the spec is approved, no tasks before the plan is approved, and no code before the tasks are approved.
+**Gates:** no plan before the spec is approved, and no code before the plan is approved (and, in Tier 3, the tasks). A tweak moves up a tier the moment it changes behavior or stored data.
 
 **Numbering:** specs are numbered sequentially (`000`, `001`, ...), and numbers are never reused. `short-name` is kebab-case and matches the branch name.
 
@@ -78,9 +86,13 @@ feature/<short-name>  ← one per spec, branched from development
 
 A spec is `Implemented` when:
 
-- [ ] Every task in `tasks.md` is checked off.
-- [ ] Every acceptance criterion in `spec.md` has been verified, by an automated test or a recorded manual check.
-- [ ] `npm test`, `npm run lint`, and `npm run typecheck` pass from the repo root.
-- [ ] The spec, plan, and tasks match what was built.
+- [ ] Every task is checked off, in `tasks.md` (Tier 3) or the plan's Tasks checklist (Tier 2).
+- [ ] Every acceptance criterion in `spec.md` has been verified, by an automated test or a recorded smoke check. Component and API tests are the main proof. One short browser smoke script on the production build, in one theme, covers the main path.
+- [ ] `npm test`, `npm run lint`, and `npm run typecheck` pass from the repo root, run one after another.
+- [ ] The spec and plan (and tasks) match what was built.
 - [ ] The spec status and `docs/specs/README.md` index are updated.
 - [ ] The owner has reviewed the branch.
+
+A tweak (Tier 1) is done when the tests for what changed pass, the three checks above pass, and the owner has reviewed the branch.
+
+**Before `development` is merged into `main`**, also run the browser smoke scripts in both themes, and against a freshly built Docker image.

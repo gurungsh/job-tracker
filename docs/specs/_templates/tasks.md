@@ -7,6 +7,7 @@
 | Status  | Draft                                  |
 | Updated | YYYY-MM-DD                             |
 
+> Use this file only for a large feature (Tier 3). A smaller feature keeps its tasks in a section at the end of `plan.md`.
 > Each task should be small enough for one commit and should state which AC it serves.
 > Where practical, write the test first, watch it fail, and then make it pass.
 > Check off a task only when it's committed and its tests pass.

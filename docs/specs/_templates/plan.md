@@ -50,3 +50,11 @@ The types and schemas to add to `packages/shared`.
 
 | Package | Workspace | Why |
 | ------- | --------- | --- |
+
+## Tasks
+
+> Keep this section for a Tier 2 feature, about ten tasks or fewer. For a larger feature (Tier 3), delete it and use `tasks.md` instead.
+> Each task should be small enough for one commit and should state which AC it serves. Check it off when it is committed and its tests pass.
+
+- [ ] **T1:** Description (AC-1)
+- [ ] **T2:** Description (AC-1, AC-2)
