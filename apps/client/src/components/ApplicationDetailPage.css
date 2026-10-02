@@ -172,3 +172,18 @@
   background: var(--danger-bg);
   border-radius: 6px;
 }
+
+.detail-archived {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--column-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.pill.pill--archived {
+  color: var(--text);
+  border: 1px solid var(--border);
+}

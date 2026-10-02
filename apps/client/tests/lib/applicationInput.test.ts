@@ -37,4 +37,13 @@ describe("sortForBoard", () => {
 
     expect(sortForBoard([none, late, newer, soon]).map((a) => a.jobTitle)).toEqual(["soon", "late", "newer", "none"]);
   });
+
+  it("carries the company's website, so a stage change doesn't clear it (spec 017, AC-7)", () => {
+    const original = application({ companyName: "Acme", jobTitle: "Engineer", companyWebsite: "https://acme.com" });
+
+    const input = applicationToInput(original, { stage: "applied" });
+
+    expect(input.companyWebsite).toBe("https://acme.com");
+    expect(applicationInputSchema.parse(input).companyWebsite).toBe("https://acme.com");
+  });
 });

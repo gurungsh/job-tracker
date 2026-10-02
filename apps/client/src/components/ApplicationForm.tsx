@@ -34,6 +34,7 @@ type ApplicationFormProps = {
 
 type FormValues = {
   companyName: string;
+  companyWebsite: string;
   jobTitle: string;
   stage: Stage;
   nextStep: string;
@@ -56,6 +57,7 @@ const amount = new Intl.NumberFormat("en-US");
 function initialValues(application?: Application): FormValues {
   return {
     companyName: application?.companyName ?? "",
+    companyWebsite: application?.companyWebsite ?? "",
     jobTitle: application?.jobTitle ?? "",
     stage: application?.stage ?? "wishlist",
     nextStep: application?.nextStep ?? "",
@@ -87,9 +89,21 @@ export function ApplicationForm({ application, companies, onSaved, onChangedChan
     onChangedChange(changed);
   }, [changed, onChangedChange]);
 
+  /**
+   * The website to show for a company name: the company's own when the name matches one, as the application's own company
+   * does even if the suggestions didn't load, and none for a new company, so a website is never saved to the wrong company
+   * (spec 017, AC-7).
+   */
+  function websiteFor(name: string): string {
+    const typed = name.trim().toLowerCase();
+    if (application && application.companyName.toLowerCase() === typed) return application.companyWebsite ?? "";
+    return companies.find((company) => company.name.toLowerCase() === typed)?.website ?? "";
+  }
+
   function update(field: keyof FormValues, value: string) {
     setValues((current) => {
       const next = { ...current, [field]: value };
+      if (field === "companyName") next.companyWebsite = websiteFor(value);
       // A contract length only applies to contracts, so it's cleared when the type changes (spec 003, AC-6).
       if (field === "employmentType" && value !== "contract") next.contractLengthMonths = "";
       return next;
@@ -163,6 +177,10 @@ export function ApplicationForm({ application, companies, onSaved, onChangedChan
             </datalist>
           </>
         )}
+      </Field>
+
+      <Field label="Website" error={errors.companyWebsite}>
+        {(props) => <input {...props} {...bind("companyWebsite")} inputMode="url" autoComplete="off" />}
       </Field>
 
       <Field label="Job title" error={errors.jobTitle}>

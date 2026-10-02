@@ -262,11 +262,11 @@ describe("the Timeline card's form and entries (spec 016, AC-1, AC-4, AC-5, AC-7
     expect(screen.getByRole("region", { name: "Timeline" })).toBeTruthy();
   });
 
-  it("shows Type, With, and Date in a row, then What happened, with a hint, as the form (AC-7)", async () => {
+  it("shows Type, With, Date, and Time in a row, then What happened, with a hint, as the form (AC-7, spec 017 AC-9)", async () => {
     await openTimeline();
     const fields = addForm().querySelector(".entry-fields") as HTMLElement;
 
-    expect([...fields.querySelectorAll("label")].map((label) => label.textContent)).toEqual(["Type", "With", "Date"]);
+    expect([...fields.querySelectorAll("label")].map((label) => label.textContent)).toEqual(["Type", "With", "Date", "Time"]);
     const text = within(addForm()).getByLabelText<HTMLTextAreaElement>("What happened");
     expect(text.placeholder).toBe("Anything worth remembering…");
     expect(addForm().querySelector(".entry-fields")?.nextElementSibling?.contains(text)).toBe(true);

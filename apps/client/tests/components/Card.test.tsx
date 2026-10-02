@@ -12,20 +12,21 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function renderCard(fields: Parameters<typeof application>[0], handlers: { onOpen?: () => void } = {}) {
+function renderCard(fields: Parameters<typeof application>[0], handlers: { onOpen?: () => void; onArchive?: () => void } = {}) {
   const app = application(fields);
   const { container } = render(
     <Card
       application={app}
       today="2026-10-13"
       onOpen={handlers.onOpen ?? (() => undefined)}
+      onArchive={handlers.onArchive ?? (() => undefined)}
       dragging={false}
       draggable
       onDragStart={() => undefined}
       onDragEnd={() => undefined}
     />,
   );
-  return { card: screen.getByRole("button"), container };
+  return { card: container.querySelector<HTMLElement>(".card") as HTMLElement, container };
 }
 
 describe("Card", () => {

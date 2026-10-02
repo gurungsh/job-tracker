@@ -216,7 +216,7 @@ describe("the Add application button", () => {
 // one of the tokens below, each paired with --surface or --column-bg in the checked pairs above, and the ✕ and Edit
 // buttons only change to pairs that are checked too.
 describe("the redesigned detail page styles", () => {
-  const files = ["SectionCard.css", "EntryActions.css", "Requirements.css", "Timeline.css", "Contacts.css", "ApplicationDetailPage.css"];
+  const files = ["SectionCard.css", "EntryActions.css", "Requirements.css", "Timeline.css", "Contacts.css", "ApplicationDetailPage.css", "ArchiveButton.css"];
   const allowedText = ["--text", "--text-muted", "--accent", "--danger", "--overdue", "--stage"];
   const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", file), "utf8");
 
@@ -278,5 +278,38 @@ describe("the theme rules", () => {
 
   it("no longer depend on the device setting in CSS (AC-3)", () => {
     expect(css).not.toContain("prefers-color-scheme");
+  });
+});
+
+// Archiving (spec 017, AC-13) adds no colors of its own. The Archived note, its pill, and the Archive button's hover
+// use --text on --column-bg, and the button is --text-muted on the card, all pairs checked above in both themes.
+describe("the archive styles", () => {
+  const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", file), "utf8");
+
+  it("sets the Archived note and pill in --text on --column-bg, a checked pair", () => {
+    const detail = read("components/ApplicationDetailPage.css");
+
+    expect(detail).toMatch(/\.detail-archived\s*{[^}]*color:\s*var\(--text\)[^}]*background:\s*var\(--column-bg\)/);
+    expect(detail).toMatch(/\.pill\.pill--archived\s*{[^}]*color:\s*var\(--text\)/);
+  });
+
+  it("hovers the Archive button in --text on --column-bg, never in the danger colors", () => {
+    expect(read("components/ArchiveButton.css")).toMatch(/button\.archive-button:hover\s*{[^}]*color:\s*var\(--text\)[^}]*background:\s*var\(--column-bg\)/);
+  });
+
+  it("hides the button on a card only where there is hover, so it is always there on a touch screen and on keyboard focus", () => {
+    const source = read("components/ArchiveButton.css");
+
+    expect(source).toMatch(/@media \(hover: hover\)\s*{[^@]*opacity:\s*0/);
+    expect(source).toMatch(/\.card-wrap:focus-within > \.archive-button\s*{[^}]*opacity:\s*1/);
+    expect(source).toMatch(/\.card-wrap:hover > \.archive-button/);
+  });
+
+  it("keeps the company name from running under the button on a card", () => {
+    expect(read("components/ArchiveButton.css")).toMatch(/\.card-wrap \.card-header\s*{[^}]*padding-right:\s*1\.75rem/);
+  });
+
+  it("uses the 2rem icon button size, a target large enough for a phone", () => {
+    expect(read("styles/global.css")).toMatch(/button\.icon-button\s*{[^}]*width:\s*2rem[^}]*height:\s*2rem/);
   });
 });

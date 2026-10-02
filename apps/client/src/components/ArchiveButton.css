@@ -1,0 +1,37 @@
+/* On a card, the button sits over its top right corner and shows when the card is pointed at or has focus inside it. */
+.card-wrap {
+  position: relative;
+}
+
+.card-wrap > .archive-button {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+}
+
+@media (hover: hover) {
+  .card-wrap > .archive-button {
+    opacity: 0;
+  }
+
+  .card-wrap:hover > .archive-button,
+  .card-wrap:focus-within > .archive-button {
+    opacity: 1;
+  }
+}
+
+/* In a table row, the button is in the last cell. */
+.cell-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+button.archive-button:hover {
+  color: var(--text);
+  background: var(--column-bg);
+}
+
+/* The button covers the card's top right corner, so the company name stops short of it. */
+.card-wrap .card-header {
+  padding-right: 1.75rem;
+}

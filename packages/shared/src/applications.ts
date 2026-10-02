@@ -93,9 +93,20 @@ function optionalJobLink() {
     .refine((link) => link === null || link.length <= 2000, "Job link must be 2,000 characters or fewer");
 }
 
+/** The company's website, with https:// added when it has no scheme. The same rules as the job link (spec 017, AC-7). */
+function optionalCompanyWebsite() {
+  return z
+    .string()
+    .nullish()
+    .transform((value) => (value ? normalizeJobLink(value) : "") || null)
+    .refine((link) => link === null || isValidJobLink(link), "Website must be a web address starting with http:// or https://")
+    .refine((link) => link === null || link.length <= 2000, "Website must be 2,000 characters or fewer");
+}
+
 export const applicationInputSchema = z
   .object({
     companyName: requiredText("Company", 200),
+    companyWebsite: optionalCompanyWebsite(),
     jobTitle: requiredText("Job title", 200),
     stage: z.enum(STAGES, { error: "Stage is not valid" }).default("wishlist"),
     nextStep: optionalText("Next step", 500),
@@ -143,6 +154,8 @@ export type Application = {
   id: number;
   companyId: number;
   companyName: string;
+  /** The company's website, shared by its applications (spec 017). */
+  companyWebsite: string | null;
   jobTitle: string;
   stage: Stage;
   nextStep: string | null;
@@ -168,9 +181,11 @@ export type Application = {
   salaryPeriod: SalaryPeriod | null;
   source: string | null;
   jobDescription: string | null;
+  /** ISO 8601 UTC timestamp, or null when the application isn't archived (spec 017). */
+  archivedAt: string | null;
 };
 
-export type Company = { id: number; name: string };
+export type Company = { id: number; name: string; website: string | null };
 
 /** The first error message for each top-level field. */
 export function fieldErrors(error: z.ZodError): Record<string, string> {

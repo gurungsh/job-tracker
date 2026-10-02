@@ -10,6 +10,7 @@ import {
   activityInputSchema,
   activityUpdateSchema,
   applicationInputSchema,
+  compareActivities,
   contactInputSchema,
   fieldErrors,
   movedText,
@@ -40,6 +41,8 @@ export function application(fields: Partial<Application> & Pick<Application, "co
   return {
     id: nextId,
     companyId: nextId,
+    companyWebsite: null,
+    archivedAt: null,
     stage: "wishlist",
     nextStep: null,
     nextStepDue: null,
@@ -71,6 +74,7 @@ export function activity(fields: Partial<Activity> & Pick<Activity, "application
     id: nextActivityId,
     type: "note",
     occurredOn: "2026-10-01",
+    occurredTime: null,
     text: "A note",
     contactId: null,
     contactName: null,
@@ -99,7 +103,7 @@ export function contact(fields: Partial<Contact> & Pick<Contact, "companyId" | "
 export function installFakeServer(applications: Application[] = [], companyNames: string[] = []): FakeServer {
   const server: FakeServer = {
     applications: [...applications],
-    companies: companyNames.map((name, index) => ({ id: index + 1, name })),
+    companies: companyNames.map((name, index) => ({ id: index + 1, name, website: null })),
     activities: [],
     contacts: [],
     requirements: [],
@@ -114,26 +118,31 @@ export function installFakeServer(applications: Application[] = [], companyNames
   let offline = false;
   const overrides: Handler[] = [];
 
-  function companyFor(name: string): Company {
+  /** Finds or adds the company, and sets its website, which an empty one clears (spec 017, AC-7). */
+  function companyFor(name: string, website: string | null): Company {
     const trimmed = name.trim();
     let company = server.companies.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
     if (!company) {
-      company = { id: server.companies.length + 1, name: trimmed };
+      company = { id: server.companies.length + 1, name: trimmed, website };
       server.companies.push(company);
     }
+    company.website = website;
+    // Every application at the company shows the same website.
+    server.applications = server.applications.map((a) => (a.companyId === company.id ? { ...a, companyWebsite: website } : a));
     return company;
   }
 
   function save(input: ApplicationInput, previous?: Application): Application {
     // Normalize with the real schema, as the server does. The date rules aren't modeled here.
-    const { companyName, ...fields } = applicationInputSchema.parse(input);
-    const company = companyFor(companyName);
+    const { companyName, companyWebsite, ...fields } = applicationInputSchema.parse(input);
+    const company = companyFor(companyName, companyWebsite);
     const now = new Date().toISOString();
     return {
       ...(previous ?? application({ companyName: company.name, jobTitle: fields.jobTitle })),
       ...fields,
       companyId: company.id,
       companyName: company.name,
+      companyWebsite: company.website,
       stageChangedAt: previous && previous.stage === fields.stage ? previous.stageChangedAt : now,
       updatedAt: now,
     };
@@ -158,12 +167,13 @@ export function installFakeServer(applications: Application[] = [], companyNames
       .sort((a, b) => (a.kind === b.kind ? a.id - b.id : a.kind === "required" ? -1 : 1));
   }
 
-  // The server's timeline order: newest date first, then the last one added (spec 007, AC-3).
+  // The server's timeline order (spec 007, AC-3, and spec 017, AC-11).
   function timelineOf(applicationId: number): Activity[] {
-    return server.activities
-      .filter((a) => a.applicationId === applicationId)
-      .sort((a, b) => (a.occurredOn === b.occurredOn ? b.id - a.id : a.occurredOn < b.occurredOn ? 1 : -1));
+    return server.activities.filter((a) => a.applicationId === applicationId).sort(compareActivities);
   }
+
+  const archivedMessage = () => json({ error: "Application is archived" }, 409);
+  const isArchived = (applicationId: number) => server.applications.find((a) => a.id === applicationId)?.archivedAt != null;
 
   const fetchMock = vi.fn((path: string, init?: RequestInit) => {
     const method = init?.method ?? "GET";
@@ -181,6 +191,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
     const timelineId = Number(/^\/api\/applications\/(\d+)\/activities$/.exec(path)?.[1]);
     if (Number.isFinite(timelineId) && (method === "GET" || method === "POST")) {
       if (method === "GET") return json(timelineOf(timelineId));
+      if (isArchived(timelineId)) return archivedMessage();
       const parsed = activityInputSchema.safeParse(body);
       if (!parsed.success) return json({ error: "Invalid activity", fields: fieldErrors(parsed.error) }, 400);
       const created = activity({ applicationId: timelineId, ...parsed.data, contactName: contactName(parsed.data.contactId) });
@@ -189,6 +200,9 @@ export function installFakeServer(applications: Application[] = [], companyNames
     }
     const activityId = Number(/^\/api\/activities\/(\d+)$/.exec(path)?.[1]);
     const activityIndex = server.activities.findIndex((a) => a.id === activityId);
+    if (activityIndex >= 0 && method !== "GET" && isArchived((server.activities[activityIndex] as Activity).applicationId)) {
+      return archivedMessage();
+    }
     if (Number.isFinite(activityId) && activityIndex >= 0 && method === "PUT") {
       const parsed = activityUpdateSchema.safeParse(body);
       if (!parsed.success) return json({ error: "Invalid activity", fields: fieldErrors(parsed.error) }, 400);
@@ -206,6 +220,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
     const requirementsApplicationId = Number(/^\/api\/applications\/(\d+)\/requirements$/.exec(path)?.[1]);
     if (Number.isFinite(requirementsApplicationId) && (method === "GET" || method === "POST")) {
       if (method === "GET") return json(requirementsOf(requirementsApplicationId));
+      if (isArchived(requirementsApplicationId)) return archivedMessage();
       const parsed = requirementInputSchema.safeParse(body);
       if (!parsed.success) return json({ error: "Invalid requirement", fields: fieldErrors(parsed.error) }, 400);
       const created = requirement({ applicationId: requirementsApplicationId, ...parsed.data });
@@ -214,6 +229,9 @@ export function installFakeServer(applications: Application[] = [], companyNames
     }
     const requirementId = Number(/^\/api\/requirements\/(\d+)$/.exec(path)?.[1]);
     const requirementIndex = server.requirements.findIndex((r) => r.id === requirementId);
+    if (requirementIndex >= 0 && method !== "GET" && isArchived((server.requirements[requirementIndex] as Requirement).applicationId)) {
+      return archivedMessage();
+    }
     if (Number.isFinite(requirementId) && requirementIndex >= 0 && method === "PUT") {
       const parsed = requirementInputSchema.safeParse(body);
       if (!parsed.success) return json({ error: "Invalid requirement", fields: fieldErrors(parsed.error) }, 400);
@@ -261,6 +279,16 @@ export function installFakeServer(applications: Application[] = [], companyNames
       server.applications.push(created);
       return json(created, 201);
     }
+    const actionId = /^\/api\/applications\/(\d+)\/(archive|restore)$/.exec(path);
+    if (method === "POST" && actionId) {
+      const target = server.applications.findIndex((a) => a.id === Number(actionId[1]));
+      if (target < 0) return json({ error: "Not found" }, 404);
+      const current = server.applications[target] as Application;
+      const archivedAt = actionId[2] === "archive" ? (current.archivedAt ?? new Date().toISOString()) : null;
+      server.applications[target] = { ...current, archivedAt };
+      return json(server.applications[target]);
+    }
+    if (method === "PUT" && index >= 0 && isArchived(id)) return archivedMessage();
     if (method === "PUT" && index >= 0) {
       const previous = server.applications[index] as Application;
       const updated = save(body as ApplicationInput, previous);

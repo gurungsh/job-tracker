@@ -57,13 +57,13 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    const overdue = await screen.findByRole("button", { name: /Acme/ });
+    const overdue = await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme/ });
     expect(overdue.textContent).toContain("Engineer");
     expect(overdue.textContent).toContain("Send portfolio");
     expect(overdue.textContent).toContain("Sep 30, 2026");
     expect(within(overdue).getByText("Overdue")).toBeTruthy();
 
-    const dueToday = screen.getByRole("button", { name: /Globex/ });
+    const dueToday = screen.getByRole("button", { name: /^(?!Archive|Restore).*Globex/ });
     expect(dueToday.textContent).toContain("Oct 1, 2026");
     expect(within(dueToday).queryByText("Overdue")).toBeNull();
   });
@@ -76,8 +76,8 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    await screen.findByRole("button", { name: /First/ });
-    const cards = within(column("Wishlist")).getAllByRole("button");
+    await screen.findByRole("button", { name: /^(?!Archive|Restore).*First/ });
+    const cards = within(column("Wishlist")).getAllByRole("button", { name: (accessible) => !/^(Archive|Restore):/.test(accessible) });
     expect(cards.map((card) => card.textContent)).toEqual([expect.stringContaining("First"), expect.stringContaining("Second")]);
   });
 
@@ -94,7 +94,7 @@ describe("Board", () => {
     server.setOffline(false);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("button", { name: /Acme/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -118,8 +118,8 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    const card = await screen.findByRole("button", { name: /Acme/ });
-    expect(within(column("Screening")).getByRole("button", { name: /Acme/ })).toBe(card);
+    const card = await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme/ });
+    expect(within(column("Screening")).getByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBe(card);
     expect(card.querySelector(".stage-badge")).toBeNull();
     expect(within(card).queryByText("Screening")).toBeNull();
   });

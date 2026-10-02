@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { daysInStage, formatDate, isOverdue, shortTimeInStage } from "../lib/dates.ts";
 import { jobSummary } from "../lib/jobSummary.ts";
 import { compactSalary } from "../lib/salary.ts";
+import { ArchiveButton } from "./ArchiveButton.tsx";
 import { CompanyAvatar } from "./CompanyAvatar.tsx";
 import "./Card.css";
 
@@ -10,6 +11,8 @@ type CardProps = {
   application: Application;
   today: string;
   onOpen: (application: Application) => void;
+  /** Archives the application without opening it (spec 017, AC-2). */
+  onArchive: (application: Application) => void;
   /** Whether the card is being dragged right now (spec 006, AC-3). */
   dragging: boolean;
   /** False while a move is being saved. */
@@ -18,13 +21,14 @@ type CardProps = {
   onDragEnd: () => void;
 };
 
-export function Card({ application, today, onOpen, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
+export function Card({ application, today, onOpen, onArchive, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
   const { companyName, jobTitle, nextStep, nextStepDue } = application;
   const overdue = nextStepDue !== null && isOverdue(nextStepDue, today);
   const details = jobSummary(application);
   const pay = compactSalary(application.salaryMin, application.salaryMax, application.salaryPeriod);
 
   return (
+    <div className="card-wrap">
     <button
       type="button"
       className={dragging ? "card card--dragging" : "card"}
@@ -63,5 +67,7 @@ export function Card({ application, today, onOpen, dragging, draggable, onDragSt
         </span>
       </span>
     </button>
+    <ArchiveButton application={application} onClick={onArchive} />
+    </div>
   );
 }

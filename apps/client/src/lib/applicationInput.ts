@@ -4,6 +4,7 @@ import type { Application, ApplicationInput } from "@job-tracker/shared";
 export function applicationToInput(application: Application, changes: Partial<ApplicationInput> = {}): ApplicationInput {
   return {
     companyName: application.companyName,
+    companyWebsite: application.companyWebsite,
     jobTitle: application.jobTitle,
     stage: application.stage,
     nextStep: application.nextStep,

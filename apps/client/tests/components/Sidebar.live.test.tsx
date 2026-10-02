@@ -62,7 +62,7 @@ describe("the sidebar's counts stay live (spec 014, AC-3)", () => {
     renderAt("/");
     await waitForCounts({ Wishlist: "1", Applied: "1" });
 
-    fireEvent.dragStart(await screen.findByRole("button", { name: /Acme Corp/ }), { dataTransfer: dataTransfer() });
+    fireEvent.dragStart(await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ }), { dataTransfer: dataTransfer() });
     fireEvent.drop(screen.getByRole("region", { name: "Applied" }), { dataTransfer: dataTransfer() });
 
     await waitForCounts({ "All applications": "2", Wishlist: "0", Applied: "2" });
@@ -74,7 +74,7 @@ describe("the sidebar's counts stay live (spec 014, AC-3)", () => {
     await waitForCounts({ Wishlist: "1", Applied: "1" });
     server.override((method) => (method === "PUT" ? new Response(JSON.stringify({ error: "Boom" }), { status: 500 }) : undefined));
 
-    fireEvent.dragStart(await screen.findByRole("button", { name: /Acme Corp/ }), { dataTransfer: dataTransfer() });
+    fireEvent.dragStart(await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ }), { dataTransfer: dataTransfer() });
     fireEvent.drop(screen.getByRole("region", { name: "Applied" }), { dataTransfer: dataTransfer() });
 
     await screen.findByText(/Couldn't move/);
@@ -123,7 +123,7 @@ describe("the sidebar's counts stay live (spec 014, AC-3)", () => {
 
     await screen.findByRole("region", { name: "Wishlist" });
     await waitForCounts({ "All applications": "1", Wishlist: "0", Applied: "1" });
-    expect(screen.queryByRole("button", { name: /Acme Corp/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ })).toBeNull();
   });
 
   it("are the same on every screen I move to afterward", async () => {

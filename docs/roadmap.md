@@ -55,7 +55,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 014 | App shell and sidebar | *(Implemented)* Use a sidebar that lists every stage with a live count. Each one opens the table filtered to that stage. The header carries the app name. | 012 |
 | 015 | Add button in the sidebar | *(Implemented)* Add an application from the top of the left sidebar on every screen, including the table and an application's page. The button leaves the board's toolbar. | 014 |
 | 016 | Detail page redesign | *(Implemented)* Read an application's page as a set of clean cards, with a header of pills and actions. Every requirement, timeline entry, and person has its own Edit and ✕, and a ✕ asks before deleting. The app header gets a logo and a sun/moon theme switch. Nothing is stored differently. | 013–015 |
-| 017 | Archive, company website, and entry times | Archive an application to hide it from the board, table, and counts, and find it under an Archived sidebar entry. Give a company a website, so its name links to it. Record the time of day on timeline entries as well as the date. | 016 |
+| 017 | Archive, company website, and entry times | *(Implemented)* Archive an application to hide it from the board, table, and counts, and find it under an Archived sidebar entry. Give a company a website, so its name links to it. Record the time of day on timeline entries as well as the date. | 016 |
 | 018 | Board stage filter and card menu | Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
 | 019 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 018 |
 | 020 | User guide | Open a built-in walkthrough of every screen from the header. | 010–019 |
@@ -126,3 +126,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 015 implemented.
 - 2026-10-02: Added specs 016 (detail page redesign) and 017 (archive, company website, and entry times) right after 015, and renumbered the specs after them (018–020).
 - 2026-10-02: Marked 016 implemented.
+- 2026-10-02: Marked 017 implemented.

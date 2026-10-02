@@ -2,6 +2,7 @@ import { type Application, STAGE_LABELS, STAGES, type Stage, isClosedStage } fro
 import { useState } from "react";
 import { api } from "../lib/api.ts";
 import { applicationToInput } from "../lib/applicationInput.ts";
+import { useArchiveActions } from "../lib/useArchiveActions.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { useApplicationsContext } from "../lib/useApplications.tsx";
 import { useOpenApplication } from "../lib/useOpenApplication.ts";
@@ -12,6 +13,7 @@ import "./Board.css";
 export function Board() {
   const { applications, replaceApplication } = useApplicationsContext();
   const openApplication = useOpenApplication();
+  const { archive, error: archiveError, dismissError } = useArchiveActions();
   // Drag and drop (spec 006): the card being dragged, the column it's over, applications being saved, and the last failure.
   const [dragging, setDragging] = useState<number | null>(null);
   const [overStage, setOverStage] = useState<Stage | null>(null);
@@ -48,13 +50,14 @@ export function Board() {
 
   return (
     <>
-      {moveError && (
+      {(moveError ?? archiveError) && (
         <div className="board-error" role="alert">
-          <span>{moveError}</span>
+          <span>{moveError ?? archiveError}</span>
           <button
             type="button"
             onClick={() => {
               setMoveError(null);
+              dismissError();
             }}
           >
             Dismiss
@@ -114,6 +117,7 @@ export function Board() {
                     application={application}
                     today={today}
                     onOpen={openApplication}
+                    onArchive={archive}
                     dragging={dragging === application.id}
                     draggable={!pendingIds.includes(application.id)}
                     onDragStart={(dragged) => {

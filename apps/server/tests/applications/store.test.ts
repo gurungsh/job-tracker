@@ -9,6 +9,7 @@ import { migrate } from "../../src/migrate.ts";
 import {
   createApplication,
   deleteApplication,
+  getApplication,
   listApplications,
   listCompanies,
   updateApplication,
@@ -61,6 +62,7 @@ describe("createApplication", () => {
       id: created.id,
       companyId: created.companyId,
       companyName: "Acme Corp",
+      companyWebsite: null,
       jobTitle: "Engineer",
       stage: "applied",
       nextStep: "Follow up",
@@ -80,6 +82,7 @@ describe("createApplication", () => {
       salaryPeriod: null,
       source: null,
       jobDescription: null,
+      archivedAt: null,
     });
     expect(listApplications(db)).toEqual([created]);
   });
@@ -90,7 +93,7 @@ describe("createApplication", () => {
 
     expect(second.companyId).toBe(first.companyId);
     expect(second.companyName).toBe("Acme Corp");
-    expect(listCompanies(db)).toEqual([{ id: first.companyId, name: "Acme Corp" }]);
+    expect(listCompanies(db)).toEqual([{ id: first.companyId, name: "Acme Corp", website: null }]);
   });
 
   it("creates a new company for a new name, and lists companies by name (AC-19)", () => {
@@ -174,7 +177,7 @@ describe("deleteApplication", () => {
     expect(deleteApplication(db, created.id)).toBe(true);
     expect(deleteApplication(db, created.id)).toBe(false);
     expect(listApplications(db)).toEqual([]);
-    expect(listCompanies(db)).toEqual([{ id: created.companyId, name: "Acme" }]);
+    expect(listCompanies(db)).toEqual([{ id: created.companyId, name: "Acme", website: null }]);
   });
 });
 
@@ -216,5 +219,37 @@ describe("job details (spec 003)", () => {
       source: null,
       jobDescription: null,
     });
+  });
+});
+
+describe("company website (spec 017, AC-7, AC-8)", () => {
+  it("saves the website on a new company and returns it on the application and in the company list", () => {
+    const created = createApplication(db, input({ companyName: "Acme", jobTitle: "A", companyWebsite: "acme.com" }), clock());
+
+    expect(created.companyWebsite).toBe("https://acme.com");
+    expect(listCompanies(db)).toEqual([{ id: created.companyId, name: "Acme", website: "https://acme.com" }]);
+  });
+
+  it("is shared by every application at the company, and an empty one clears it", () => {
+    const first = createApplication(db, input({ companyName: "Acme", jobTitle: "A", companyWebsite: "acme.com" }), clock());
+    const second = createApplication(db, input({ companyName: "Acme", jobTitle: "B" }), clock());
+
+    expect(second.companyWebsite).toBeNull();
+    expect(getApplication(db, first.id)?.companyWebsite).toBeNull();
+
+    updateApplication(db, first.id, input({ companyName: "Acme", jobTitle: "A", companyWebsite: "https://acme.example" }), clock());
+    expect(getApplication(db, second.id)?.companyWebsite).toBe("https://acme.example");
+  });
+
+  it("goes to the company that is chosen when saving, and leaves the old company's alone", () => {
+    const first = createApplication(db, input({ companyName: "Acme", jobTitle: "A", companyWebsite: "acme.com" }), clock());
+
+    const moved = updateApplication(db, first.id, input({ companyName: "Globex", jobTitle: "A", companyWebsite: "globex.com" }), clock());
+
+    expect(moved?.companyWebsite).toBe("https://globex.com");
+    expect(listCompanies(db).map((c) => [c.name, c.website])).toEqual([
+      ["Acme", "https://acme.com"],
+      ["Globex", "https://globex.com"],
+    ]);
   });
 });

@@ -30,7 +30,7 @@ describe("adding an application", () => {
     await userEvent.click(within(panel).getByRole("button", { name: "Save" }));
 
     const wishlist = screen.getByRole("region", { name: "Wishlist" });
-    expect(await within(wishlist).findByRole("button", { name: /Acme Corp/ })).toBeTruthy();
+    expect(await within(wishlist).findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ })).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(server.requests.find((r) => r.method === "POST")?.body).toMatchObject({
       companyName: "Acme Corp",

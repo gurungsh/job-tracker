@@ -33,6 +33,8 @@ export const api = {
   updateApplication: (id: number, input: ApplicationInput) =>
     request<Application>("PUT", `/api/applications/${String(id)}`, input),
   deleteApplication: (id: number) => request<undefined>("DELETE", `/api/applications/${String(id)}`),
+  archiveApplication: (id: number) => request<Application>("POST", `/api/applications/${String(id)}/archive`),
+  restoreApplication: (id: number) => request<Application>("POST", `/api/applications/${String(id)}/restore`),
   listActivities: (applicationId: number) =>
     request<Activity[]>("GET", `/api/applications/${String(applicationId)}/activities`),
   createActivity: (applicationId: number, input: ActivityInput) =>

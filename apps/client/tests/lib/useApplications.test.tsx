@@ -143,7 +143,7 @@ describe("loading the list again when a view opens (spec 014, plan)", () => {
       </MemoryRouter>,
     );
 
-    await screen.findByRole("button", { name: /Acme Corp/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
 
     expect(server.requests.filter((r) => r.method === "GET" && r.path === "/api/applications")).toHaveLength(1);
   });

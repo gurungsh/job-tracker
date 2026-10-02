@@ -57,6 +57,8 @@ function Detail({ id }: { id: number }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   // What was last loaded or saved, to show again when a stage change fails. `stageRequest` numbers the changes, so only the last one's result counts.
   const savedApplication = useRef<Application | null>(null);
   const stageRequest = useRef(0);
@@ -114,6 +116,27 @@ function Detail({ id }: { id: number }) {
     }
   }
 
+  /** Archives or restores the application and stays on its page (spec 017, AC-1, AC-5). */
+  async function changeArchived(archived: boolean) {
+    setArchiveError(null);
+    setArchiving(true);
+    try {
+      const saved = archived ? await api.archiveApplication(id) : await api.restoreApplication(id);
+      savedApplication.current = saved;
+      setState({ status: "ready", application: saved });
+      replaceApplication(saved);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        setState({ status: "missing" });
+        removeApplication(id);
+        return;
+      }
+      setArchiveError(`Couldn't ${archived ? "archive" : "restore"}. ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setArchiving(false);
+    }
+  }
+
   async function openEdit() {
     // The suggestions are a convenience, so the form still opens without them.
     const companies = await api.listCompanies().catch((): Company[] => []);
@@ -162,6 +185,8 @@ function Detail({ id }: { id: number }) {
   const { application } = state;
   // The work mode and the employment type, each as a small pill, for each one that is set (spec 016, AC-2).
   const pills = [application.workMode ? WORK_MODE_LABELS[application.workMode] : null, employmentLabel(application)].filter(Boolean);
+  // An archived application can be read, restored, or deleted, and nothing else until it is restored (spec 017, AC-6).
+  const archived = application.archivedAt !== null;
 
   return (
     <div className="detail-page">
@@ -172,11 +197,18 @@ function Detail({ id }: { id: number }) {
         <div className="detail-heading">
           <span className="detail-company">
             <CompanyAvatar name={application.companyName} />
-            {application.companyName}
+            {application.companyWebsite ? (
+              <a href={application.companyWebsite} target="_blank" rel="noopener noreferrer">
+                {application.companyName}
+              </a>
+            ) : (
+              application.companyName
+            )}
           </span>
           <h2 className="detail-title">{application.jobTitle}</h2>
-          {pills.length > 0 && (
+          {(pills.length > 0 || archived) && (
             <div className="detail-pills">
+              {archived && <span className="pill pill--archived">Archived</span>}
               {pills.map((label) => (
                 <span key={label} className="pill">
                   {label}
@@ -188,6 +220,7 @@ function Detail({ id }: { id: number }) {
         <div className="detail-actions">
           <select
             aria-label="Stage"
+            disabled={archived}
             value={application.stage}
             onChange={(event) => void changeStage(event.target.value as Stage)}
           >
@@ -197,8 +230,17 @@ function Detail({ id }: { id: number }) {
               </option>
             ))}
           </select>
-          <button type="button" onClick={() => void openEdit()}>
+          <button type="button" disabled={archived} onClick={() => void openEdit()}>
             Edit
+          </button>
+          <button
+            type="button"
+            disabled={archiving}
+            onClick={() => {
+              void changeArchived(!archived);
+            }}
+          >
+            {archived ? "Restore" : "Archive"}
           </button>
           <button
             type="button"
@@ -212,16 +254,21 @@ function Detail({ id }: { id: number }) {
           </button>
         </div>
       </header>
-      {(stageError ?? deleteError) && (
+      {(stageError ?? deleteError ?? archiveError) && (
         <p className="detail-error" role="alert">
-          {stageError ?? deleteError}
+          {stageError ?? deleteError ?? archiveError}
+        </p>
+      )}
+      {archived && (
+        <p className="detail-archived" role="status">
+          Archived. Restore to make changes.
         </p>
       )}
 
       <div className="detail-layout">
         <div className="detail-main">
-          <Requirements applicationId={application.id} />
-          <Timeline reloadKey={timelineKey} applicationId={application.id} companyId={application.companyId} />
+          <Requirements applicationId={application.id} readOnly={archived} />
+          <Timeline reloadKey={timelineKey} applicationId={application.id} companyId={application.companyId} readOnly={archived} />
           <SectionCard title="Job description">
             {application.jobDescription ? (
               <p className="detail-description">{application.jobDescription}</p>
@@ -236,6 +283,7 @@ function Detail({ id }: { id: number }) {
           </SectionCard>
           <Contacts
             companyId={application.companyId}
+            readOnly={archived}
             onChange={() => {
               setTimelineKey((count) => count + 1);
             }}
