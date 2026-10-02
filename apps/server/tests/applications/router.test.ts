@@ -264,3 +264,37 @@ describe("job details (spec 003)", () => {
     expect(await response.json()).toMatchObject({ stage: "applied", appliedOn: "2026-09-01", stageChangedAt: now });
   });
 });
+
+describe("moving a card by dragging (spec 006)", () => {
+  it("saves a stage-only change from the card's own values and keeps every other field (AC-2)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-01T15:00:00.000Z"));
+    const created = await create({
+      companyName: "Acme",
+      jobTitle: "Engineer",
+      nextStep: "Call",
+      nextStepDue: "2026-10-05",
+      jobLink: "https://acme.com/jobs/1",
+      employmentType: "contract",
+      contractLengthMonths: 6,
+      salaryMin: 90,
+      salaryMax: 100,
+      salaryPeriod: "hourly",
+      jobDescription: "Build things",
+    });
+
+    // The board sends the card's current values, with salary as numbers, plus the new stage.
+    const response = await send("PUT", `/api/applications/${String(created.id)}`, { ...created, stage: "rejected" });
+
+    expect(response.status).toBe(200);
+    // Only the stage and the dates that follow it change. Everything else is as created.
+    expect(await response.json()).toEqual({
+      ...created,
+      stage: "rejected",
+      appliedOn: "2026-10-01",
+      closedOn: "2026-10-01",
+      stageChangedAt: "2026-10-01T15:00:00.000Z",
+      updatedAt: "2026-10-01T15:00:00.000Z",
+    });
+  });
+});

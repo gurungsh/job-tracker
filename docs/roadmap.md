@@ -44,7 +44,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 003 | Job details | *(Implemented)* Record each application's job link, location, work mode, employment type and contract length, salary range, source, and description. | 002 |
 | 004 | Logging and observability | Log every API request and server event to the terminal and to daily log files, see browser errors in the server's logs, and check the app's health, version, and request counts. | 000 |
 | 005 | File restructure | *(Implemented)* Find code, tests, and styles quickly: tests live apart from source, and each component's styles sit beside it. The app behaves exactly as before. | 000–004 |
-| 006 | Board drag and drop | Move cards between columns, and reorder them within a column, by dragging. The order is kept. | 002 |
+| 006 | Board drag and drop | *(Implemented)* Move cards between columns by dragging them with the mouse. The stage changes as it does in the edit form. | 002 |
 | 007 | Activity timeline | Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
 | 008 | Contacts | Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 007 |
 | 009 | Requirements checklist | List a posting's required and preferred items, and check off the ones I meet. | 002 |
@@ -57,6 +57,8 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - Search and filtering on the board
 - A "what's next" view that lists upcoming next steps by due date
 - Editing company details, such as website, industry, and notes
+- Reordering cards within a column by hand, and keeping that order
+- Dragging on touch screens and with the keyboard
 
 ## Decided
 
@@ -79,3 +81,5 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-01: Added spec 004, logging and observability, and renumbered the specs after it (005–008).
 - 2026-10-01: Added spec 005, file restructure, and renumbered the specs after it (006–009).
 - 2026-10-01: Marked 005 implemented.
+- 2026-10-01: Narrowed 006 to moving cards between columns with the mouse. Reordering and touch or keyboard dragging moved to "Later, maybe".
+- 2026-10-01: Marked 006 implemented.

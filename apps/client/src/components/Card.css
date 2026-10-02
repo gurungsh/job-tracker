@@ -51,3 +51,7 @@
   border-radius: 4px;
   padding: 0 0.3rem;
 }
+
+.card--dragging {
+  opacity: 0.4;
+}

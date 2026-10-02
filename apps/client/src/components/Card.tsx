@@ -6,16 +6,30 @@ type CardProps = {
   application: Application;
   today: string;
   onOpen: (application: Application) => void;
+  /** Whether the card is being dragged right now (spec 006, AC-3). */
+  dragging: boolean;
+  /** False while a move is being saved. */
+  draggable: boolean;
+  onDragStart: (application: Application) => void;
+  onDragEnd: () => void;
 };
 
-export function Card({ application, today, onOpen }: CardProps) {
+export function Card({ application, today, onOpen, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
   const { companyName, jobTitle, nextStep, nextStepDue } = application;
   const overdue = nextStepDue !== null && isOverdue(nextStepDue, today);
 
   return (
     <button
       type="button"
-      className="card"
+      className={dragging ? "card card--dragging" : "card"}
+      draggable={draggable}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        // Firefox won't start a drag without some data.
+        event.dataTransfer.setData("text/plain", String(application.id));
+        onDragStart(application);
+      }}
+      onDragEnd={onDragEnd}
       onClick={() => {
         onOpen(application);
       }}
