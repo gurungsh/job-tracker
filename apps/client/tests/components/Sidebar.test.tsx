@@ -1,10 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Sidebar } from "../../src/components/Sidebar.tsx";
 import { ApplicationsProvider } from "../../src/lib/useApplications.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
+
+const noop = () => undefined;
 
 function Where() {
   const { pathname, search } = useLocation();
@@ -15,7 +17,7 @@ function renderSidebar(path = "/") {
   render(
     <MemoryRouter initialEntries={[path]}>
       <ApplicationsProvider>
-        <Sidebar />
+        <Sidebar onAdd={noop} />
         <Where />
       </ApplicationsProvider>
     </MemoryRouter>,
@@ -182,7 +184,7 @@ describe("Sidebar's selected entry (spec 014, AC-5)", () => {
     const { unmount } = render(
       <MemoryRouter initialEntries={["/"]}>
         <ApplicationsProvider>
-          <Sidebar />
+          <Sidebar onAdd={noop} />
         </ApplicationsProvider>
       </MemoryRouter>,
     );
@@ -198,7 +200,7 @@ describe("Sidebar's selected entry (spec 014, AC-5)", () => {
     const { unmount } = render(
       <MemoryRouter initialEntries={["/table?stage=nonsense"]}>
         <ApplicationsProvider>
-          <Sidebar />
+          <Sidebar onAdd={noop} />
         </ApplicationsProvider>
       </MemoryRouter>,
     );
@@ -207,5 +209,60 @@ describe("Sidebar's selected entry (spec 014, AC-5)", () => {
 
     renderSidebar("/table?stage=offer&stage=offer");
     expect(current()).toEqual(["Offer"]);
+  });
+});
+
+describe("Sidebar's Add application button (spec 015, AC-1, AC-8, AC-10)", () => {
+  function renderWithAdd(onAdd = vi.fn()) {
+    installFakeServer(SAMPLE());
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <ApplicationsProvider>
+          <Sidebar onAdd={onAdd} />
+        </ApplicationsProvider>
+      </MemoryRouter>,
+    );
+    return onAdd;
+  }
+  const addButton = () => screen.getByRole("button", { name: "Add application" });
+
+  it("is the first thing in the sidebar, above All applications, and outside the Stages navigation (AC-1)", () => {
+    renderWithAdd();
+    const sidebar = addButton().parentElement as HTMLElement;
+
+    expect(sidebar.firstElementChild).toBe(addButton());
+    expect(sidebar.children[1]).toBe(screen.getByRole("navigation", { name: "Stages" }));
+    expect(screen.getByRole("navigation", { name: "Stages" }).contains(addButton())).toBe(false);
+    expect(addButton().compareDocumentPosition(screen.getByRole("link", { name: /^All applications/ }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it("has a plus icon, the primary button style, and a name that is only its label (AC-1, AC-10)", () => {
+    renderWithAdd();
+
+    expect(addButton().querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(addButton().classList.contains("primary")).toBe(true);
+    expect(addButton().textContent).toBe("Add application");
+  });
+
+  it("calls onAdd when I click it, or press Enter or Space on it (AC-8)", async () => {
+    const onAdd = renderWithAdd();
+
+    await userEvent.click(addButton());
+    addButton().focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.keyboard(" ");
+
+    expect(onAdd).toHaveBeenCalledTimes(3);
+  });
+
+  it("comes before the stage links in tab order (AC-8)", async () => {
+    renderWithAdd();
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(addButton());
+    await userEvent.tab();
+    expect(document.activeElement).toBe(screen.getByRole("link", { name: /^All applications/ }));
   });
 });

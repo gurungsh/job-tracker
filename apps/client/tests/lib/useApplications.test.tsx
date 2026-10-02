@@ -8,6 +8,7 @@ import { application, installFakeServer } from "../support/fakeServer.ts";
 
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 const globex = application({ companyName: "Globex", jobTitle: "Designer", stage: "offer" });
+const initech = application({ companyName: "Initech", jobTitle: "Analyst", stage: "wishlist", nextStepDue: "2026-01-01" });
 
 function Probe() {
   const { state, replaceApplication, removeApplication, reload } = useApplicationsStore();
@@ -145,5 +146,83 @@ describe("loading the list again when a view opens (spec 014, plan)", () => {
     await screen.findByRole("button", { name: /Acme Corp/ });
 
     expect(server.requests.filter((r) => r.method === "GET" && r.path === "/api/applications")).toHaveLength(1);
+  });
+});
+
+describe("adding an application to the shared list (spec 015, AC-4, AC-9)", () => {
+  function AddProbe({ added }: { added: ReturnType<typeof application> }) {
+    const { state, addApplication } = useApplicationsStore();
+    return (
+      <div>
+        <p data-testid="list">
+          {state.status === "ready" ? state.applications.map((a) => `${a.jobTitle}:${a.stage}`).join(",") : state.status}
+        </p>
+        <p data-testid="companies">{state.status === "ready" ? state.companies.map((c) => c.name).join(",") : ""}</p>
+        <button
+          type="button"
+          onClick={() => {
+            addApplication(added);
+          }}
+        >
+          Add
+        </button>
+      </div>
+    );
+  }
+
+  it("puts it in the list in board order and makes no request", async () => {
+    const server = installFakeServer([acme, globex]);
+    render(
+      <ApplicationsProvider>
+        <AddProbe added={initech} />
+      </ApplicationsProvider>,
+    );
+    await screen.findByText("Engineer:applied,Designer:offer");
+
+    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+
+    // Due dates come first, so the one with a due date leads, then newest first.
+    expect(screen.getByTestId("list").textContent).toBe("Analyst:wishlist,Designer:offer,Engineer:applied");
+    expect(server.requests.filter((r) => r.path === "/api/applications")).toHaveLength(1);
+  });
+
+  it("offers a new company as a suggestion, in name order, and a known company once", async () => {
+    installFakeServer([acme, globex], ["Acme Corp", "Globex"]);
+    const sameCompany = { ...application({ companyName: "Globex", jobTitle: "Second" }), companyId: 2 };
+    const { unmount } = render(
+      <ApplicationsProvider>
+        <AddProbe added={{ ...initech, companyId: 9 }} />
+      </ApplicationsProvider>,
+    );
+    await screen.findByText("Acme Corp,Globex");
+
+    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(screen.getByTestId("companies").textContent).toBe("Acme Corp,Globex,Initech");
+    unmount();
+
+    installFakeServer([acme, globex], ["Acme Corp", "Globex"]);
+    render(
+      <ApplicationsProvider>
+        <AddProbe added={sameCompany} />
+      </ApplicationsProvider>,
+    );
+    await screen.findByText("Acme Corp,Globex");
+    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+    expect(screen.getByTestId("companies").textContent).toBe("Acme Corp,Globex");
+  });
+
+  it("leaves a list that isn't ready alone", async () => {
+    const server = installFakeServer([acme]);
+    server.setOffline(true);
+    render(
+      <ApplicationsProvider>
+        <AddProbe added={initech} />
+      </ApplicationsProvider>,
+    );
+    await screen.findByText("error");
+
+    await userEvent.click(screen.getByRole("button", { name: "Add" }));
+
+    expect(screen.getByTestId("list").textContent).toBe("error");
   });
 });

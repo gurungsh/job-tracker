@@ -122,3 +122,30 @@ describe("the app shell's layout (spec 014, AC-12)", () => {
   });
 });
 
+describe("the stacking order (spec 015, AC-3)", () => {
+  const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", file), "utf8");
+  const layer = (css: string, selector: string) => {
+    const rule = new RegExp(`${selector.replace(/[.\\[\]]/g, "\\$&")}\\s*{[^}]*z-index:\\s*(\\d+)`).exec(css);
+    if (!rule) throw new Error(`No z-index for ${selector}`);
+    return Number(rule[1]);
+  };
+
+  it("puts dialogs above the sticky header, and the header above the drawer and its backdrop", () => {
+    const shell = read("AppShell.css");
+    const dialog = layer(read("ConfirmDialog.css"), ".dialog-backdrop");
+    const header = layer(shell, ".app-header");
+
+    expect(dialog).toBeGreaterThan(header);
+    expect(header).toBeGreaterThan(layer(shell, ".app-drawer"));
+    expect(layer(shell, ".app-drawer")).toBeGreaterThan(layer(shell, ".drawer-backdrop"));
+  });
+});
+
+describe("dialogs on a narrow screen (spec 015, AC-3)", () => {
+  const css = fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", "ConfirmDialog.css"), "utf8");
+
+  it("sit in a backdrop whose one column is the width of the screen, so they can't run off it", () => {
+    expect(/\.dialog-backdrop\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(css)).toBe(true);
+  });
+});
+

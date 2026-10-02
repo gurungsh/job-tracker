@@ -53,9 +53,10 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 012 | Table view | *(Implemented)* See all applications in a table with search, filters for stage, work mode and employment type, and sortable columns. Filters live in the page address. A Kanban/Table switch moves between the two views. | 011 |
 | 013 | Application detail page | *(Implemented)* Click a card to open that application on its own page, with a link back to the board. The page shows the job's details, requirements, timeline, and contacts together, and I can change the stage, edit the application, or delete it from there. It replaces the side panel. | 011, 012 |
 | 014 | App shell and sidebar | *(Implemented)* Use a sidebar that lists every stage with a live count. Each one opens the table filtered to that stage. The header carries the app name. | 012 |
-| 015 | Board stage filter and card menu | Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
-| 016 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 015 |
-| 017 | User guide | Open a built-in walkthrough of every screen from the header. | 010–016 |
+| 015 | Add button in the sidebar | *(Implemented)* Add an application from the top of the left sidebar on every screen, including the table and an application's page. The button leaves the board's toolbar. | 014 |
+| 016 | Board stage filter and card menu | Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
+| 017 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 016 |
+| 018 | User guide | Open a built-in walkthrough of every screen from the header. | 010–017 |
 
 ## Later, maybe
 
@@ -66,7 +67,7 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - Editing company details, such as website, industry, and notes
 - Reordering cards within a column by hand, and keeping that order
 - Dragging on touch screens
-- A left navigation bar that holds the Add application button and other entries, sharing the column that spec 014 builds
+- Other left navigation entries beyond the stage list and the Add application button, sharing the column that spec 014 builds
 
 ## Decided
 
@@ -86,10 +87,12 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Stage icons come from an icon library, which spec 011 adds as a dependency.
 - 2026-10-02: Clicking a card opens the application on its own page instead of the side panel, so spec 013 replaces the panel for existing applications. It comes after the table view because it needs the router that spec 012 adds.
 - 2026-10-02: Spec 013 removes the side panel entirely. Cards and rows open the application's page, adding and editing use a dialog, and the timeline, contacts, and requirements are sections of the page. The page's back link and delete go back to the view it was opened from, and to the board when that is unknown.
-- 2026-10-02: Keyboard dragging is in scope from spec 016, which changes spec 006's "mouse only" decision.
+- 2026-10-02: Keyboard dragging is in scope from spec 017, which changes spec 006's "mouse only" decision.
+- 2026-10-02: The Add application button moves to the top of the left sidebar, above the stage list, on every screen (spec 015). It comes out of the board's toolbar.
+- 2026-10-02: Saving a new application keeps me where I was, and the screen and the sidebar's counts update. The Add form always starts on Wishlist. On a narrow screen the Add button is only at the top of the menu drawer. There is no keyboard shortcut for adding in spec 015.
 - 2026-10-02: Spec 014 builds the left column with the stage list, and a later navigation bar joins that same column. The Add application button moves into it in that later spec, so 014 leaves it in the board's toolbar.
 - 2026-10-02: The sidebar starts with an "All applications" entry and the total. A stage entry opens the table with only that stage and clears its other filters. The app name in the header links to the board. On a narrow screen the sidebar folds behind a menu button.
-- 2026-10-02: Still out of scope for specs 010 to 017: currencies other than USD, archiving, fetching company logos from the internet, and accounts or a profile menu.
+- 2026-10-02: Still out of scope for specs 010 to 018: currencies other than USD, archiving, fetching company logos from the internet, and accounts or a profile menu.
 - 2026-10-02: Requirements are managed in a Requirements tab in the side panel. Each has text, a required or preferred kind, and a met checkbox. They list required first, then preferred, in the order added. A count shows at the top of the tab, not on cards.
 
 ## Changelog
@@ -115,3 +118,5 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 012 implemented.
 - 2026-10-02: Marked 013 implemented.
 - 2026-10-02: Marked 014 implemented.
+- 2026-10-02: Added spec 015, the Add application button in the sidebar, right after 014, and renumbered the specs after it (016–018). The button moves out of the board's toolbar into the left column that spec 014 built.
+- 2026-10-02: Marked 015 implemented.

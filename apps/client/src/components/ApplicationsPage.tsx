@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
 import { type ApplicationsContext, useApplicationsStore } from "../lib/useApplications.tsx";
-import { ApplicationDialog } from "./ApplicationDialog.tsx";
 import { ViewSwitch } from "./ViewSwitch.tsx";
 import "./Board.css";
 
-/** Loads the applications once for the board and the table, and owns the dialog for adding an application. */
+/** Shows the board or the table, with the loading and error states for the list they share. */
 export function ApplicationsPage() {
   const { state, reload, retry, replaceApplication } = useApplicationsStore();
   // The list now outlives the views. Coming back to one after it was loaded asks for it again, quietly, with the old
@@ -14,10 +13,6 @@ export function ApplicationsPage() {
   useEffect(() => {
     if (loadedOnMount.current) reload();
   }, [reload]);
-  const [adding, setAdding] = useState(false);
-  const openAdd = useCallback(() => {
-    setAdding(true);
-  }, []);
 
   if (state.status === "loading") return <p className="board-status">Loading…</p>;
   if (state.status === "error") {
@@ -31,7 +26,7 @@ export function ApplicationsPage() {
     );
   }
 
-  const context: ApplicationsContext = { applications: state.applications, replaceApplication, openAdd };
+  const context: ApplicationsContext = { applications: state.applications, replaceApplication };
 
   return (
     <>
@@ -39,18 +34,6 @@ export function ApplicationsPage() {
         <ViewSwitch />
       </div>
       <Outlet context={context} />
-      {adding && (
-        <ApplicationDialog
-          companies={state.companies}
-          onSaved={() => {
-            setAdding(false);
-            reload();
-          }}
-          onClose={() => {
-            setAdding(false);
-          }}
-        />
-      )}
     </>
   );
 }

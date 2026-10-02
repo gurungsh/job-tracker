@@ -118,7 +118,9 @@ describe("TableView rows and columns (spec 012, AC-3, AC-4, AC-5)", () => {
 
     render(<AppAt path="/table" />);
 
-    expect(await screen.findByText(/No applications yet/)).toBeTruthy();
+    const message = await screen.findByText("No applications yet. Use the Add application button in the sidebar to add your first one.");
+    expect(message.textContent).not.toMatch(/board/i);
+    expect(screen.getByRole("button", { name: "Add application" }).closest(".app-sidebar")).not.toBeNull();
     expect(screen.queryByRole("table")).toBeNull();
   });
 });

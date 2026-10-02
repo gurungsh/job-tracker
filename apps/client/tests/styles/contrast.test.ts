@@ -186,6 +186,31 @@ describe("the app shell styles", () => {
   });
 });
 
+// The Add application button in the sidebar (spec 015, AC-10) is the app's primary button, whose text and background
+// are the --accent-text on --accent pair checked above. Its own rules must not change either color.
+describe("the Add application button", () => {
+  const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", file), "utf8");
+
+  it("uses the primary button's colors, which are the checked accent pair (AC-10)", () => {
+    expect(read("styles/global.css")).toMatch(/button\.primary\s*{[^}]*background:\s*var\(--accent\)[^}]*color:\s*var\(--accent-text\)/);
+    const rule = /\.sidebar-add\s*{([^}]*)}/.exec(read("components/Sidebar.css"));
+    expect(rule).not.toBeNull();
+    expect(rule?.[1]).not.toMatch(/(?<![-\w])(color|background|background-color)\s*:/);
+  });
+
+  it("lets the salary fields' columns shrink below an input's built-in width (spec 015, AC-3)", () => {
+    expect(read("components/ApplicationForm.css")).toMatch(/\.field-row\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/);
+  });
+
+  it("lets the job details fieldset shrink, so its fields stay inside a dialog on a phone (spec 015, AC-3)", () => {
+    expect(read("components/ApplicationForm.css")).toMatch(/\.job-details\s*{[^}]*min-width:\s*0/);
+  });
+
+  it("leaves nothing of the board's old toolbar in its styles (AC-11)", () => {
+    expect(read("components/Board.css")).not.toContain("board-toolbar");
+  });
+});
+
 describe("the theme rules", () => {
   it("set the browser's color scheme for each theme, so native controls follow (AC-9)", () => {
     expect(css).toMatch(/:root\s*{[^}]*color-scheme:\s*light;/);

@@ -65,6 +65,8 @@
 }
 
 .job-details {
+  /* A fieldset won't shrink below its content unless told to, which pushed its fields past the edge of a phone. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -81,7 +83,8 @@
 
 .field-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, 1fr), not 1fr, so the columns can be narrower than an input's built-in width on a phone. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.75rem;
 }
 

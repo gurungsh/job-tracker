@@ -138,7 +138,7 @@ export function TableView() {
   }, [query.search]);
 
   if (applications.length === 0) {
-    return <p className="board-empty">No applications yet. Add your first one from the board.</p>;
+    return <p className="board-empty">No applications yet. Use the Add application button in the sidebar to add your first one.</p>;
   }
 
   const rows = sortApplications(filterApplications(applications, query), query.sort);

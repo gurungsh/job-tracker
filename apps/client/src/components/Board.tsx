@@ -10,7 +10,7 @@ import { localToday } from "../lib/dates.ts";
 import "./Board.css";
 
 export function Board() {
-  const { applications, replaceApplication, openAdd } = useApplicationsContext();
+  const { applications, replaceApplication } = useApplicationsContext();
   const openApplication = useOpenApplication();
   // Drag and drop (spec 006): the card being dragged, the column it's over, applications being saved, and the last failure.
   const [dragging, setDragging] = useState<number | null>(null);
@@ -48,17 +48,6 @@ export function Board() {
 
   return (
     <>
-      <div className="board-toolbar">
-        <button
-          type="button"
-          className="primary"
-          onClick={() => {
-            openAdd();
-          }}
-        >
-          Add application
-        </button>
-      </div>
       {moveError && (
         <div className="board-error" role="alert">
           <span>{moveError}</span>
@@ -73,7 +62,7 @@ export function Board() {
         </div>
       )}
       {applications.length === 0 && (
-        <p className="board-empty">No applications yet. Add your first one to get started.</p>
+        <p className="board-empty">No applications yet. Use the Add application button in the sidebar to add your first one.</p>
       )}
       <div className="board">
         {STAGES.map((stage) => {

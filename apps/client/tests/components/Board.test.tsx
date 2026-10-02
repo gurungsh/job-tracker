@@ -42,7 +42,10 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    expect(await screen.findByText("No applications yet. Add your first one to get started.")).toBeTruthy();
+    const message = await screen.findByText("No applications yet. Use the Add application button in the sidebar to add your first one.");
+    expect(message.textContent).not.toMatch(/board/i);
+    // The button it points to is really in the sidebar (spec 015, AC-7).
+    expect(screen.getByRole("button", { name: "Add application" }).closest(".app-sidebar")).not.toBeNull();
     expect(screen.getAllByRole("region")).toHaveLength(8);
   });
 

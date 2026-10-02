@@ -8,12 +8,6 @@
   color: var(--danger);
 }
 
-.board-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.75rem;
-}
-
 /* Five open columns get more room than the three closed ones (spec 002, AC-1). The board scrolls sideways when narrow. */
 .board {
   display: grid;

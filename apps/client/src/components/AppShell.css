@@ -65,7 +65,8 @@
   border-right: 1px solid var(--border);
 }
 
-.app-sidebar > nav {
+/* The button and the stage list stay in place as the page scrolls (spec 015, edge cases). */
+.app-sidebar > .sidebar {
   position: sticky;
   top: 1rem;
 }

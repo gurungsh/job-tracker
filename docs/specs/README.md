@@ -47,3 +47,4 @@ Copy `plan.md` and `tasks.md` from the templates only after the previous documen
 | 012 | [Table view](012-table-view/)                  | Implemented | `feature/table-view`         |
 | 013 | [Application detail page](013-application-detail-page/) | Implemented | `feature/application-detail-page` |
 | 014 | [App shell and sidebar](014-app-shell-sidebar/) | Implemented | `feature/app-shell-sidebar` |
+| 015 | [Add button in the sidebar](015-add-button-sidebar/) | Implemented | `feature/add-button-sidebar` |

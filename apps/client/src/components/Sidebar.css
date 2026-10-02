@@ -1,3 +1,18 @@
+/* The Add application button above the stage list, as wide as the sidebar (spec 015, AC-1). */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
 .sidebar ul {
   display: flex;
   flex-direction: column;

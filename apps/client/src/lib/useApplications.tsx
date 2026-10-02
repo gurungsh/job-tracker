@@ -56,9 +56,24 @@ function useApplications() {
     );
   }, []);
 
+  // Puts a newly saved application in the loaded list, in board order, and its company among the suggestions when it is
+  // new (spec 015, AC-4). A list that isn't loaded is left alone, and its owner loads it again instead (AC-9).
+  const addApplication = useCallback((added: Application) => {
+    setState((current) => {
+      if (current.status !== "ready") return current;
+      const known = current.companies.some((company) => company.id === added.companyId);
+      const companies = known
+        ? current.companies
+        : [...current.companies, { id: added.companyId, name: added.companyName }].sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+          );
+      return { ...current, companies, applications: sortForBoard([...current.applications, added]) };
+    });
+  }, []);
+
   return useMemo(
-    () => ({ state, reload, retry, replaceApplication, removeApplication }),
-    [state, reload, retry, replaceApplication, removeApplication],
+    () => ({ state, reload, retry, replaceApplication, removeApplication, addApplication }),
+    [state, reload, retry, replaceApplication, removeApplication, addApplication],
   );
 }
 
@@ -84,8 +99,6 @@ export function useApplicationsStore(): ApplicationsStore {
 export type ApplicationsContext = {
   applications: Application[];
   replaceApplication: (replacement: Application) => void;
-  /** Opens the dialog for adding an application (spec 013, AC-13). */
-  openAdd: () => void;
 };
 
 export function useApplicationsContext(): ApplicationsContext {
