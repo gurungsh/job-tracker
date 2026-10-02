@@ -1,9 +1,9 @@
+import "./styles/global.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
-import { ErrorBoundary } from "./ErrorBoundary.tsx";
-import { installErrorReporting } from "./errorReporting.ts";
-import "./styles.css";
+import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
+import { installErrorReporting } from "./lib/errorReporting.ts";
 
 installErrorReporting();
 

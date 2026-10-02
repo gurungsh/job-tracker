@@ -33,6 +33,8 @@ Adding a new runtime dependency requires a line in the plan explaining why.
 - **Validate at the boundary.** The server validates every request body and query. It never trusts the client.
 - **Schema changes go through migrations.** Migrations are versioned, forward-only SQL files, and the database is never edited by hand.
 - **Tests come with the code.** Every acceptance criterion has at least one automated test unless the spec says otherwise.
+- **Tests live apart from the code.** Each package keeps its tests and test helpers in a `tests/` folder beside `src/`, mirroring `src/`'s folders. `src/` holds only code that ships.
+- **Styles sit beside their component.** A client component's CSS is a file next to it, imported by that component. Only app-wide styles go in `styles/global.css`.
 - **Prefer simple code.** Use no abstraction until a second use case exists.
 - **Language:** American English and USD in code, UI, docs, and commit messages.
 

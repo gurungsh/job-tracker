@@ -1,0 +1,56 @@
+.board-status,
+.board-empty {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+}
+
+.board-status[role="alert"] {
+  color: var(--danger);
+}
+
+.board-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+/* Five open columns get more room than the three closed ones (spec 002, AC-1). The board scrolls sideways when narrow. */
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr)) repeat(3, minmax(150px, 0.65fr));
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  align-items: start;
+}
+
+.column {
+  background: var(--column-bg);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  min-height: 8rem;
+}
+
+.column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0.25rem 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.column--closed .column-header {
+  color: var(--text-muted);
+}
+
+.column-count {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

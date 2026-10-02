@@ -43,10 +43,11 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 002 | Applications board | *(Implemented)* Add, edit, and delete applications, each with a company (by name), a job title, a stage, and a next step with a due date. See them on a board with one column per stage, and change the stage from the edit form. | 000 |
 | 003 | Job details | *(Implemented)* Record each application's job link, location, work mode, employment type and contract length, salary range, source, and description. | 002 |
 | 004 | Logging and observability | Log every API request and server event to the terminal and to daily log files, see browser errors in the server's logs, and check the app's health, version, and request counts. | 000 |
-| 005 | Board drag and drop | Move cards between columns, and reorder them within a column, by dragging. The order is kept. | 002 |
-| 006 | Activity timeline | Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
-| 007 | Contacts | Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 006 |
-| 008 | Requirements checklist | List a posting's required and preferred items, and check off the ones I meet. | 002 |
+| 005 | File restructure | *(Implemented)* Find code, tests, and styles quickly: tests live apart from source, and each component's styles sit beside it. The app behaves exactly as before. | 000–004 |
+| 006 | Board drag and drop | Move cards between columns, and reorder them within a column, by dragging. The order is kept. | 002 |
+| 007 | Activity timeline | Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
+| 008 | Contacts | Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 007 |
+| 009 | Requirements checklist | List a posting's required and preferred items, and check off the ones I meet. | 002 |
 
 ## Later, maybe
 
@@ -67,6 +68,7 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-01: The application fields are split across two specs: the board essentials in 002, and the job details in 003. This keeps 002 a reviewable size. Drag and drop and later specs moved down one number.
 - 2026-10-01: The spec order stays as listed. The "what's next" view stays under "Later, maybe".
 - 2026-10-01: Logging and observability is added as spec 004, ahead of the remaining features. Drag and drop and later specs moved down one number.
+- 2026-10-01: File restructure is added as spec 005, ahead of the remaining features, so new features are built in the new layout. Drag and drop and later specs moved down one number.
 
 ## Changelog
 
@@ -75,3 +77,5 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-01: Split the job details out of 002 into a new spec 003, and renumbered the specs after it (004–007).
 - 2026-10-01: Marked 003 implemented.
 - 2026-10-01: Added spec 004, logging and observability, and renumbered the specs after it (005–008).
+- 2026-10-01: Added spec 005, file restructure, and renumbered the specs after it (006–009).
+- 2026-10-01: Marked 005 implemented.

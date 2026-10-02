@@ -1,4 +1,5 @@
-import { Board } from "./Board.tsx";
+import { Board } from "./components/Board.tsx";
+import "./App.css";
 
 export function App() {
   return (

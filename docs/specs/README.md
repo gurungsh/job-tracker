@@ -37,3 +37,4 @@ Copy `plan.md` and `tasks.md` from the templates only after the previous documen
 | 002 | [Applications board](002-applications-board/)   | Implemented | `feature/applications-board` |
 | 003 | [Job details](003-job-details/)                 | Implemented | `feature/job-details`        |
 | 004 | [Logging and observability](004-logging/)      | Implemented | `feature/logging`            |
+| 005 | [File restructure](005-restructure-files/)     | Implemented | `feature/restructure-files`  |

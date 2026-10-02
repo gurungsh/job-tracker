@@ -1,0 +1,126 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import type { DatabaseSync } from "node:sqlite";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { openDatabase } from "../src/db.ts";
+import { migrate } from "../src/migrate.ts";
+
+const migrationsDir = path.join(import.meta.dirname, "..", "migrations");
+const now = "2026-10-01T12:00:00.000Z";
+
+let tempDir: string;
+let db: DatabaseSync;
+
+beforeEach(() => {
+  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-schema-"));
+  db = openDatabase(path.join(tempDir, "test.db"));
+  migrate(db, migrationsDir);
+});
+
+afterEach(() => {
+  db.close();
+  fs.rmSync(tempDir, { recursive: true, force: true });
+});
+
+describe("real migrations", () => {
+  it("create the companies and applications tables", () => {
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+      .all()
+      .map((row) => row.name);
+
+    expect(tables).toEqual(["applications", "companies", "schema_migrations"]);
+  });
+
+  it("make company names unique regardless of case", () => {
+    db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme Corp", now);
+
+    expect(() => db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("ACME corp", now)).toThrow(
+      /UNIQUE/,
+    );
+    expect(db.prepare("SELECT name FROM companies WHERE name = ?").get("acme CORP")).toEqual({ name: "Acme Corp" });
+  });
+
+  it("reject an unknown stage and an application without a company", () => {
+    const insert = db.prepare(
+      `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+
+    expect(() => insert.run(999, "Engineer", "wishlist", now, now, now)).toThrow(/FOREIGN KEY/);
+    const { lastInsertRowid } = db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+    expect(() => insert.run(lastInsertRowid, "Engineer", "hired", now, now, now)).toThrow(/CHECK/);
+  });
+});
+
+describe("migration 0002 (job details)", () => {
+  const detailColumns = [
+    "job_link",
+    "location",
+    "work_mode",
+    "employment_type",
+    "contract_length_months",
+    "salary_min",
+    "salary_max",
+    "salary_period",
+    "source",
+    "job_description",
+  ];
+
+  it("adds the job detail columns to applications", () => {
+    const columns = db
+      .prepare("SELECT name FROM pragma_table_info('applications')")
+      .all()
+      .map((row) => row.name);
+
+    expect(columns).toEqual(expect.arrayContaining(detailColumns));
+  });
+
+  it("keeps existing applications, with empty details (spec 003, AC-9)", () => {
+    const oldDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-old-migrations-"));
+    const oldDb = openDatabase(path.join(tempDir, "old.db"));
+    try {
+      fs.copyFileSync(
+        path.join(migrationsDir, "0001_create_companies_and_applications.sql"),
+        path.join(oldDir, "0001_create_companies_and_applications.sql"),
+      );
+      migrate(oldDb, oldDir);
+      const { lastInsertRowid } = oldDb.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+      oldDb
+        .prepare(
+          `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+           VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+        )
+        .run(lastInsertRowid, now, now, now);
+
+      expect(migrate(oldDb, migrationsDir)).toEqual(["0002_add_job_details.sql"]);
+      const row = oldDb.prepare(`SELECT job_title, ${detailColumns.join(", ")} FROM applications`).get();
+      expect(row).toEqual({ job_title: "Engineer", ...Object.fromEntries(detailColumns.map((column) => [column, null])) });
+    } finally {
+      oldDb.close();
+      fs.rmSync(oldDir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects unknown options and out-of-range numbers", () => {
+    const { lastInsertRowid: companyId } = db
+      .prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)")
+      .run("Acme", now);
+    const insert = (column: string, value: string | number) =>
+      db
+        .prepare(
+          `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at, ${column})
+           VALUES (?, 'Engineer', 'wishlist', ?, ?, ?, ?)`,
+        )
+        .run(companyId, now, now, now, value);
+
+    expect(() => insert("work_mode", "moon")).toThrow(/CHECK/);
+    expect(() => insert("employment_type", "gig")).toThrow(/CHECK/);
+    expect(() => insert("salary_period", "weekly")).toThrow(/CHECK/);
+    expect(() => insert("contract_length_months", 0)).toThrow(/CHECK/);
+    expect(() => insert("salary_min", -1)).toThrow(/CHECK/);
+    expect(() => insert("salary_max", 10_000_001)).toThrow(/CHECK/);
+    expect(() => insert("salary_min", 0)).not.toThrow();
+  });
+});
