@@ -156,6 +156,36 @@ describe("the detail page styles", () => {
   });
 });
 
+// The header, the sidebar, and the drawer (spec 014, AC-11) add no colors of their own. The sidebar sits on --surface,
+// and an entry that is hovered or selected sits on --column-bg. Its text is --text, a stage's color, or --text-muted,
+// and every one of those pairings is checked above, in both themes.
+describe("the app shell styles", () => {
+  const checkedTextTokens = ["--text", "--text-muted", "--accent", "--stage"];
+  const files = ["AppShell.css", "Sidebar.css"];
+  const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", file), "utf8");
+
+  it.each(files)("%s uses only color tokens (AC-11)", (file) => {
+    expect(read(file)).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it.each(files)("%s sets text only in colors whose contrast is checked (AC-11)", (file) => {
+    const used = [...read(file).matchAll(/(?<![-\w])color:\s*var\((--[\w-]+)\)/g)].map((match) => match[1] as string);
+
+    for (const token of used) expect(checkedTextTokens, token).toContain(token);
+  });
+
+  it("puts the sidebar's text only on backgrounds whose pairings are checked (AC-11)", () => {
+    const backgrounds = [...read("Sidebar.css").matchAll(/background:\s*var\((--[\w-]+)\)/g)].map((match) => match[1] as string);
+
+    expect(backgrounds.length).toBeGreaterThan(0);
+    for (const token of backgrounds) expect(["--column-bg", "--surface"], token).toContain(token);
+  });
+
+  it("shows the selected entry in a way that doesn't depend on its text color (AC-11)", () => {
+    expect(read("Sidebar.css")).toMatch(/\[aria-current="page"\]\s*{[^}]*border-left-color:\s*var\(--accent\)[^}]*font-weight:\s*600/);
+  });
+});
+
 describe("the theme rules", () => {
   it("set the browser's color scheme for each theme, so native controls follow (AC-9)", () => {
     expect(css).toMatch(/:root\s*{[^}]*color-scheme:\s*light;/);

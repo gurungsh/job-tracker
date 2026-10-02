@@ -1,13 +1,19 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Outlet } from "react-router";
-import { type ApplicationsContext, useApplications } from "../lib/useApplications.ts";
+import { type ApplicationsContext, useApplicationsStore } from "../lib/useApplications.tsx";
 import { ApplicationDialog } from "./ApplicationDialog.tsx";
 import { ViewSwitch } from "./ViewSwitch.tsx";
 import "./Board.css";
 
 /** Loads the applications once for the board and the table, and owns the dialog for adding an application. */
 export function ApplicationsPage() {
-  const { state, reload, retry, replaceApplication } = useApplications();
+  const { state, reload, retry, replaceApplication } = useApplicationsStore();
+  // The list now outlives the views. Coming back to one after it was loaded asks for it again, quietly, with the old
+  // list still showing, so a change made elsewhere shows up as it did before the list was shared (spec 014, plan).
+  const loadedOnMount = useRef(state.status === "ready");
+  useEffect(() => {
+    if (loadedOnMount.current) reload();
+  }, [reload]);
   const [adding, setAdding] = useState(false);
   const openAdd = useCallback(() => {
     setAdding(true);

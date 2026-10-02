@@ -1,19 +1,15 @@
 import { Navigate, Route, Routes } from "react-router";
 import { ApplicationDetailPage } from "./components/ApplicationDetailPage.tsx";
 import { ApplicationsPage } from "./components/ApplicationsPage.tsx";
+import { AppShell } from "./components/AppShell.tsx";
 import { Board } from "./components/Board.tsx";
 import { TableView } from "./components/TableView.tsx";
-import { ThemeToggle } from "./components/ThemeToggle.tsx";
-import "./App.css";
+import { ApplicationsProvider } from "./lib/useApplications.tsx";
 
 export function App() {
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Job Tracker</h1>
-        <ThemeToggle />
-      </header>
-      <main>
+    <ApplicationsProvider>
+      <AppShell>
         <Routes>
           <Route element={<ApplicationsPage />}>
             <Route index element={<Board />} />
@@ -22,7 +18,7 @@ export function App() {
           <Route path="applications/:id" element={<ApplicationDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </main>
-    </div>
+      </AppShell>
+    </ApplicationsProvider>
   );
 }

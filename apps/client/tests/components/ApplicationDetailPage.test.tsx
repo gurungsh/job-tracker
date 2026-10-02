@@ -199,6 +199,14 @@ describe("the detail page's sections (spec 013)", () => {
     }
   });
 
+  it("stacks its sections by the page's own width, not the screen's, because the sidebar takes room (spec 014, AC-12)", () => {
+    expect(/\.detail-page\s*{[^}]*container-type:\s*inline-size/.test(css)).toBe(true);
+    expect(css).toMatch(/@container \(max-width: 46rem\)/);
+    expect(css).not.toMatch(/@media/);
+    // Stacked sections fill the page's width, instead of keeping the grid's start alignment.
+    expect(/@container[^{]*{[^}]*\.detail-layout\s*{[^}]*align-items:\s*stretch/.test(css)).toBe(true);
+  });
+
   it("shows the description with its line breaks kept, or says none is saved (AC-4)", async () => {
     installFakeServer([full]);
     const { unmount } = render(<AppAt path={`/applications/${String(full.id)}`} />);

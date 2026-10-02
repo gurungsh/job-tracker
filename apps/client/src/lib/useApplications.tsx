@@ -1,5 +1,5 @@
 import type { Application, Company } from "@job-tracker/shared";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { api } from "./api.ts";
 import { sortForBoard } from "./applicationInput.ts";
@@ -7,8 +7,8 @@ import { sortForBoard } from "./applicationInput.ts";
 type Loaded = { applications: Application[]; companies: Company[] };
 export type LoadState = { status: "loading" } | { status: "error"; message: string } | ({ status: "ready" } & Loaded);
 
-/** Loads the applications and companies, for the board and the table to share (spec 012, AC-15, AC-17). */
-export function useApplications() {
+/** Loads the applications and companies, for the whole app to share (spec 012, AC-15, AC-17, and spec 014, AC-3). */
+function useApplications() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   // Bumped to load again, for example after a save.
   const [loadCount, setLoadCount] = useState(0);
@@ -47,7 +47,37 @@ export function useApplications() {
     );
   }, []);
 
-  return { state, reload, retry, replaceApplication };
+  // Takes one application out of the loaded list, after it is deleted.
+  const removeApplication = useCallback((id: number) => {
+    setState((current) =>
+      current.status === "ready"
+        ? { ...current, applications: current.applications.filter((a) => a.id !== id) }
+        : current,
+    );
+  }, []);
+
+  return useMemo(
+    () => ({ state, reload, retry, replaceApplication, removeApplication }),
+    [state, reload, retry, replaceApplication, removeApplication],
+  );
+}
+
+type ApplicationsStore = ReturnType<typeof useApplications>;
+
+const StoreContext = createContext<ApplicationsStore | null>(null);
+
+/**
+ * Holds the one list of applications for the whole app, so the board, the table, an application's page, and the
+ * sidebar's counts all read and change the same one (spec 014, AC-3).
+ */
+export function ApplicationsProvider({ children }: { children: ReactNode }) {
+  return <StoreContext value={useApplications()}>{children}</StoreContext>;
+}
+
+export function useApplicationsStore(): ApplicationsStore {
+  const store = useContext(StoreContext);
+  if (!store) throw new Error("useApplicationsStore needs an ApplicationsProvider around it");
+  return store;
 }
 
 /** What the applications page hands to the board and the table. */

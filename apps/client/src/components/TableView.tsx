@@ -16,7 +16,7 @@ import { compactSalary } from "../lib/salary.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { type SortColumn, type TableQuery, parseTableQuery, toSearchParams } from "../lib/tableQuery.ts";
 import { filterApplications, sortApplications } from "../lib/tableRows.ts";
-import { useApplicationsContext } from "../lib/useApplications.ts";
+import { useApplicationsContext } from "../lib/useApplications.tsx";
 import { useOpenApplication } from "../lib/useOpenApplication.ts";
 import { FilterDropdown } from "./FilterDropdown.tsx";
 import "./TableView.css";

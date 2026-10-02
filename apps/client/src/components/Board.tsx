@@ -3,7 +3,7 @@ import { useState } from "react";
 import { api } from "../lib/api.ts";
 import { applicationToInput } from "../lib/applicationInput.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
-import { useApplicationsContext } from "../lib/useApplications.ts";
+import { useApplicationsContext } from "../lib/useApplications.tsx";
 import { useOpenApplication } from "../lib/useOpenApplication.ts";
 import { Card } from "./Card.tsx";
 import { localToday } from "../lib/dates.ts";

@@ -140,3 +140,5 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Approved.
 - 2026-10-02: Implementation started.
 - 2026-10-02: Implemented.
+- 2026-10-02: Spec 014 added the sidebar beside the page. The page now switches to one column by its own width, not the screen's, because the sidebar takes room, so AC-15's "narrow screen" means a narrow page. Its stage changes, edits, and deletes also update the sidebar's counts at once. The Add application button still stays in the board's toolbar until the later navigation bar.
+- 2026-10-02: Spec 014 fixed a layout bug found beside the sidebar: when the page stacks its sections in one column, they now fill the page's width instead of keeping their content's width. AC-15 is unchanged.

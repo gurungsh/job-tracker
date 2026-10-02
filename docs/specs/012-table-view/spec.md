@@ -178,3 +178,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Implementation started.
 - 2026-10-02: Implemented.
 - 2026-10-02: Spec 013 replaced the side panel. Clicking a row opens the application's page, with a link back to the table as it was left, so AC-16 and AC-17 now describe the page: an edit or delete made there shows in the table when I go back, and a row that no longer matches the filters is gone.
+- 2026-10-02: Spec 014 added a sidebar whose entries open this table filtered to one stage, with the search, other filters, and sort cleared, or unfiltered from "All applications". The table's own address, filters, and switch work as before, and the table still has no Add button, which moves with the later navigation bar.

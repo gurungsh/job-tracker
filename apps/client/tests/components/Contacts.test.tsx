@@ -23,6 +23,7 @@ async function openPage(server = installFakeServer([acme])) {
 }
 
 const contactsSection = () => within(screen.getByRole("region", { name: "Contacts" }));
+const timelineSection = () => within(screen.getByRole("region", { name: "Timeline" }));
 
 const addForm = () => screen.getByRole("form", { name: "Add contact" });
 const cardsText = () => contactsSection().getAllByRole("listitem").map((item) => item.textContent);
@@ -44,7 +45,7 @@ describe("the Contacts section", () => {
     );
 
     await openPage(server);
-    await screen.findAllByRole("listitem");
+    await contactsSection().findAllByRole("listitem");
 
     const [first, second] = cardsText();
     expect(cardsText()).toHaveLength(2);
@@ -69,7 +70,7 @@ describe("the Contacts section", () => {
     await userEvent.type(form.getByLabelText("Notes"), "Prefers email");
     await userEvent.click(form.getByRole("button", { name: "Add contact" }));
 
-    const item = await screen.findByRole("listitem");
+    const item = await contactsSection().findByRole("listitem");
     expect(item.textContent).toContain("Sam Lee · Recruiter");
     expect(item.textContent).toContain("Prefers email");
     expect(server.contacts).toEqual([
@@ -175,8 +176,8 @@ describe("editing and deleting contacts", () => {
     await waitFor(() => {
       expect(screen.queryByRole("form", { name: "Edit contact" })).toBeNull();
     });
-    expect(screen.getByRole("listitem").textContent).toContain("Samantha Lee");
-    expect(screen.getByRole("listitem").textContent).not.toContain("Recruiter");
+    expect(contactsSection().getByRole("listitem").textContent).toContain("Samantha Lee");
+    expect(contactsSection().getByRole("listitem").textContent).not.toContain("Recruiter");
     expect(server.contacts[0]).toMatchObject({ name: "Samantha Lee", role: null });
   });
 
@@ -259,7 +260,7 @@ describe("a contact on a timeline entry", () => {
       expect(server.activities.some((entry) => entry.text === "Followed up")).toBe(true);
     });
     expect(server.activities.find((entry) => entry.text === "Followed up")).toMatchObject({ contactId: pat.id, contactName: "Pat" });
-    const item = screen.getAllByRole("listitem").find((i) => i.textContent.includes("Followed up"));
+    const item = timelineSection().getAllByRole("listitem").find((i) => i.textContent.includes("Followed up"));
     expect(item?.textContent).toContain("with Pat");
     expect(within(form.getByLabelText("Contact")).getByRole("option", { name: "None" })).toBeTruthy();
   });
@@ -268,7 +269,7 @@ describe("a contact on a timeline entry", () => {
     const { server } = withEntries();
     await openPage(server);
 
-    const items = await screen.findAllByRole("listitem");
+    const items = await timelineSection().findAllByRole("listitem");
     expect(items[0]?.textContent).toContain("with Sam");
     expect(items[1]?.textContent).not.toContain("with");
   });
@@ -276,7 +277,7 @@ describe("a contact on a timeline entry", () => {
   it("changes or removes the contact when editing (AC-8)", async () => {
     const { server, pat } = withEntries();
     await openPage(server);
-    const items = await screen.findAllByRole("listitem");
+    const items = await timelineSection().findAllByRole("listitem");
 
     await userEvent.click(within(items[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     let form = within(screen.getByRole("form", { name: "Edit entry" }));
@@ -288,7 +289,7 @@ describe("a contact on a timeline entry", () => {
     });
     expect(await screen.findByText("with Pat")).toBeTruthy();
 
-    await userEvent.click(within(screen.getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Edit" }));
+    await userEvent.click(within(timelineSection().getAllByRole("listitem")[0] as HTMLElement).getByRole("button", { name: "Edit" }));
     form = within(screen.getByRole("form", { name: "Edit entry" }));
     await userEvent.selectOptions(form.getByLabelText("Contact"), "None");
     await userEvent.click(form.getByRole("button", { name: "Save" }));
@@ -301,7 +302,7 @@ describe("a contact on a timeline entry", () => {
   it("lets an automatic entry take a contact too (AC-9)", async () => {
     const { server, sam } = withEntries();
     await openPage(server);
-    const items = await screen.findAllByRole("listitem");
+    const items = await timelineSection().findAllByRole("listitem");
 
     await userEvent.click(within(items[1] as HTMLElement).getByRole("button", { name: "Edit" }));
     const form = within(screen.getByRole("form", { name: "Edit entry" }));

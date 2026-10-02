@@ -7,6 +7,7 @@ import { daysInStage, formatDate, isOverdue, localToday, shortTimeInStage } from
 import { employmentLabel } from "../lib/jobSummary.ts";
 import { compactSalary } from "../lib/salary.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
+import { useApplicationsStore } from "../lib/useApplications.tsx";
 import { readOrigin } from "../lib/viewOrigin.ts";
 import { ApplicationDialog } from "./ApplicationDialog.tsx";
 import { CompanyAvatar } from "./CompanyAvatar.tsx";
@@ -43,6 +44,8 @@ function Missing() {
 function Detail({ id }: { id: number }) {
   const origin = readOrigin(useLocation().state);
   const navigate = useNavigate();
+  // The shared list is told about every change made here, so the sidebar's counts and the views stay right (spec 014, AC-3).
+  const { replaceApplication, removeApplication } = useApplicationsStore();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   // Bumped to load again after a failure.
   const [attempt, setAttempt] = useState(0);
@@ -85,22 +88,29 @@ function Detail({ id }: { id: number }) {
     if (state.status !== "ready") return;
     const request = (stageRequest.current += 1);
     setStageError(null);
-    setState({ status: "ready", application: { ...state.application, stage } });
+    const shown = { ...state.application, stage };
+    setState({ status: "ready", application: shown });
+    replaceApplication(shown);
     try {
       const latest = await api.getApplication(id);
       const saved = await api.updateApplication(id, applicationToInput(latest, { stage }));
       if (request !== stageRequest.current) return;
       savedApplication.current = saved;
       setState({ status: "ready", application: saved });
+      replaceApplication(saved);
       setTimelineKey((count) => count + 1);
     } catch (error) {
       if (request !== stageRequest.current) return;
       if (error instanceof ApiError && error.status === 404) {
         setState({ status: "missing" });
+        removeApplication(id);
         return;
       }
       setStageError(`Couldn't change the stage. ${error instanceof Error ? error.message : String(error)}`);
-      if (savedApplication.current) setState({ status: "ready", application: savedApplication.current });
+      if (savedApplication.current) {
+        setState({ status: "ready", application: savedApplication.current });
+        replaceApplication(savedApplication.current);
+      }
     }
   }
 
@@ -117,6 +127,7 @@ function Detail({ id }: { id: number }) {
     setDeleting(true);
     try {
       await api.deleteApplication(id);
+      removeApplication(id);
       void navigate(origin.path, { replace: true });
     } catch (error) {
       setDeleteError(`Couldn't delete. ${error instanceof Error ? error.message : String(error)}`);
@@ -239,6 +250,7 @@ function Detail({ id }: { id: number }) {
           onSaved={(saved) => {
             savedApplication.current = saved;
             setState({ status: "ready", application: saved });
+            replaceApplication(saved);
             setTimelineKey((count) => count + 1);
             setEditing(null);
           }}

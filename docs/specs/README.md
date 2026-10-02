@@ -46,3 +46,4 @@ Copy `plan.md` and `tasks.md` from the templates only after the previous documen
 | 011 | [Stage colors and richer cards](011-stage-colors-cards/) | Implemented | `feature/stage-colors-cards` |
 | 012 | [Table view](012-table-view/)                  | Implemented | `feature/table-view`         |
 | 013 | [Application detail page](013-application-detail-page/) | Implemented | `feature/application-detail-page` |
+| 014 | [App shell and sidebar](014-app-shell-sidebar/) | Implemented | `feature/app-shell-sidebar` |
