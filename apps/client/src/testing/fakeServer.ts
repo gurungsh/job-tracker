@@ -1,6 +1,6 @@
 // An in-memory stand-in for the API, installed as the global fetch in UI tests.
 // It mirrors the real routes closely enough for the UI; the real rules are tested on the server.
-import type { Application, ApplicationInput, Company } from "@job-tracker/shared";
+import { type Application, type ApplicationInput, type Company, applicationInputSchema } from "@job-tracker/shared";
 import { vi } from "vitest";
 
 type Handler = (method: string, path: string, body: unknown) => Response | undefined;
@@ -31,6 +31,16 @@ export function application(fields: Partial<Application> & Pick<Application, "co
     stageChangedAt: now,
     createdAt: now,
     updatedAt: now,
+    jobLink: null,
+    location: null,
+    workMode: null,
+    employmentType: null,
+    contractLengthMonths: null,
+    salaryMin: null,
+    salaryMax: null,
+    salaryPeriod: null,
+    source: null,
+    jobDescription: null,
     ...fields,
   };
 }
@@ -61,19 +71,16 @@ export function installFakeServer(applications: Application[] = [], companyNames
   }
 
   function save(input: ApplicationInput, previous?: Application): Application {
-    const company = companyFor(input.companyName);
-    const stage = input.stage ?? "wishlist";
+    // Normalize with the real schema, as the server does. The date rules aren't modeled here.
+    const { companyName, ...fields } = applicationInputSchema.parse(input);
+    const company = companyFor(companyName);
     const now = new Date().toISOString();
     return {
-      ...(previous ?? application({ companyName: company.name, jobTitle: input.jobTitle })),
+      ...(previous ?? application({ companyName: company.name, jobTitle: fields.jobTitle })),
+      ...fields,
       companyId: company.id,
       companyName: company.name,
-      jobTitle: input.jobTitle.trim(),
-      stage,
-      nextStep: input.nextStep?.trim() || null,
-      nextStepDue: input.nextStepDue || null,
-      appliedOn: input.appliedOn || null,
-      stageChangedAt: previous && previous.stage === stage ? previous.stageChangedAt : now,
+      stageChangedAt: previous && previous.stage === fields.stage ? previous.stageChangedAt : now,
       updatedAt: now,
     };
   }

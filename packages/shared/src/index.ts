@@ -6,4 +6,5 @@ export type ErrorResponse = { error: string };
 export type ValidationErrorResponse = ErrorResponse & { fields: Record<string, string> };
 
 export * from "./applications.ts";
+export * from "./jobDetails.ts";
 export * from "./stages.ts";

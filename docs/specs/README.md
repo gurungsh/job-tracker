@@ -35,3 +35,4 @@ Copy `plan.md` and `tasks.md` from the templates only after the previous documen
 | 000 | [Project foundation](000-project-foundation/)   | Implemented | `feature/project-foundation` |
 | 001 | [Run the app in Docker](001-docker/)             | Implemented | `feature/docker`             |
 | 002 | [Applications board](002-applications-board/)   | Implemented | `feature/applications-board` |
+| 003 | [Job details](003-job-details/)                 | Implemented | `feature/job-details`        |

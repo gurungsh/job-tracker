@@ -41,7 +41,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 000 | Project foundation | *(Implemented)* Run, test, lint, and typecheck the app. | — |
 | 001 | Run the app in Docker | *(Implemented)* Run the production app with one Docker command. | 000 |
 | 002 | Applications board | *(Implemented)* Add, edit, and delete applications, each with a company (by name), a job title, a stage, and a next step with a due date. See them on a board with one column per stage, and change the stage from the edit form. | 000 |
-| 003 | Job details | Record each application's job link, location, work mode, employment type and contract length, salary range, source, and description. | 002 |
+| 003 | Job details | *(Implemented)* Record each application's job link, location, work mode, employment type and contract length, salary range, source, and description. | 002 |
 | 004 | Board drag and drop | Move cards between columns, and reorder them within a column, by dragging. The order is kept. | 002 |
 | 005 | Activity timeline | Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
 | 006 | Contacts | Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 005 |
@@ -71,3 +71,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-01: Draft created.
 - 2026-10-01: Resolved the open questions (see Decided) and approved.
 - 2026-10-01: Split the job details out of 002 into a new spec 003, and renumbered the specs after it (004–007).
+- 2026-10-01: Marked 003 implemented.

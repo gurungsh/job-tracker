@@ -12,6 +12,7 @@ A personal tracker for job applications, built with spec-driven development.
 - Add, edit, and delete applications in a side panel. Each has a company, a job title, a stage, and a next step with a due date. Overdue next steps are highlighted.
 - The applied date, the closed date, and the time in the current stage are recorded automatically.
 - Company names are suggested as you type and are matched regardless of case.
+- Each application can keep its job details: link (with an "Open posting" shortcut), location, work mode, employment type and contract length, salary range in USD, source, and description. Salary amounts can be typed as "140,000" or "140k", and links without `https://` get it added.
 
 ## Setup
 
@@ -85,6 +86,8 @@ The client talks to a small JSON API under `/api`:
 Writes accept an optional `X-Time-Zone` header with an IANA time zone, such as `America/Chicago`. The server uses it to work out "today" for the applied and closed dates. The browser always sends it. Without it, the server's own time zone is used (UTC in Docker).
 
 Invalid input returns `400` with `{ "error": "...", "fields": { "<field>": "<message>" } }`.
+
+Application fields are `companyName`, `jobTitle`, `stage`, `nextStep`, `nextStepDue`, and `appliedOn`, plus the optional job details: `jobLink`, `location`, `workMode` (`onsite`, `hybrid`, or `remote`), `employmentType` (`full_time`, `contract`, or `part_time`), `contractLengthMonths`, `salaryMin`, `salaryMax`, `salaryPeriod` (`annual` or `hourly`), `source`, and `jobDescription`. Salary amounts can be numbers or text such as `"140k"`.
 
 ## Layout
 

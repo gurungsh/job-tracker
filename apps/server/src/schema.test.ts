@@ -53,3 +53,74 @@ describe("real migrations", () => {
     expect(() => insert.run(lastInsertRowid, "Engineer", "hired", now, now, now)).toThrow(/CHECK/);
   });
 });
+
+describe("migration 0002 (job details)", () => {
+  const detailColumns = [
+    "job_link",
+    "location",
+    "work_mode",
+    "employment_type",
+    "contract_length_months",
+    "salary_min",
+    "salary_max",
+    "salary_period",
+    "source",
+    "job_description",
+  ];
+
+  it("adds the job detail columns to applications", () => {
+    const columns = db
+      .prepare("SELECT name FROM pragma_table_info('applications')")
+      .all()
+      .map((row) => row.name);
+
+    expect(columns).toEqual(expect.arrayContaining(detailColumns));
+  });
+
+  it("keeps existing applications, with empty details (spec 003, AC-9)", () => {
+    const oldDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-old-migrations-"));
+    const oldDb = openDatabase(path.join(tempDir, "old.db"));
+    try {
+      fs.copyFileSync(
+        path.join(migrationsDir, "0001_create_companies_and_applications.sql"),
+        path.join(oldDir, "0001_create_companies_and_applications.sql"),
+      );
+      migrate(oldDb, oldDir);
+      const { lastInsertRowid } = oldDb.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+      oldDb
+        .prepare(
+          `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+           VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+        )
+        .run(lastInsertRowid, now, now, now);
+
+      expect(migrate(oldDb, migrationsDir)).toEqual(["0002_add_job_details.sql"]);
+      const row = oldDb.prepare(`SELECT job_title, ${detailColumns.join(", ")} FROM applications`).get();
+      expect(row).toEqual({ job_title: "Engineer", ...Object.fromEntries(detailColumns.map((column) => [column, null])) });
+    } finally {
+      oldDb.close();
+      fs.rmSync(oldDir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects unknown options and out-of-range numbers", () => {
+    const { lastInsertRowid: companyId } = db
+      .prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)")
+      .run("Acme", now);
+    const insert = (column: string, value: string | number) =>
+      db
+        .prepare(
+          `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at, ${column})
+           VALUES (?, 'Engineer', 'wishlist', ?, ?, ?, ?)`,
+        )
+        .run(companyId, now, now, now, value);
+
+    expect(() => insert("work_mode", "moon")).toThrow(/CHECK/);
+    expect(() => insert("employment_type", "gig")).toThrow(/CHECK/);
+    expect(() => insert("salary_period", "weekly")).toThrow(/CHECK/);
+    expect(() => insert("contract_length_months", 0)).toThrow(/CHECK/);
+    expect(() => insert("salary_min", -1)).toThrow(/CHECK/);
+    expect(() => insert("salary_max", 10_000_001)).toThrow(/CHECK/);
+    expect(() => insert("salary_min", 0)).not.toThrow();
+  });
+});

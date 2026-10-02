@@ -2,16 +2,27 @@ import {
   type Application,
   type ApplicationInput,
   type Company,
+  EMPLOYMENT_TYPE_LABELS,
+  EMPLOYMENT_TYPES,
+  SALARY_PERIOD_LABELS,
+  SALARY_PERIODS,
   STAGE_LABELS,
   STAGES,
   type Stage,
+  type SalaryPeriod,
+  WORK_MODE_LABELS,
+  WORK_MODES,
   applicationInputSchema,
   fieldErrors,
+  isValidJobLink,
+  normalizeJobLink,
+  parseDollars,
 } from "@job-tracker/shared";
 import { type ReactNode, type SyntheticEvent, useCallback, useEffect, useId, useState } from "react";
 import { ApiError, api } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { daysInStage, formatDate, localDateOf, timeInStage } from "./dates.ts";
+import { salarySummary } from "./salary.ts";
 
 type ApplicationPanelProps = {
   /** The application to edit. Leave it out to add a new one. */
@@ -29,7 +40,19 @@ type FormValues = {
   nextStep: string;
   nextStepDue: string;
   appliedOn: string;
+  jobLink: string;
+  location: string;
+  workMode: string;
+  employmentType: string;
+  contractLengthMonths: string;
+  salaryMin: string;
+  salaryMax: string;
+  salaryPeriod: string;
+  source: string;
+  jobDescription: string;
 };
+
+const amount = new Intl.NumberFormat("en-US");
 
 function initialValues(application?: Application): FormValues {
   return {
@@ -39,6 +62,17 @@ function initialValues(application?: Application): FormValues {
     nextStep: application?.nextStep ?? "",
     nextStepDue: application?.nextStepDue ?? "",
     appliedOn: application?.appliedOn ?? "",
+    jobLink: application?.jobLink ?? "",
+    location: application?.location ?? "",
+    workMode: application?.workMode ?? "",
+    employmentType: application?.employmentType ?? "",
+    contractLengthMonths: application?.contractLengthMonths?.toString() ?? "",
+    // Saved amounts are shown with commas, which parse back to the same number (spec 003, AC-13).
+    salaryMin: application?.salaryMin == null ? "" : amount.format(application.salaryMin),
+    salaryMax: application?.salaryMax == null ? "" : amount.format(application.salaryMax),
+    salaryPeriod: application?.salaryPeriod ?? "",
+    source: application?.source ?? "",
+    jobDescription: application?.jobDescription ?? "",
   };
 }
 
@@ -71,18 +105,42 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
   }, [requestClose]);
 
   function update(field: keyof FormValues, value: string) {
-    setValues((current) => ({ ...current, [field]: value }));
+    setValues((current) => {
+      const next = { ...current, [field]: value };
+      // A contract length only applies to contracts, so it's cleared when the type changes (spec 003, AC-6).
+      if (field === "employmentType" && value !== "contract") next.contractLengthMonths = "";
+      return next;
+    });
   }
+
+  /** Props for a text input, select, or text area bound to a form field. */
+  function bind(field: keyof FormValues) {
+    return {
+      value: values[field],
+      onChange: (event: { target: { value: string } }) => {
+        update(field, event.target.value);
+      },
+    };
+  }
+
+  // "Open posting" and the salary summary follow what's typed, read the same way as when saving (spec 003, AC-4, AC-5).
+  const postingLink = normalizeJobLink(values.jobLink);
+  const summary = salarySummary(
+    parseDollars(values.salaryMin) ?? null,
+    parseDollars(values.salaryMax) ?? null,
+    (values.salaryPeriod || null) as SalaryPeriod | null,
+  );
 
   async function save(event: SyntheticEvent) {
     event.preventDefault();
-    const input: ApplicationInput = values;
     // Check the same rules the server does, so most mistakes are caught before sending (spec 002, AC-7, AC-20).
-    const result = applicationInputSchema.safeParse(input);
+    // What's sent is the normalized result, such as 140000 for "140k" (spec 003, AC-13).
+    const result = applicationInputSchema.safeParse(values);
     if (!result.success) {
       setErrors(fieldErrors(result.error));
       return;
     }
+    const input: ApplicationInput = result.data;
 
     setErrors({});
     setSaveError(null);
@@ -214,6 +272,94 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
             )}
           </Field>
 
+          <fieldset className="job-details">
+            <legend>Job details</legend>
+
+            <Field
+              label="Job link"
+              error={errors.jobLink}
+              action={
+                isValidJobLink(postingLink) && (
+                  <a href={postingLink} target="_blank" rel="noopener noreferrer">
+                    Open posting <span aria-hidden="true">↗</span>
+                  </a>
+                )
+              }
+            >
+              {(props) => <input {...props} {...bind("jobLink")} inputMode="url" autoComplete="off" />}
+            </Field>
+
+            <Field label="Location" error={errors.location}>
+              {(props) => <input {...props} {...bind("location")} />}
+            </Field>
+
+            <Field label="Work mode" error={errors.workMode}>
+              {(props) => (
+                <select {...props} {...bind("workMode")}>
+                  <option value="">—</option>
+                  {WORK_MODES.map((mode) => (
+                    <option key={mode} value={mode}>
+                      {WORK_MODE_LABELS[mode]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+
+            <Field label="Employment type" error={errors.employmentType}>
+              {(props) => (
+                <select {...props} {...bind("employmentType")}>
+                  <option value="">—</option>
+                  {EMPLOYMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {EMPLOYMENT_TYPE_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+
+            {values.employmentType === "contract" && (
+              <Field label="Contract length (months)" error={errors.contractLengthMonths}>
+                {(props) => <input {...props} {...bind("contractLengthMonths")} inputMode="numeric" />}
+              </Field>
+            )}
+
+            <div className="field-row">
+              <Field label="Salary minimum" error={errors.salaryMin}>
+                {(props) => <input {...props} {...bind("salaryMin")} inputMode="decimal" placeholder="140,000 or 140k" />}
+              </Field>
+              <Field label="Salary maximum" error={errors.salaryMax}>
+                {(props) => <input {...props} {...bind("salaryMax")} inputMode="decimal" placeholder="170,000 or 170k" />}
+              </Field>
+            </div>
+
+            <Field label="Salary period" error={errors.salaryPeriod}>
+              {(props) => (
+                <select {...props} {...bind("salaryPeriod")}>
+                  <option value="">—</option>
+                  {SALARY_PERIODS.map((period) => (
+                    <option key={period} value={period}>
+                      {SALARY_PERIOD_LABELS[period]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+
+            <p className="salary-summary" aria-live="polite">
+              {summary}
+            </p>
+
+            <Field label="Source" error={errors.source}>
+              {(props) => <input {...props} {...bind("source")} placeholder="LinkedIn, referral, company site…" />}
+            </Field>
+
+            <Field label="Job description" error={errors.jobDescription}>
+              {(props) => <textarea {...props} {...bind("jobDescription")} rows={8} className="job-description" />}
+            </Field>
+          </fieldset>
+
           {saveError && (
             <p className="form-error" role="alert">
               {saveError}
@@ -283,21 +429,26 @@ type FieldControlProps = {
   "aria-describedby": string | undefined;
 };
 
-/** A labeled form control with its error message linked for screen readers. */
+/** A labeled form control with its error message linked for screen readers, and an optional action beside the label. */
 function Field({
   label,
   error,
+  action,
   children,
 }: {
   label: string;
   error: string | undefined;
+  action?: ReactNode;
   children: (props: FieldControlProps) => ReactNode;
 }) {
   const id = useId();
   const errorId = `${id}-error`;
   return (
     <div className="field">
-      <label htmlFor={id}>{label}</label>
+      <div className="field-label">
+        <label htmlFor={id}>{label}</label>
+        {action}
+      </div>
       {children({ id, "aria-invalid": error !== undefined, "aria-describedby": error ? errorId : undefined })}
       {error && (
         <span id={errorId} className="field-error">

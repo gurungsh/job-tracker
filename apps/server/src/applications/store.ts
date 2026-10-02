@@ -1,5 +1,13 @@
 import type { DatabaseSync, SQLOutputValue } from "node:sqlite";
-import type { Application, Company, Stage, ValidApplicationInput } from "@job-tracker/shared";
+import type {
+  Application,
+  Company,
+  EmploymentType,
+  SalaryPeriod,
+  Stage,
+  ValidApplicationInput,
+  WorkMode,
+} from "@job-tracker/shared";
 import { stageDates } from "./dates.ts";
 
 /** When a write happens: the client's local date (YYYY-MM-DD) and the current UTC timestamp. */
@@ -9,7 +17,9 @@ type Row = Record<string, SQLOutputValue>;
 
 const selectApplications = `
   SELECT a.id, a.company_id, c.name AS company_name, a.job_title, a.stage, a.next_step, a.next_step_due,
-         a.applied_on, a.closed_on, a.stage_changed_at, a.created_at, a.updated_at
+         a.applied_on, a.closed_on, a.stage_changed_at, a.created_at, a.updated_at,
+         a.job_link, a.location, a.work_mode, a.employment_type, a.contract_length_months,
+         a.salary_min, a.salary_max, a.salary_period, a.source, a.job_description
   FROM applications a
   JOIN companies c ON c.id = a.company_id`;
 
@@ -35,8 +45,8 @@ export function createApplication(db: DatabaseSync, input: ValidApplicationInput
     const { lastInsertRowid } = db
       .prepare(
         `INSERT INTO applications (company_id, job_title, stage, next_step, next_step_due, applied_on, closed_on,
-                                   stage_changed_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                   stage_changed_at, created_at, updated_at, ${detailColumns.join(", ")})
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${detailColumns.map(() => "?").join(", ")})`,
       )
       .run(
         companyId,
@@ -49,6 +59,7 @@ export function createApplication(db: DatabaseSync, input: ValidApplicationInput
         dates.stageChangedAt,
         clock.now,
         clock.now,
+        ...detailValues(input),
       );
     return getApplication(db, Number(lastInsertRowid)) as Application;
   });
@@ -70,7 +81,7 @@ export function updateApplication(
     db.prepare(
       `UPDATE applications
        SET company_id = ?, job_title = ?, stage = ?, next_step = ?, next_step_due = ?, applied_on = ?, closed_on = ?,
-           stage_changed_at = ?, updated_at = ?
+           stage_changed_at = ?, updated_at = ?, ${detailColumns.map((column) => `${column} = ?`).join(", ")}
        WHERE id = ?`,
     ).run(
       companyId,
@@ -82,6 +93,7 @@ export function updateApplication(
       dates.closedOn,
       dates.stageChangedAt,
       clock.now,
+      ...detailValues(input),
       id,
     );
     return getApplication(db, id);
@@ -91,6 +103,35 @@ export function updateApplication(
 /** Returns false if the application doesn't exist. */
 export function deleteApplication(db: DatabaseSync, id: number): boolean {
   return db.prepare("DELETE FROM applications WHERE id = ?").run(id).changes > 0;
+}
+
+// Job detail columns (spec 003), in the order detailValues() returns them.
+const detailColumns = [
+  "job_link",
+  "location",
+  "work_mode",
+  "employment_type",
+  "contract_length_months",
+  "salary_min",
+  "salary_max",
+  "salary_period",
+  "source",
+  "job_description",
+];
+
+function detailValues(input: ValidApplicationInput) {
+  return [
+    input.jobLink,
+    input.location,
+    input.workMode,
+    input.employmentType,
+    input.contractLengthMonths,
+    input.salaryMin,
+    input.salaryMax,
+    input.salaryPeriod,
+    input.source,
+    input.jobDescription,
+  ];
 }
 
 function getApplication(db: DatabaseSync, id: number): Application | undefined {
@@ -132,7 +173,21 @@ function toApplication(row: Row): Application {
     stageChangedAt: String(row.stage_changed_at),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
+    jobLink: nullableText(row.job_link),
+    location: nullableText(row.location),
+    workMode: nullableText(row.work_mode) as WorkMode | null,
+    employmentType: nullableText(row.employment_type) as EmploymentType | null,
+    contractLengthMonths: nullableNumber(row.contract_length_months),
+    salaryMin: nullableNumber(row.salary_min),
+    salaryMax: nullableNumber(row.salary_max),
+    salaryPeriod: nullableText(row.salary_period) as SalaryPeriod | null,
+    source: nullableText(row.source),
+    jobDescription: nullableText(row.job_description),
   };
+}
+
+function nullableNumber(value: SQLOutputValue | undefined): number | null {
+  return value == null ? null : Number(value);
 }
 
 function nullableText(value: SQLOutputValue | undefined): string | null {

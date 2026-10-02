@@ -70,6 +70,16 @@ describe("createApplication", () => {
       stageChangedAt: c.now,
       createdAt: c.now,
       updatedAt: c.now,
+      jobLink: null,
+      location: null,
+      workMode: null,
+      employmentType: null,
+      contractLengthMonths: null,
+      salaryMin: null,
+      salaryMax: null,
+      salaryPeriod: null,
+      source: null,
+      jobDescription: null,
     });
     expect(listApplications(db)).toEqual([created]);
   });
@@ -165,5 +175,46 @@ describe("deleteApplication", () => {
     expect(deleteApplication(db, created.id)).toBe(false);
     expect(listApplications(db)).toEqual([]);
     expect(listCompanies(db)).toEqual([{ id: created.companyId, name: "Acme" }]);
+  });
+});
+
+describe("job details (spec 003)", () => {
+  const details = {
+    jobLink: "https://jobs.acme.com/123",
+    location: "Austin, TX",
+    workMode: "hybrid",
+    employmentType: "contract",
+    contractLengthMonths: 6,
+    salaryMin: 92_500,
+    salaryMax: 140_000,
+    salaryPeriod: "annual",
+    source: "LinkedIn",
+    jobDescription: "Line one\n\nLine two",
+  } as const;
+
+  it("saves and returns every detail (AC-2)", () => {
+    const created = createApplication(db, input({ companyName: "Acme", jobTitle: "Engineer", ...details }), clock());
+
+    expect(created).toMatchObject(details);
+    expect(listApplications(db)[0]).toMatchObject(details);
+  });
+
+  it("clears details on update (AC-3)", () => {
+    const created = createApplication(db, input({ companyName: "Acme", jobTitle: "Engineer", ...details }), clock());
+
+    const updated = updateApplication(db, created.id, input({ companyName: "Acme", jobTitle: "Engineer", location: "Remote" }), clock());
+
+    expect(updated).toMatchObject({
+      location: "Remote",
+      jobLink: null,
+      workMode: null,
+      employmentType: null,
+      contractLengthMonths: null,
+      salaryMin: null,
+      salaryMax: null,
+      salaryPeriod: null,
+      source: null,
+      jobDescription: null,
+    });
   });
 });
