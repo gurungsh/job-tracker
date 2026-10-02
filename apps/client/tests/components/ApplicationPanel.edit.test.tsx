@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -31,7 +31,7 @@ async function openCard(name: RegExp) {
 describe("editing an application", () => {
   it("opens the side panel with every field, the dates, and the days in stage (AC-9, AC-22)", async () => {
     installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
 
     const panel = await openCard(/Acme Corp/);
 
@@ -49,7 +49,7 @@ describe("editing an application", () => {
     installFakeServer([
       application({ companyName: "Globex", jobTitle: "Designer", stage: "rejected", closedOn: "2026-10-10" }),
     ]);
-    render(<Board />);
+    render(<AppAt />);
 
     const panel = await openCard(/Globex/);
 
@@ -58,7 +58,7 @@ describe("editing an application", () => {
 
   it("saves edits and updates the card (AC-10)", async () => {
     const server = installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     const title = within(panel).getByLabelText("Job title");
@@ -76,7 +76,7 @@ describe("editing an application", () => {
 
   it("moves the card when the stage changes (AC-12)", async () => {
     installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     await userEvent.selectOptions(within(panel).getByLabelText("Stage"), "Interviewing");
@@ -91,7 +91,7 @@ describe("editing an application", () => {
 describe("closing the side panel", () => {
   it("closes right away when nothing changed", async () => {
     installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     await userEvent.click(within(panel).getByRole("button", { name: "Close" }));
@@ -102,7 +102,7 @@ describe("closing the side panel", () => {
 
   it("asks before throwing away unsaved changes (AC-11)", async () => {
     installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
     await userEvent.type(within(panel).getByLabelText("Job title"), " II");
 
@@ -121,7 +121,7 @@ describe("closing the side panel", () => {
 
   it("asks before closing an add form that has input", async () => {
     installFakeServer();
-    render(<Board />);
+    render(<AppAt />);
     await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
     await userEvent.type(screen.getByLabelText("Company"), "Acme");
 
@@ -134,7 +134,7 @@ describe("closing the side panel", () => {
 describe("deleting an application", () => {
   it("asks first, naming the job title and company, and does nothing on cancel (AC-16)", async () => {
     const server = installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     await userEvent.click(within(panel).getByRole("button", { name: "Delete" }));
@@ -148,7 +148,7 @@ describe("deleting an application", () => {
 
   it("removes the card after confirming (AC-16)", async () => {
     const server = installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     await userEvent.click(within(panel).getByRole("button", { name: "Delete" }));
@@ -161,7 +161,7 @@ describe("deleting an application", () => {
 
   it("isn't offered when adding", async () => {
     installFakeServer();
-    render(<Board />);
+    render(<AppAt />);
 
     await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
 
@@ -170,7 +170,7 @@ describe("deleting an application", () => {
 
   it("keeps the panel open with an error when deleting fails", async () => {
     const server = installFakeServer([screening]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     server.setOffline(true);

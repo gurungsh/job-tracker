@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -27,7 +27,7 @@ function details(panel: HTMLElement) {
 describe("job details section", () => {
   it("lists the job details in order below the other fields, with contract length only for contracts (AC-1)", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     const labels = () =>
@@ -52,7 +52,7 @@ describe("job details section", () => {
 
   it("saves every detail, and shows the saved values when reopened (AC-2, AC-13)", async () => {
     const server = installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     let panel = await openCard(/Acme Corp/);
     const job = details(panel);
 
@@ -97,7 +97,7 @@ describe("job details section", () => {
     const server = installFakeServer([
       { ...acme, employmentType: "contract", contractLengthMonths: 6 },
     ]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
     const job = details(panel);
 
@@ -111,7 +111,7 @@ describe("job details section", () => {
 
   it("asks before throwing away changes to job details only (AC-10)", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     await userEvent.type(details(panel).getByLabelText("Source"), "Referral");
@@ -122,7 +122,7 @@ describe("job details section", () => {
 
   it("doesn't count saved amounts shown with commas as a change", async () => {
     installFakeServer([{ ...acme, salaryMin: 140_000, salaryPeriod: "annual" }]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     await userEvent.click(within(panel).getByRole("button", { name: "Close" }));
@@ -135,7 +135,7 @@ describe("job details section", () => {
 describe("open posting link", () => {
   it("opens the normalized link in a new tab, and appears only for a valid link (AC-4, AC-12)", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
     const job = details(panel);
 
@@ -156,7 +156,7 @@ describe("open posting link", () => {
 describe("salary summary", () => {
   it("updates as I type (AC-5)", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
     const job = details(panel);
     const summary = () => panel.querySelector(".salary-summary")?.textContent;
@@ -174,7 +174,7 @@ describe("salary summary", () => {
 
   it("is announced to screen readers", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
 
     expect(panel.querySelector(".salary-summary")?.getAttribute("aria-live")).toBe("polite");
@@ -200,7 +200,7 @@ describe("board cards", () => {
         jobDescription: "Build things",
       },
     ]);
-    render(<Board />);
+    render(<AppAt />);
 
     const card = await screen.findByRole("button", { name: /Acme Corp/ });
 
@@ -223,7 +223,7 @@ describe("job detail validation (AC-7)", () => {
 
   async function tryToSave(fill: (job: ReturnType<typeof details>) => Promise<void>) {
     const server = installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openCard(/Acme Corp/);
     await fill(details(panel));
     await userEvent.click(within(panel).getByRole("button", { name: "Save" }));

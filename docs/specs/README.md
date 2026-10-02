@@ -44,3 +44,4 @@ Copy `plan.md` and `tasks.md` from the templates only after the previous documen
 | 009 | [Requirements checklist](009-requirements-checklist/) | Implemented | `feature/requirements-checklist` |
 | 010 | [Light and dark themes](010-themes/)           | Implemented | `feature/themes`             |
 | 011 | [Stage colors and richer cards](011-stage-colors-cards/) | Implemented | `feature/stage-colors-cards` |
+| 012 | [Table view](012-table-view/)                  | Implemented | `feature/table-view`         |

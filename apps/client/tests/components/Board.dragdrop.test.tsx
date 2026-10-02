@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -37,7 +37,7 @@ describe("Board drag and drop", () => {
       application({ companyName: "Late", jobTitle: "B", stage: "applied", nextStepDue: "2026-12-01" }),
       application({ companyName: "Moving", jobTitle: "C", stage: "wishlist", nextStepDue: "2026-11-01", nextStep: "Call" }),
     ]);
-    render(<Board />);
+    render(<AppAt />);
 
     const dragged = await card(/Moving/);
     fireEvent.dragStart(dragged, { dataTransfer: dataTransfer() });
@@ -65,7 +65,7 @@ describe("Board drag and drop", () => {
 
   it.each(["Accepted", "Rejected", "Withdrawn"])("saves a drop into %s without asking (AC-6)", async (label) => {
     const server = installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "offer" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     fireEvent.dragStart(await card(/Acme/), { dataTransfer: dataTransfer() });
     fireEvent.drop(column(label), { dataTransfer: dataTransfer() });
@@ -79,7 +79,7 @@ describe("Board drag and drop", () => {
 
   it("highlights the column under the card and dims the card, then clears both (AC-3)", async () => {
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "wishlist" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     const dragged = await card(/Acme/);
     fireEvent.dragStart(dragged, { dataTransfer: dataTransfer() });
@@ -97,7 +97,7 @@ describe("Board drag and drop", () => {
 
   it("clears the highlight when the drop completes (AC-3)", async () => {
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     fireEvent.dragStart(await card(/Acme/), { dataTransfer: dataTransfer() });
     fireEvent.dragOver(column("Applied"), { dataTransfer: dataTransfer() });
@@ -110,7 +110,7 @@ describe("Board drag and drop", () => {
 
   it("does nothing when dropped on its own column, or when nothing from the board is dragged (AC-4)", async () => {
     const server = installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "applied" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     const dragged = await card(/Acme/);
     fireEvent.dragStart(dragged, { dataTransfer: dataTransfer() });
@@ -127,7 +127,7 @@ describe("Board drag and drop", () => {
 
   it("puts the card back and explains when the save fails, until dismissed (AC-5)", async () => {
     const server = installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "wishlist" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     const dragged = await card(/Acme/);
     server.setOffline(true);
@@ -146,7 +146,7 @@ describe("Board drag and drop", () => {
 
   it("clears an old failure message when I move another card (AC-5)", async () => {
     const server = installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "wishlist" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     const dragged = await card(/Acme/);
     server.setOffline(true);
@@ -176,7 +176,7 @@ describe("Board drag and drop", () => {
         };
       }) as unknown as Response;
     });
-    render(<Board />);
+    render(<AppAt />);
 
     fireEvent.dragStart(await card(/Acme/), { dataTransfer: dataTransfer() });
     fireEvent.drop(column("Applied"), { dataTransfer: dataTransfer() });
@@ -193,7 +193,7 @@ describe("Board drag and drop", () => {
 
   it("closes the side panel when its application is moved (AC-8)", async () => {
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "wishlist" })]);
-    render(<Board />);
+    render(<AppAt />);
 
     await userEvent.click(await card(/Acme/));
     expect(await screen.findByRole("dialog")).toBeTruthy();

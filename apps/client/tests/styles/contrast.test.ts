@@ -126,6 +126,16 @@ describe.each(["light", "dark"] as const)("the company badge in the %s theme", (
   });
 });
 
+// The table, its filters, and the view switch (spec 012, AC-20) add no colors of their own. They use the tokens above,
+// whose pairings are checked in both themes, so a hex color written into one of these files is a mistake.
+describe("the table styles", () => {
+  it.each(["TableView.css", "FilterDropdown.css", "ViewSwitch.css"])("%s uses only color tokens (AC-20)", (file) => {
+    const source = fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", file), "utf8");
+
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+});
+
 describe("the theme rules", () => {
   it("set the browser's color scheme for each theme, so native controls follow (AC-9)", () => {
     expect(css).toMatch(/:root\s*{[^}]*color-scheme:\s*light;/);

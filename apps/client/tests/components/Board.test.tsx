@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { STAGE_LABELS, STAGES } from "@job-tracker/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -27,7 +27,7 @@ describe("Board", () => {
       application({ companyName: "Initech", jobTitle: "Analyst", stage: "rejected" }),
     ]);
 
-    render(<Board />);
+    render(<AppAt />);
 
     const regions = await screen.findAllByRole("region");
     expect(regions.map((region) => region.getAttribute("aria-label"))).toEqual(STAGES.map((stage) => STAGE_LABELS[stage]));
@@ -40,7 +40,7 @@ describe("Board", () => {
   it("invites me to add an application when there are none (AC-2)", async () => {
     installFakeServer();
 
-    render(<Board />);
+    render(<AppAt />);
 
     expect(await screen.findByText("No applications yet. Add your first one to get started.")).toBeTruthy();
     expect(screen.getAllByRole("region")).toHaveLength(8);
@@ -52,7 +52,7 @@ describe("Board", () => {
       application({ companyName: "Globex", jobTitle: "Designer", nextStep: "Call back", nextStepDue: "2026-10-01" }),
     ]);
 
-    render(<Board />);
+    render(<AppAt />);
 
     const overdue = await screen.findByRole("button", { name: /Acme/ });
     expect(overdue.textContent).toContain("Engineer");
@@ -71,7 +71,7 @@ describe("Board", () => {
       application({ companyName: "Second", jobTitle: "B" }),
     ]);
 
-    render(<Board />);
+    render(<AppAt />);
 
     await screen.findByRole("button", { name: /First/ });
     const cards = within(column("Wishlist")).getAllByRole("button");
@@ -82,7 +82,7 @@ describe("Board", () => {
     const server = installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer" })]);
     server.setOffline(true);
 
-    render(<Board />);
+    render(<AppAt />);
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Can't reach the server");
@@ -98,7 +98,7 @@ describe("Board", () => {
   it("shows each column's stage icon, name, and count in the stage's own color (spec 011, AC-1)", async () => {
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "offer" })]);
 
-    render(<Board />);
+    render(<AppAt />);
 
     const regions = await screen.findAllByRole("region");
     expect(regions.map((region) => region.getAttribute("data-stage"))).toEqual([...STAGES]);
@@ -113,7 +113,7 @@ describe("Board", () => {
   it("gives a card the badge of the column it is in (spec 011, AC-2)", async () => {
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "screening" })]);
 
-    render(<Board />);
+    render(<AppAt />);
 
     const card = await screen.findByRole("button", { name: /Acme/ });
     expect(within(column("Screening")).getByRole("button", { name: /Acme/ })).toBe(card);

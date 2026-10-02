@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -21,7 +21,7 @@ async function openAddPanel() {
 describe("adding an application", () => {
   it("adds a card to Wishlist from just a company and a job title (AC-6)", async () => {
     const server = installFakeServer();
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openAddPanel();
 
     await userEvent.type(within(panel).getByLabelText("Company"), "Acme Corp");
@@ -40,7 +40,7 @@ describe("adding an application", () => {
 
   it("says which required field is missing and sends nothing (AC-7)", async () => {
     const server = installFakeServer();
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openAddPanel();
 
     await userEvent.type(within(panel).getByLabelText("Job title"), "   ");
@@ -54,7 +54,7 @@ describe("adding an application", () => {
 
   it("explains other rule breaks next to the field (AC-20)", async () => {
     installFakeServer();
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openAddPanel();
 
     await userEvent.type(within(panel).getByLabelText("Company"), "Acme");
@@ -76,7 +76,7 @@ describe("adding an application", () => {
         headers: { "Content-Type": "application/json" },
       });
     });
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openAddPanel();
 
     await userEvent.type(within(panel).getByLabelText("Company"), "Acme");
@@ -88,7 +88,7 @@ describe("adding an application", () => {
 
   it("keeps the panel and my input when saving fails", async () => {
     const server = installFakeServer();
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openAddPanel();
     await userEvent.type(within(panel).getByLabelText("Company"), "Acme");
     await userEvent.type(within(panel).getByLabelText("Job title"), "Engineer");
@@ -103,7 +103,7 @@ describe("adding an application", () => {
 
   it("suggests existing companies (AC-17)", async () => {
     installFakeServer([application({ companyName: "Acme Corp", jobTitle: "A" })], ["Acme Corp", "Globex"]);
-    render(<Board />);
+    render(<AppAt />);
     const panel = await openAddPanel();
 
     const company = within(panel).getByLabelText("Company");

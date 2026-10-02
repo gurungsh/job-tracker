@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
-import { App } from "../../src/App.tsx";
+import { AppAt } from "../support/render.tsx";
 import { ThemeToggle } from "../../src/components/ThemeToggle.tsx";
 import { THEME_KEY } from "../../src/lib/theme.ts";
 import { installFakeServer } from "../support/fakeServer.ts";
@@ -60,7 +60,7 @@ describe("ThemeToggle", () => {
   it("is in the header, after the app name, on every screen (AC-1)", async () => {
     installFakeServer([]);
     document.documentElement.setAttribute("data-theme", "light");
-    render(<App />);
+    render(<AppAt />);
 
     const header = screen.getByRole("banner");
     const children = [...header.children].map((child) => child.textContent);

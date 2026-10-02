@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer, requirement } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -16,7 +16,7 @@ afterEach(() => {
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 
 async function openTab(server = installFakeServer([acme])) {
-  render(<Board />);
+  render(<AppAt />);
   await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
   await userEvent.click(screen.getByRole("tab", { name: "Requirements" }));
   await screen.findByRole("form", { name: "Add requirement" });
@@ -38,7 +38,7 @@ async function addItem(text: string, kind?: "Required" | "Preferred") {
 describe("the Requirements tab", () => {
   it("is the fourth tab for an existing application, and absent for a new one (AC-1)", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Details", "Timeline", "Contacts", "Requirements"]);
@@ -134,7 +134,7 @@ describe("the Requirements tab", () => {
 
   it("shows an error with a way to try again when loading fails (AC-13)", async () => {
     const server = installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
     server.setOffline(true);
     await userEvent.click(screen.getByRole("tab", { name: "Requirements" }));

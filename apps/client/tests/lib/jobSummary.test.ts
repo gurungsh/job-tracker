@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jobSummary } from "../../src/lib/jobSummary.ts";
+import { employmentLabel, jobSummary } from "../../src/lib/jobSummary.ts";
 
 const none = { location: null, workMode: null, employmentType: null, contractLengthMonths: null } as const;
 
@@ -18,5 +18,16 @@ describe("jobSummary (spec 011, AC-6)", () => {
 
   it("is empty when nothing is filled in", () => {
     expect(jobSummary(none)).toBe("");
+  });
+});
+
+describe("employmentLabel (spec 012, AC-4)", () => {
+  it.each([
+    [{ employmentType: "contract", contractLengthMonths: 6 }, "Contract · 6 mo"],
+    [{ employmentType: "contract", contractLengthMonths: null }, "Contract"],
+    [{ employmentType: "full_time", contractLengthMonths: null }, "Full-time"],
+    [{ employmentType: null, contractLengthMonths: null }, ""],
+  ] as const)("writes %j as %j", (application, expected) => {
+    expect(employmentLabel(application)).toBe(expected);
   });
 });

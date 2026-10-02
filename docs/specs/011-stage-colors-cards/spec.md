@@ -129,3 +129,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Implementation started.
 - 2026-10-02: Clarified when the badge shows "?": only when the name has nothing to take an initial from, so a name that starts with an emoji or symbol uses that character, as the edge case says.
 - 2026-10-02: Implemented.
+- 2026-10-02: Spec 012 adds the table view this spec left out of scope. It reuses this spec's stage colors and icons, pay and time-in-stage wording, and "Overdue" marker. The cards are unchanged.

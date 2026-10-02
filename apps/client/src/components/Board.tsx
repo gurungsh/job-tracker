@@ -1,66 +1,26 @@
-import { type Application, type Company, STAGE_LABELS, STAGES, type Stage, isClosedStage } from "@job-tracker/shared";
-import { useCallback, useEffect, useState } from "react";
+import { type Application, STAGE_LABELS, STAGES, type Stage, isClosedStage } from "@job-tracker/shared";
+import { useState } from "react";
 import { api } from "../lib/api.ts";
-import { applicationToInput, sortForBoard } from "../lib/applicationInput.ts";
+import { applicationToInput } from "../lib/applicationInput.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
-import { ApplicationPanel } from "./ApplicationPanel.tsx";
+import { useApplicationsContext } from "../lib/useApplications.ts";
 import { Card } from "./Card.tsx";
 import { localToday } from "../lib/dates.ts";
 import "./Board.css";
 
-type Loaded = { applications: Application[]; companies: Company[] };
-type LoadState = { status: "loading" } | { status: "error"; message: string } | ({ status: "ready" } & Loaded);
-
 export function Board() {
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-  // The side panel: closed, adding, or editing one application.
-  const [panel, setPanel] = useState<{ application?: Application } | null>(null);
-  // Bumped to load the board again, for example after a save.
-  const [loadCount, setLoadCount] = useState(0);
-  const reload = useCallback(() => {
-    setLoadCount((count) => count + 1);
-  }, []);
-  const closePanel = useCallback(() => {
-    setPanel(null);
-  }, []);
+  const { applications, replaceApplication, panelApplicationId, openPanel, closePanel } = useApplicationsContext();
   // Drag and drop (spec 006): the card being dragged, the column it's over, applications being saved, and the last failure.
   const [dragging, setDragging] = useState<number | null>(null);
   const [overStage, setOverStage] = useState<Stage | null>(null);
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [moveError, setMoveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let current = true;
-    Promise.all([api.listApplications(), api.listCompanies()]).then(
-      ([applications, companies]) => {
-        if (current) setState({ status: "ready", applications, companies });
-      },
-      (error: unknown) => {
-        if (current) setState({ status: "error", message: error instanceof Error ? error.message : String(error) });
-      },
-    );
-    return () => {
-      current = false;
-    };
-  }, [loadCount]);
-
-  // Swaps one application in the loaded board, keeping board order.
-  const replaceApplication = (replacement: Application) => {
-    setState((current) =>
-      current.status === "ready"
-        ? {
-            ...current,
-            applications: sortForBoard(current.applications.map((a) => (a.id === replacement.id ? replacement : a))),
-          }
-        : current,
-    );
-  };
-
   // Moves a card now and saves it, putting it back if the save fails (spec 006, AC-1, AC-5).
   const moveApplication = (application: Application, stage: Stage) => {
     setMoveError(null);
     setPendingIds((ids) => [...ids, application.id]);
-    if (panel?.application?.id === application.id) setPanel(null);
+    if (panelApplicationId === application.id) closePanel();
     replaceApplication({ ...application, stage });
     api.updateApplication(application.id, applicationToInput(application, { stage })).then(
       (saved) => {
@@ -76,27 +36,8 @@ export function Board() {
     });
   };
 
-  if (state.status === "loading") return <p className="board-status">Loading…</p>;
-
-  if (state.status === "error") {
-    return (
-      <div className="board-status" role="alert">
-        <p>Couldn't load your applications. {state.message}</p>
-        <button
-          type="button"
-          onClick={() => {
-            setState({ status: "loading" });
-            reload();
-          }}
-        >
-          Try again
-        </button>
-      </div>
-    );
-  }
-
   const today = localToday();
-  const draggedApplication = state.applications.find((a) => a.id === dragging);
+  const draggedApplication = applications.find((a) => a.id === dragging);
   // Only a card from this board, over another column, can be dropped (AC-3, AC-4).
   const canDropOn = (stage: Stage) => draggedApplication !== undefined && draggedApplication.stage !== stage;
   const endDrag = () => {
@@ -104,7 +45,7 @@ export function Board() {
     setOverStage(null);
   };
   const openApplication = (application: Application) => {
-    setPanel({ application });
+    openPanel(application);
   };
 
   return (
@@ -114,7 +55,7 @@ export function Board() {
           type="button"
           className="primary"
           onClick={() => {
-            setPanel({});
+            openPanel();
           }}
         >
           Add application
@@ -133,13 +74,13 @@ export function Board() {
           </button>
         </div>
       )}
-      {state.applications.length === 0 && (
+      {applications.length === 0 && (
         <p className="board-empty">No applications yet. Add your first one to get started.</p>
       )}
       <div className="board">
         {STAGES.map((stage) => {
           // The server sends applications already in board order (spec 002, AC-4).
-          const cards = state.applications.filter((application) => application.stage === stage);
+          const cards = applications.filter((application) => application.stage === stage);
           const label = STAGE_LABELS[stage];
           const StageIcon = STAGE_ICONS[stage];
           return (
@@ -199,22 +140,6 @@ export function Board() {
           );
         })}
       </div>
-      {panel && (
-        <ApplicationPanel
-          key={panel.application?.id ?? "new"}
-          application={panel.application}
-          companies={state.companies}
-          onSaved={() => {
-            setPanel(null);
-            reload();
-          }}
-          onDeleted={() => {
-            setPanel(null);
-            reload();
-          }}
-          onClose={closePanel}
-        />
-      )}
     </>
   );
 }

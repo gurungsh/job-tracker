@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Board } from "../../src/components/Board.tsx";
+import { AppAt } from "../support/render.tsx";
 import { activity, application, contact, installFakeServer } from "../support/fakeServer.ts";
 
 beforeEach(() => {
@@ -16,7 +16,7 @@ afterEach(() => {
 const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 
 async function openTab(tab: "Contacts" | "Timeline", server = installFakeServer([acme])) {
-  render(<Board />);
+  render(<AppAt />);
   await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
   await userEvent.click(screen.getByRole("tab", { name: tab }));
   return server;
@@ -28,7 +28,7 @@ const cardsText = () => screen.getAllByRole("listitem").map((item) => item.textC
 describe("the Contacts tab", () => {
   it("is offered for an existing application, after Details and Timeline, and not for a new one (AC-1; spec 009 adds a tab after it)", async () => {
     installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Details", "Timeline", "Contacts", "Requirements"]);
@@ -96,7 +96,7 @@ describe("the Contacts tab", () => {
     // The fake server numbers companies on its own, so give the two Acme applications one company.
     second.companyId = acme.companyId;
     server.contacts.push(contact({ companyId: acme.companyId, name: "Shared Sam" }));
-    render(<Board />);
+    render(<AppAt />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Designer/ }));
     await userEvent.click(screen.getByRole("tab", { name: "Contacts" }));
@@ -140,7 +140,7 @@ describe("the Contacts tab", () => {
 
   it("shows an error with a way to try again when loading fails (AC-13)", async () => {
     const server = installFakeServer([acme]);
-    render(<Board />);
+    render(<AppAt />);
     await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
     server.setOffline(true);
     await userEvent.click(screen.getByRole("tab", { name: "Contacts" }));

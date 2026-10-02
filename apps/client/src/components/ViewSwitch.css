@@ -1,0 +1,28 @@
+.view-bar {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.view-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.view-switch a {
+  padding: 0.35rem 0.9rem;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-switch a + a {
+  border-left: 1px solid var(--border);
+}
+
+.view-switch a[aria-current="page"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
