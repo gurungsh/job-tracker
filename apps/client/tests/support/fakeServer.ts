@@ -1,6 +1,15 @@
 // An in-memory stand-in for the API, installed as the global fetch in UI tests.
 // It mirrors the real routes closely enough for the UI; the real rules are tested on the server.
-import { type Application, type ApplicationInput, type Company, applicationInputSchema } from "@job-tracker/shared";
+import {
+  type Activity,
+  type Application,
+  type ApplicationInput,
+  type Company,
+  activityInputSchema,
+  activityUpdateSchema,
+  applicationInputSchema,
+  fieldErrors,
+} from "@job-tracker/shared";
 import { vi } from "vitest";
 
 type Handler = (method: string, path: string, body: unknown) => Response | undefined;
@@ -8,6 +17,7 @@ type Handler = (method: string, path: string, body: unknown) => Response | undef
 export type FakeServer = {
   applications: Application[];
   companies: Company[];
+  activities: Activity[];
   requests: { method: string; path: string; body: unknown }[];
   /** Makes the next requests fail as if the server were down, until called again with false. */
   setOffline: (offline: boolean) => void;
@@ -45,10 +55,19 @@ export function application(fields: Partial<Application> & Pick<Application, "co
   };
 }
 
+let nextActivityId = 500;
+
+export function activity(fields: Partial<Activity> & Pick<Activity, "applicationId">): Activity {
+  nextActivityId += 1;
+  const now = "2026-10-01T12:00:00.000Z";
+  return { id: nextActivityId, type: "note", occurredOn: "2026-10-01", text: "A note", createdAt: now, updatedAt: now, ...fields };
+}
+
 export function installFakeServer(applications: Application[] = [], companyNames: string[] = []): FakeServer {
   const server: FakeServer = {
     applications: [...applications],
     companies: companyNames.map((name, index) => ({ id: index + 1, name })),
+    activities: [],
     requests: [],
     setOffline: (value) => {
       offline = value;
@@ -85,6 +104,13 @@ export function installFakeServer(applications: Application[] = [], companyNames
     };
   }
 
+  // The server's timeline order: newest date first, then the last one added (spec 007, AC-3).
+  function timelineOf(applicationId: number): Activity[] {
+    return server.activities
+      .filter((a) => a.applicationId === applicationId)
+      .sort((a, b) => (a.occurredOn === b.occurredOn ? b.id - a.id : a.occurredOn < b.occurredOn ? 1 : -1));
+  }
+
   const fetchMock = vi.fn((path: string, init?: RequestInit) => {
     const method = init?.method ?? "GET";
     const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
@@ -97,6 +123,31 @@ export function installFakeServer(applications: Application[] = [], companyNames
 
     const id = Number(/^\/api\/applications\/(\d+)$/.exec(path)?.[1]);
     const index = server.applications.findIndex((a) => a.id === id);
+
+    const timelineId = Number(/^\/api\/applications\/(\d+)\/activities$/.exec(path)?.[1]);
+    if (Number.isFinite(timelineId) && (method === "GET" || method === "POST")) {
+      if (method === "GET") return json(timelineOf(timelineId));
+      const parsed = activityInputSchema.safeParse(body);
+      if (!parsed.success) return json({ error: "Invalid activity", fields: fieldErrors(parsed.error) }, 400);
+      const created = activity({ applicationId: timelineId, ...parsed.data });
+      server.activities.push(created);
+      return json(created, 201);
+    }
+    const activityId = Number(/^\/api\/activities\/(\d+)$/.exec(path)?.[1]);
+    const activityIndex = server.activities.findIndex((a) => a.id === activityId);
+    if (Number.isFinite(activityId) && activityIndex >= 0 && method === "PUT") {
+      const parsed = activityUpdateSchema.safeParse(body);
+      if (!parsed.success) return json({ error: "Invalid activity", fields: fieldErrors(parsed.error) }, 400);
+      const { type, ...rest } = parsed.data;
+      const current = server.activities[activityIndex] as Activity;
+      const updated = { ...current, ...rest, type: type ?? current.type };
+      server.activities[activityIndex] = updated;
+      return json(updated);
+    }
+    if (Number.isFinite(activityId) && activityIndex >= 0 && method === "DELETE") {
+      server.activities.splice(activityIndex, 1);
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
 
     if (method === "GET" && path === "/api/applications") return json(server.applications);
     if (method === "GET" && path === "/api/companies") return json(server.companies);

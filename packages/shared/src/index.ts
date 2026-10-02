@@ -4,6 +4,7 @@ export type ErrorResponse = { error: string; requestId?: string };
 /** A 400 response naming each invalid field. */
 export type ValidationErrorResponse = ErrorResponse & { fields: Record<string, string> };
 
+export * from "./activities.ts";
 export * from "./applications.ts";
 export * from "./jobDetails.ts";
 export * from "./observability.ts";

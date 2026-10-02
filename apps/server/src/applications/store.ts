@@ -8,6 +8,8 @@ import type {
   ValidApplicationInput,
   WorkMode,
 } from "@job-tracker/shared";
+import { addedText, movedText } from "@job-tracker/shared";
+import { insertActivity } from "../activities/store.ts";
 import { stageDates } from "./dates.ts";
 
 /** When a write happens: the client's local date (YYYY-MM-DD) and the current UTC timestamp. */
@@ -61,7 +63,9 @@ export function createApplication(db: DatabaseSync, input: ValidApplicationInput
         clock.now,
         ...detailValues(input),
       );
-    return getApplication(db, Number(lastInsertRowid)) as Application;
+    const id = Number(lastInsertRowid);
+    insertActivity(db, id, "stage_change", clock.today, addedText(input.stage), clock.now);
+    return getApplication(db, id) as Application;
   });
 }
 
@@ -96,6 +100,9 @@ export function updateApplication(
       ...detailValues(input),
       id,
     );
+    if (previous.stage !== input.stage) {
+      insertActivity(db, id, "stage_change", clock.today, movedText(previous.stage, input.stage), clock.now);
+    }
     return getApplication(db, id);
   });
 }

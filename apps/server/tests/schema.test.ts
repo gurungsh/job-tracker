@@ -24,13 +24,13 @@ afterEach(() => {
 });
 
 describe("real migrations", () => {
-  it("create the companies and applications tables", () => {
+  it("create the companies, applications, and activities tables", () => {
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all()
       .map((row) => row.name);
 
-    expect(tables).toEqual(["applications", "companies", "schema_migrations"]);
+    expect(tables).toEqual(["activities", "applications", "companies", "schema_migrations"]);
   });
 
   it("make company names unique regardless of case", () => {
@@ -94,7 +94,7 @@ describe("migration 0002 (job details)", () => {
         )
         .run(lastInsertRowid, now, now, now);
 
-      expect(migrate(oldDb, migrationsDir)).toEqual(["0002_add_job_details.sql"]);
+      expect(migrate(oldDb, migrationsDir)).toEqual(["0002_add_job_details.sql", "0003_create_activities.sql"]);
       const row = oldDb.prepare(`SELECT job_title, ${detailColumns.join(", ")} FROM applications`).get();
       expect(row).toEqual({ job_title: "Engineer", ...Object.fromEntries(detailColumns.map((column) => [column, null])) });
     } finally {
@@ -122,5 +122,46 @@ describe("migration 0002 (job details)", () => {
     expect(() => insert("salary_min", -1)).toThrow(/CHECK/);
     expect(() => insert("salary_max", 10_000_001)).toThrow(/CHECK/);
     expect(() => insert("salary_min", 0)).not.toThrow();
+  });
+});
+
+describe("migration 0003 (activities)", () => {
+  function addApplication(): number {
+    const { lastInsertRowid: companyId } = db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+    const { lastInsertRowid } = db
+      .prepare(
+        `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+         VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+      )
+      .run(companyId, now, now, now);
+    return Number(lastInsertRowid);
+  }
+
+  const insert = (applicationId: number, type: string) =>
+    db
+      .prepare("INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at) VALUES (?, ?, '2026-10-01', 'x', ?, ?)")
+      .run(applicationId, type, now, now);
+
+  it("starts empty for existing applications (spec 007, AC-10)", () => {
+    addApplication();
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM activities").get()).toEqual({ n: 0 });
+  });
+
+  it("rejects an unknown type and an unknown application", () => {
+    const id = addApplication();
+
+    expect(() => insert(id, "meeting")).toThrow(/CHECK/);
+    expect(() => insert(999, "note")).toThrow(/FOREIGN KEY/);
+  });
+
+  it("removes an application's entries when it is deleted (spec 007, AC-11)", () => {
+    const id = addApplication();
+    insert(id, "note");
+    insert(id, "stage_change");
+
+    db.prepare("DELETE FROM applications WHERE id = ?").run(id);
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM activities").get()).toEqual({ n: 0 });
   });
 });

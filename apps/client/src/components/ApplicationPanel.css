@@ -8,12 +8,38 @@
   background: var(--surface);
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 24px rgb(0 0 0 / 0.15);
+  display: flex;
+  flex-direction: column;
 }
 
 .panel-form {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel-form[hidden] {
+  display: none;
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-tabs button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+}
+
+.panel-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  font-weight: 600;
 }
 
 .panel-header,

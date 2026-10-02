@@ -21,6 +21,7 @@ import {
 import { type ReactNode, type SyntheticEvent, useCallback, useEffect, useId, useState } from "react";
 import { ApiError, api } from "../lib/api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { Timeline } from "./Timeline.tsx";
 import { daysInStage, formatDate, localDateOf, timeInStage } from "../lib/dates.ts";
 import { salarySummary } from "../lib/salary.ts";
 import "./ApplicationPanel.css";
@@ -86,6 +87,8 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
   const [saving, setSaving] = useState(false);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Existing applications have a timeline tab. The form stays mounted underneath, so unsaved edits survive (spec 007, AC-14).
+  const [tab, setTab] = useState<"details" | "timeline">("details");
   const title = application ? "Edit application" : "Add application";
 
   const changed = JSON.stringify(values) !== JSON.stringify(initialValues(application));
@@ -173,13 +176,31 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
 
   return (
     <aside className="panel" role="dialog" aria-labelledby={titleId}>
-      <form className="panel-form" onSubmit={(event) => void save(event)} noValidate>
-        <header className="panel-header">
-          <h2 id={titleId}>{title}</h2>
-          <button type="button" onClick={requestClose} aria-label="Close">
-            ×
-          </button>
-        </header>
+      <header className="panel-header">
+        <h2 id={titleId}>{title}</h2>
+        <button type="button" onClick={requestClose} aria-label="Close">
+          ×
+        </button>
+      </header>
+      {application && (
+        <div className="panel-tabs" role="tablist">
+          {(["details", "timeline"] as const).map((name) => (
+            <button
+              key={name}
+              type="button"
+              role="tab"
+              aria-selected={tab === name}
+              onClick={() => {
+                setTab(name);
+              }}
+            >
+              {name === "details" ? "Details" : "Timeline"}
+            </button>
+          ))}
+        </div>
+      )}
+      {application && tab === "timeline" && <Timeline applicationId={application.id} />}
+      <form className="panel-form" onSubmit={(event) => void save(event)} noValidate hidden={tab === "timeline"}>
 
         <div className="panel-body">
           {application && <StageInfo application={application} />}
