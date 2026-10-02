@@ -7,6 +7,7 @@ import { activitiesRouter } from "./activities/router.ts";
 import { applicationsRouter } from "./applications/router.ts";
 import { clientErrorsRouter } from "./clientErrors.ts";
 import { companiesRouter } from "./companies/router.ts";
+import { contactsRouter } from "./contacts/router.ts";
 import { healthRouter, type RequestCounts } from "./health.ts";
 import { type Logger, silentLogger } from "./logger.ts";
 import { requestIdOf, requestLog } from "./requestLog.ts";
@@ -29,6 +30,7 @@ export function createApp({ db, clientDir, logger = silentLogger }: AppOptions):
 
   app.use("/api/applications", applicationsRouter(db));
   app.use("/api", activitiesRouter(db));
+  app.use("/api", contactsRouter(db));
   app.use("/api/companies", companiesRouter(db));
   app.use("/api/client-errors", clientErrorsRouter(logger));
 

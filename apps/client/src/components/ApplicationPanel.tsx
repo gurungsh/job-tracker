@@ -21,6 +21,7 @@ import {
 import { type ReactNode, type SyntheticEvent, useCallback, useEffect, useId, useState } from "react";
 import { ApiError, api } from "../lib/api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { Contacts } from "./Contacts.tsx";
 import { Timeline } from "./Timeline.tsx";
 import { daysInStage, formatDate, localDateOf, timeInStage } from "../lib/dates.ts";
 import { salarySummary } from "../lib/salary.ts";
@@ -56,6 +57,8 @@ type FormValues = {
 
 const amount = new Intl.NumberFormat("en-US");
 
+const TAB_LABELS = { details: "Details", timeline: "Timeline", contacts: "Contacts" } as const;
+
 function initialValues(application?: Application): FormValues {
   return {
     companyName: application?.companyName ?? "",
@@ -88,7 +91,7 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Existing applications have a timeline tab. The form stays mounted underneath, so unsaved edits survive (spec 007, AC-14).
-  const [tab, setTab] = useState<"details" | "timeline">("details");
+  const [tab, setTab] = useState<"details" | "timeline" | "contacts">("details");
   const title = application ? "Edit application" : "Add application";
 
   const changed = JSON.stringify(values) !== JSON.stringify(initialValues(application));
@@ -184,7 +187,7 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
       </header>
       {application && (
         <div className="panel-tabs" role="tablist">
-          {(["details", "timeline"] as const).map((name) => (
+          {(["details", "timeline", "contacts"] as const).map((name) => (
             <button
               key={name}
               type="button"
@@ -194,13 +197,16 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
                 setTab(name);
               }}
             >
-              {name === "details" ? "Details" : "Timeline"}
+              {TAB_LABELS[name]}
             </button>
           ))}
         </div>
       )}
-      {application && tab === "timeline" && <Timeline applicationId={application.id} />}
-      <form className="panel-form" onSubmit={(event) => void save(event)} noValidate hidden={tab === "timeline"}>
+      {application && tab === "timeline" && <Timeline applicationId={application.id} companyId={application.companyId} />}
+      {application && tab === "contacts" && (
+        <Contacts companyId={application.companyId} companyName={application.companyName} />
+      )}
+      <form className="panel-form" onSubmit={(event) => void save(event)} noValidate hidden={tab !== "details"}>
 
         <div className="panel-body">
           {application && <StageInfo application={application} />}

@@ -7,6 +7,7 @@ import {
   fieldErrors,
 } from "@job-tracker/shared";
 import express, { type Response, type Router } from "express";
+import { contactIsAtApplicationsCompany } from "../contacts/store.ts";
 import { createActivity, deleteActivity, getActivity, listActivities, updateActivity } from "./store.ts";
 
 /** Routes for an application's timeline and for single entries (spec 007). Mounted at /api. */
@@ -29,6 +30,10 @@ export function activitiesRouter(db: DatabaseSync): Router {
     const result = activityInputSchema.safeParse(req.body ?? {});
     if (!result.success) {
       invalid(res, fieldErrors(result.error));
+      return;
+    }
+    if (!contactAllowed(db, result.data.contactId, id)) {
+      invalid(res, { contactId: CONTACT_ERROR });
       return;
     }
     const created = createActivity(db, id, result.data, new Date().toISOString());
@@ -55,6 +60,10 @@ export function activitiesRouter(db: DatabaseSync): Router {
       invalid(res, { type: "Type is not valid" });
       return;
     }
+    if (!contactAllowed(db, result.data.contactId, existing.applicationId)) {
+      invalid(res, { contactId: CONTACT_ERROR });
+      return;
+    }
     res.json(updateActivity(db, id, result.data, new Date().toISOString()));
   });
 
@@ -65,6 +74,13 @@ export function activitiesRouter(db: DatabaseSync): Router {
   });
 
   return router;
+}
+
+const CONTACT_ERROR = "Choose a contact at this company";
+
+/** An entry may name no one, or someone at its application's company (spec 008, AC-10). */
+function contactAllowed(db: DatabaseSync, contactId: number | null, applicationId: number): boolean {
+  return contactId === null || contactIsAtApplicationsCompany(db, contactId, applicationId);
 }
 
 function parseId(value: string | undefined): number | undefined {

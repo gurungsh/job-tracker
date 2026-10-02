@@ -4,20 +4,22 @@ import type { Activity, ActivityType, ValidActivityInput, ValidActivityUpdate } 
 type Row = Record<string, SQLOutputValue>;
 
 const selectActivities = `
-  SELECT id, application_id, type, occurred_on, text, created_at, updated_at
-  FROM activities`;
+  SELECT a.id, a.application_id, a.type, a.occurred_on, a.text, a.contact_id, c.name AS contact_name,
+         a.created_at, a.updated_at
+  FROM activities a
+  LEFT JOIN contacts c ON c.id = a.contact_id`;
 
 /** Newest date first, and the last one added first within a date (spec 007, AC-3). Undefined if the application doesn't exist. */
 export function listActivities(db: DatabaseSync, applicationId: number): Activity[] | undefined {
   if (!applicationExists(db, applicationId)) return undefined;
   return db
-    .prepare(`${selectActivities} WHERE application_id = ? ORDER BY occurred_on DESC, id DESC`)
+    .prepare(`${selectActivities} WHERE a.application_id = ? ORDER BY a.occurred_on DESC, a.id DESC`)
     .all(applicationId)
     .map(toActivity);
 }
 
 export function getActivity(db: DatabaseSync, id: number): Activity | undefined {
-  const row = db.prepare(`${selectActivities} WHERE id = ?`).get(id);
+  const row = db.prepare(`${selectActivities} WHERE a.id = ?`).get(id);
   return row ? toActivity(row) : undefined;
 }
 
@@ -29,13 +31,14 @@ export function insertActivity(
   occurredOn: string,
   text: string,
   now: string,
+  contactId: number | null = null,
 ): number {
   const { lastInsertRowid } = db
     .prepare(
-      `INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO activities (application_id, type, occurred_on, text, contact_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(applicationId, type, occurredOn, text, now, now);
+    .run(applicationId, type, occurredOn, text, contactId, now, now);
   return Number(lastInsertRowid);
 }
 
@@ -47,14 +50,14 @@ export function createActivity(
   now: string,
 ): Activity | undefined {
   if (!applicationExists(db, applicationId)) return undefined;
-  return getActivity(db, insertActivity(db, applicationId, input.type, input.occurredOn, input.text, now));
+  return getActivity(db, insertActivity(db, applicationId, input.type, input.occurredOn, input.text, now, input.contactId));
 }
 
-/** Changes the date, text, and (when given) type of an entry. Returns undefined if it doesn't exist. */
+/** Changes the date, text, contact, and (when given) type of an entry. Returns undefined if it doesn't exist. */
 export function updateActivity(db: DatabaseSync, id: number, input: ValidActivityUpdate, now: string): Activity | undefined {
   const { changes } = db
-    .prepare("UPDATE activities SET type = COALESCE(?, type), occurred_on = ?, text = ?, updated_at = ? WHERE id = ?")
-    .run(input.type ?? null, input.occurredOn, input.text, now, id);
+    .prepare("UPDATE activities SET type = COALESCE(?, type), occurred_on = ?, text = ?, contact_id = ?, updated_at = ? WHERE id = ?")
+    .run(input.type ?? null, input.occurredOn, input.text, input.contactId, now, id);
   return changes > 0 ? getActivity(db, id) : undefined;
 }
 
@@ -74,6 +77,8 @@ function toActivity(row: Row): Activity {
     type: row.type as ActivityType,
     occurredOn: String(row.occurred_on),
     text: String(row.text),
+    contactId: row.contact_id == null ? null : Number(row.contact_id),
+    contactName: row.contact_name == null ? null : String(row.contact_name),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };

@@ -27,12 +27,20 @@ const textSchema = z
   .min(1, "Text is required")
   .max(ACTIVITY_TEXT_MAX, `Text must be ${new Intl.NumberFormat("en-US").format(ACTIVITY_TEXT_MAX)} characters or fewer`);
 const dateSchema = z.iso.date({ error: dateMessage });
+// The contact the entry involved, at the application's company. Left out or null means none (spec 008, AC-8).
+const contactSchema = z
+  .number({ error: "Contact is not valid" })
+  .int({ error: "Contact is not valid" })
+  .positive({ error: "Contact is not valid" })
+  .nullish()
+  .transform((value) => value ?? null);
 
 /** What a client sends to log a new entry (spec 007). */
 export const activityInputSchema = z.object({
   type: z.enum(LOGGED_ACTIVITY_TYPES, { error: "Type is not valid" }),
   occurredOn: dateSchema,
   text: textSchema,
+  contactId: contactSchema,
 });
 
 /**
@@ -43,6 +51,7 @@ export const activityUpdateSchema = z.object({
   type: z.enum(ACTIVITY_TYPES, { error: "Type is not valid" }).optional(),
   occurredOn: dateSchema,
   text: textSchema,
+  contactId: contactSchema,
 });
 
 export type ActivityInput = z.input<typeof activityInputSchema>;
@@ -57,6 +66,9 @@ export type Activity = {
   /** YYYY-MM-DD */
   occurredOn: string;
   text: string;
+  /** The contact the entry involved, if any (spec 008). */
+  contactId: number | null;
+  contactName: string | null;
   createdAt: string;
   updatedAt: string;
 };

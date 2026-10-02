@@ -1,4 +1,13 @@
-import type { Activity, ActivityInput, ActivityUpdate, Application, ApplicationInput, Company } from "@job-tracker/shared";
+import type {
+  Activity,
+  ActivityInput,
+  ActivityUpdate,
+  Application,
+  ApplicationInput,
+  Company,
+  Contact,
+  ContactInput,
+} from "@job-tracker/shared";
 import { reportError } from "./errorReporting.ts";
 
 /** A failed API call. `status` is 0 when the server couldn't be reached. */
@@ -27,6 +36,11 @@ export const api = {
     request<Activity>("POST", `/api/applications/${String(applicationId)}/activities`, input),
   updateActivity: (id: number, input: ActivityUpdate) => request<Activity>("PUT", `/api/activities/${String(id)}`, input),
   deleteActivity: (id: number) => request<undefined>("DELETE", `/api/activities/${String(id)}`),
+  listContacts: (companyId: number) => request<Contact[]>("GET", `/api/companies/${String(companyId)}/contacts`),
+  createContact: (companyId: number, input: ContactInput) =>
+    request<Contact>("POST", `/api/companies/${String(companyId)}/contacts`, input),
+  updateContact: (id: number, input: ContactInput) => request<Contact>("PUT", `/api/contacts/${String(id)}`, input),
+  deleteContact: (id: number) => request<undefined>("DELETE", `/api/contacts/${String(id)}`),
 };
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {

@@ -5,9 +5,11 @@ import {
   type Application,
   type ApplicationInput,
   type Company,
+  type Contact,
   activityInputSchema,
   activityUpdateSchema,
   applicationInputSchema,
+  contactInputSchema,
   fieldErrors,
 } from "@job-tracker/shared";
 import { vi } from "vitest";
@@ -18,6 +20,7 @@ export type FakeServer = {
   applications: Application[];
   companies: Company[];
   activities: Activity[];
+  contacts: Contact[];
   requests: { method: string; path: string; body: unknown }[];
   /** Makes the next requests fail as if the server were down, until called again with false. */
   setOffline: (offline: boolean) => void;
@@ -60,7 +63,25 @@ let nextActivityId = 500;
 export function activity(fields: Partial<Activity> & Pick<Activity, "applicationId">): Activity {
   nextActivityId += 1;
   const now = "2026-10-01T12:00:00.000Z";
-  return { id: nextActivityId, type: "note", occurredOn: "2026-10-01", text: "A note", createdAt: now, updatedAt: now, ...fields };
+  return {
+    id: nextActivityId,
+    type: "note",
+    occurredOn: "2026-10-01",
+    text: "A note",
+    contactId: null,
+    contactName: null,
+    createdAt: now,
+    updatedAt: now,
+    ...fields,
+  };
+}
+
+let nextContactId = 700;
+
+export function contact(fields: Partial<Contact> & Pick<Contact, "companyId" | "name">): Contact {
+  nextContactId += 1;
+  const now = "2026-10-01T12:00:00.000Z";
+  return { id: nextContactId, role: null, email: null, phone: null, notes: null, entryCount: 0, createdAt: now, updatedAt: now, ...fields };
 }
 
 export function installFakeServer(applications: Application[] = [], companyNames: string[] = []): FakeServer {
@@ -68,6 +89,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
     applications: [...applications],
     companies: companyNames.map((name, index) => ({ id: index + 1, name })),
     activities: [],
+    contacts: [],
     requests: [],
     setOffline: (value) => {
       offline = value;
@@ -104,6 +126,18 @@ export function installFakeServer(applications: Application[] = [], companyNames
     };
   }
 
+  function contactName(id: number | null): string | null {
+    return server.contacts.find((c) => c.id === id)?.name ?? null;
+  }
+
+  /** Contacts with the number of entries that name them, as the server counts them. */
+  function contactsOf(companyId: number): Contact[] {
+    return server.contacts
+      .filter((c) => c.companyId === companyId)
+      .map((c) => ({ ...c, entryCount: server.activities.filter((a) => a.contactId === c.id).length }))
+      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()) || a.id - b.id);
+  }
+
   // The server's timeline order: newest date first, then the last one added (spec 007, AC-3).
   function timelineOf(applicationId: number): Activity[] {
     return server.activities
@@ -129,7 +163,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
       if (method === "GET") return json(timelineOf(timelineId));
       const parsed = activityInputSchema.safeParse(body);
       if (!parsed.success) return json({ error: "Invalid activity", fields: fieldErrors(parsed.error) }, 400);
-      const created = activity({ applicationId: timelineId, ...parsed.data });
+      const created = activity({ applicationId: timelineId, ...parsed.data, contactName: contactName(parsed.data.contactId) });
       server.activities.push(created);
       return json(created, 201);
     }
@@ -140,12 +174,38 @@ export function installFakeServer(applications: Application[] = [], companyNames
       if (!parsed.success) return json({ error: "Invalid activity", fields: fieldErrors(parsed.error) }, 400);
       const { type, ...rest } = parsed.data;
       const current = server.activities[activityIndex] as Activity;
-      const updated = { ...current, ...rest, type: type ?? current.type };
+      const updated = { ...current, ...rest, type: type ?? current.type, contactName: contactName(rest.contactId) };
       server.activities[activityIndex] = updated;
       return json(updated);
     }
     if (Number.isFinite(activityId) && activityIndex >= 0 && method === "DELETE") {
       server.activities.splice(activityIndex, 1);
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+
+    const companyContactsId = Number(/^\/api\/companies\/(\d+)\/contacts$/.exec(path)?.[1]);
+    if (Number.isFinite(companyContactsId) && (method === "GET" || method === "POST")) {
+      if (method === "GET") return json(contactsOf(companyContactsId));
+      const parsed = contactInputSchema.safeParse(body);
+      if (!parsed.success) return json({ error: "Invalid contact", fields: fieldErrors(parsed.error) }, 400);
+      const created = contact({ companyId: companyContactsId, ...parsed.data });
+      server.contacts.push(created);
+      return json(created, 201);
+    }
+    const contactId = Number(/^\/api\/contacts\/(\d+)$/.exec(path)?.[1]);
+    const contactIndex = server.contacts.findIndex((c) => c.id === contactId);
+    if (Number.isFinite(contactId) && contactIndex >= 0 && method === "PUT") {
+      const parsed = contactInputSchema.safeParse(body);
+      if (!parsed.success) return json({ error: "Invalid contact", fields: fieldErrors(parsed.error) }, 400);
+      const updatedContact = { ...(server.contacts[contactIndex] as Contact), ...parsed.data };
+      server.contacts[contactIndex] = updatedContact;
+      // Entries that name the contact show its new name.
+      server.activities = server.activities.map((a) => (a.contactId === contactId ? { ...a, contactName: parsed.data.name } : a));
+      return json(contactsOf(updatedContact.companyId).find((c) => c.id === contactId));
+    }
+    if (Number.isFinite(contactId) && contactIndex >= 0 && method === "DELETE") {
+      server.contacts.splice(contactIndex, 1);
+      server.activities = server.activities.map((a) => (a.contactId === contactId ? { ...a, contactId: null, contactName: null } : a));
       return Promise.resolve(new Response(null, { status: 204 }));
     }
 

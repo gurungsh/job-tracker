@@ -5,7 +5,12 @@ const valid = { type: "call", occurredOn: "2026-10-05", text: "  Spoke with the 
 
 describe("activityInputSchema", () => {
   it("accepts a valid entry, trims the text, and allows future dates (AC-2, AC-4)", () => {
-    expect(activityInputSchema.parse(valid)).toEqual({ type: "call", occurredOn: "2026-10-05", text: "Spoke with the recruiter" });
+    expect(activityInputSchema.parse(valid)).toEqual({
+      type: "call",
+      occurredOn: "2026-10-05",
+      text: "Spoke with the recruiter",
+      contactId: null,
+    });
     expect(activityInputSchema.parse({ ...valid, occurredOn: "2099-01-01" }).occurredOn).toBe("2099-01-01");
   });
 

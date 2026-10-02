@@ -1,6 +1,7 @@
 import {
   ACTIVITY_TYPE_LABELS,
   type Activity,
+  type Contact,
   LOGGED_ACTIVITY_TYPES,
   activityInputSchema,
   activityUpdateSchema,
@@ -12,9 +13,12 @@ import { formatDate, localToday } from "../lib/dates.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import "./Timeline.css";
 
-type TimelineProps = { applicationId: number };
+type TimelineProps = { applicationId: number; companyId: number };
 
-type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; entries: Activity[] };
+type LoadState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "ready"; entries: Activity[]; contacts: Contact[] };
 
 /** The server's timeline order: newest date first, then the last one added (spec 007, AC-3). */
 function sortEntries(entries: Activity[]): Activity[] {
@@ -24,7 +28,7 @@ function sortEntries(entries: Activity[]): Activity[] {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** An application's history: entries I log, and the stage changes the server records (spec 007). */
-export function Timeline({ applicationId }: TimelineProps) {
+export function Timeline({ applicationId, companyId }: TimelineProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -33,9 +37,10 @@ export function Timeline({ applicationId }: TimelineProps) {
 
   useEffect(() => {
     let current = true;
-    api.listActivities(applicationId).then(
-      (entries) => {
-        if (current) setState({ status: "ready", entries: sortEntries(entries) });
+    // The company's contacts are loaded each time the tab opens, so the choices are current (spec 008, AC-8).
+    Promise.all([api.listActivities(applicationId), api.listContacts(companyId)]).then(
+      ([entries, contacts]) => {
+        if (current) setState({ status: "ready", entries: sortEntries(entries), contacts });
       },
       (error: unknown) => {
         if (current) setState({ status: "error", message: errorText(error) });
@@ -44,10 +49,12 @@ export function Timeline({ applicationId }: TimelineProps) {
     return () => {
       current = false;
     };
-  }, [applicationId, loadCount]);
+  }, [applicationId, companyId, loadCount]);
 
   function changeEntries(change: (entries: Activity[]) => Activity[]) {
-    setState((current) => (current.status === "ready" ? { status: "ready", entries: sortEntries(change(current.entries)) } : current));
+    setState((current) =>
+      current.status === "ready" ? { ...current, entries: sortEntries(change(current.entries)) } : current,
+    );
   }
 
   async function remove(entry: Activity) {
@@ -85,7 +92,8 @@ export function Timeline({ applicationId }: TimelineProps) {
       <EntryForm
         heading="Add entry"
         submitLabel="Add entry"
-        initial={{ type: "note", occurredOn: localToday(), text: "" }}
+        initial={{ type: "note", occurredOn: localToday(), text: "", contactId: null }}
+        contacts={state.contacts}
         resetAfterSave
         onSubmit={async (input) => {
           // The add form always offers one of the loggable types.
@@ -111,7 +119,8 @@ export function Timeline({ applicationId }: TimelineProps) {
                 <EntryForm
                   heading="Edit entry"
                   submitLabel="Save"
-                  initial={{ type: entry.type, occurredOn: entry.occurredOn, text: entry.text }}
+                  initial={{ type: entry.type, occurredOn: entry.occurredOn, text: entry.text, contactId: entry.contactId }}
+                  contacts={state.contacts}
                   onCancel={() => {
                     setEditingId(null);
                   }}
@@ -127,6 +136,7 @@ export function Timeline({ applicationId }: TimelineProps) {
                     <span className="timeline-type">{ACTIVITY_TYPE_LABELS[entry.type]}</span>
                     <time dateTime={entry.occurredOn}>{formatDate(entry.occurredOn)}</time>
                   </div>
+                  {entry.contactName && <p className="timeline-contact">with {entry.contactName}</p>}
                   <p className="timeline-text">{entry.text}</p>
                   <div className="timeline-entry-actions">
                     <button
@@ -171,20 +181,22 @@ export function Timeline({ applicationId }: TimelineProps) {
   );
 }
 
-type EntryValues = { type: Activity["type"]; occurredOn: string; text: string };
+type EntryValues = { type: Activity["type"]; occurredOn: string; text: string; contactId: number | null };
 
 type EntryFormProps = {
   heading: string;
   submitLabel: string;
   initial: EntryValues;
+  /** The company's contacts, for the Contact choice. */
+  contacts: Contact[];
   /** Clear the text and go back to today after a save, for adding several entries in a row. */
   resetAfterSave?: boolean;
   onCancel?: () => void;
-  onSubmit: (input: { type?: Activity["type"]; occurredOn: string; text: string }) => Promise<void>;
+  onSubmit: (input: { type?: Activity["type"]; occurredOn: string; text: string; contactId: number | null }) => Promise<void>;
 };
 
 /** The form for adding an entry and for editing one. Stage-change entries keep their type, so it isn't offered (AC-8). */
-function EntryForm({ heading, submitLabel, initial, resetAfterSave = false, onCancel, onSubmit }: EntryFormProps) {
+function EntryForm({ heading, submitLabel, initial, contacts, resetAfterSave = false, onCancel, onSubmit }: EntryFormProps) {
   const id = useId();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -196,7 +208,7 @@ function EntryForm({ heading, submitLabel, initial, resetAfterSave = false, onCa
     event.preventDefault();
     // The same rules the server checks (spec 007, AC-4).
     const result = keepsType
-      ? activityUpdateSchema.safeParse({ occurredOn: values.occurredOn, text: values.text })
+      ? activityUpdateSchema.safeParse({ occurredOn: values.occurredOn, text: values.text, contactId: values.contactId })
       : activityInputSchema.safeParse(values);
     if (!result.success) {
       setErrors(fieldErrors(result.error));
@@ -237,6 +249,24 @@ function EntryForm({ heading, submitLabel, initial, resetAfterSave = false, onCa
           {errors.type && <p className="field-error">{errors.type}</p>}
         </div>
       )}
+      <div className="field">
+        <label htmlFor={`${id}-contact`}>Contact</label>
+        <select
+          id={`${id}-contact`}
+          value={values.contactId === null ? "" : String(values.contactId)}
+          onChange={(event) => {
+            setValues({ ...values, contactId: event.target.value === "" ? null : Number(event.target.value) });
+          }}
+        >
+          <option value="">None</option>
+          {contacts.map((contact) => (
+            <option key={contact.id} value={contact.id}>
+              {contact.name}
+            </option>
+          ))}
+        </select>
+        {errors.contactId && <p className="field-error">{errors.contactId}</p>}
+      </div>
       <div className="field">
         <label htmlFor={`${id}-date`}>Date</label>
         <input

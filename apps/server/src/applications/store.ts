@@ -100,6 +100,10 @@ export function updateApplication(
       ...detailValues(input),
       id,
     );
+    // Contacts belong to a company, so entries stop naming them when the application moves (spec 008, AC-11).
+    if (previous.companyId !== companyId) {
+      db.prepare("UPDATE activities SET contact_id = NULL WHERE application_id = ?").run(id);
+    }
     if (previous.stage !== input.stage) {
       insertActivity(db, id, "stage_change", clock.today, movedText(previous.stage, input.stage), clock.now);
     }

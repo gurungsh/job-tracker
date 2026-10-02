@@ -24,13 +24,13 @@ afterEach(() => {
 });
 
 describe("real migrations", () => {
-  it("create the companies, applications, and activities tables", () => {
+  it("create the companies, applications, activities, and contacts tables", () => {
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all()
       .map((row) => row.name);
 
-    expect(tables).toEqual(["activities", "applications", "companies", "schema_migrations"]);
+    expect(tables).toEqual(["activities", "applications", "companies", "contacts", "schema_migrations"]);
   });
 
   it("make company names unique regardless of case", () => {
@@ -94,7 +94,11 @@ describe("migration 0002 (job details)", () => {
         )
         .run(lastInsertRowid, now, now, now);
 
-      expect(migrate(oldDb, migrationsDir)).toEqual(["0002_add_job_details.sql", "0003_create_activities.sql"]);
+      expect(migrate(oldDb, migrationsDir)).toEqual([
+        "0002_add_job_details.sql",
+        "0003_create_activities.sql",
+        "0004_create_contacts.sql",
+      ]);
       const row = oldDb.prepare(`SELECT job_title, ${detailColumns.join(", ")} FROM applications`).get();
       expect(row).toEqual({ job_title: "Engineer", ...Object.fromEntries(detailColumns.map((column) => [column, null])) });
     } finally {
@@ -163,5 +167,81 @@ describe("migration 0003 (activities)", () => {
     db.prepare("DELETE FROM applications WHERE id = ?").run(id);
 
     expect(db.prepare("SELECT COUNT(*) AS n FROM activities").get()).toEqual({ n: 0 });
+  });
+});
+
+describe("migration 0004 (contacts)", () => {
+  function addEntry(): { companyId: number; applicationId: number; activityId: number } {
+    const { lastInsertRowid: companyId } = db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+    const { lastInsertRowid: applicationId } = db
+      .prepare(
+        `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+         VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+      )
+      .run(companyId, now, now, now);
+    const { lastInsertRowid: activityId } = db
+      .prepare("INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at) VALUES (?, 'note', '2026-10-01', 'x', ?, ?)")
+      .run(applicationId, now, now);
+    return { companyId: Number(companyId), applicationId: Number(applicationId), activityId: Number(activityId) };
+  }
+
+  const addContact = (companyId: number) =>
+    Number(
+      db.prepare("INSERT INTO contacts (company_id, name, created_at, updated_at) VALUES (?, 'Sam', ?, ?)").run(companyId, now, now)
+        .lastInsertRowid,
+    );
+
+  it("leaves existing entries with no contact (spec 008, AC-12)", () => {
+    const oldDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-old-migrations-"));
+    const oldDb = openDatabase(path.join(tempDir, "old3.db"));
+    try {
+      for (const file of fs.readdirSync(migrationsDir).filter((name) => !name.startsWith("0004"))) {
+        fs.copyFileSync(path.join(migrationsDir, file), path.join(oldDir, file));
+      }
+      migrate(oldDb, oldDir);
+      const { lastInsertRowid: companyId } = oldDb.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+      const { lastInsertRowid: applicationId } = oldDb
+        .prepare(
+          `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+           VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+        )
+        .run(companyId, now, now, now);
+      oldDb
+        .prepare("INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at) VALUES (?, 'note', '2026-10-01', 'kept', ?, ?)")
+        .run(applicationId, now, now);
+
+      expect(migrate(oldDb, migrationsDir)).toEqual(["0004_create_contacts.sql"]);
+      expect(oldDb.prepare("SELECT text, contact_id FROM activities").get()).toEqual({ text: "kept", contact_id: null });
+      expect(oldDb.prepare("SELECT COUNT(*) AS n FROM contacts").get()).toEqual({ n: 0 });
+    } finally {
+      oldDb.close();
+      fs.rmSync(oldDir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a contact at a company that doesn't exist, and an entry naming an unknown contact", () => {
+    const { activityId } = addEntry();
+
+    expect(() => addContact(999)).toThrow(/FOREIGN KEY/);
+    expect(() => db.prepare("UPDATE activities SET contact_id = 999 WHERE id = ?").run(activityId)).toThrow(/FOREIGN KEY/);
+  });
+
+  it("unlinks entries, and keeps them, when a contact is deleted (spec 008, AC-7)", () => {
+    const { companyId, activityId } = addEntry();
+    const contactId = addContact(companyId);
+    db.prepare("UPDATE activities SET contact_id = ? WHERE id = ?").run(contactId, activityId);
+
+    db.prepare("DELETE FROM contacts WHERE id = ?").run(contactId);
+
+    expect(db.prepare("SELECT contact_id FROM activities WHERE id = ?").get(activityId)).toEqual({ contact_id: null });
+  });
+
+  it("keeps a company's contacts when its application is deleted (spec 008 rules)", () => {
+    const { companyId, applicationId } = addEntry();
+    addContact(companyId);
+
+    db.prepare("DELETE FROM applications WHERE id = ?").run(applicationId);
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM contacts").get()).toEqual({ n: 1 });
   });
 });

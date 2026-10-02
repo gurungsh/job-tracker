@@ -14,7 +14,7 @@ import { STAGES, type Stage } from "./stages.ts";
 
 const count = new Intl.NumberFormat("en-US");
 
-function requiredText(label: string, max: number) {
+export function requiredText(label: string, max: number) {
   return z
     .string({ error: `${label} is required` })
     .trim()
@@ -23,7 +23,7 @@ function requiredText(label: string, max: number) {
 }
 
 /** Optional text: trimmed, and stored as null when empty. */
-function optionalText(label: string, max: number) {
+export function optionalText(label: string, max: number) {
   return z
     .string()
     .trim()
