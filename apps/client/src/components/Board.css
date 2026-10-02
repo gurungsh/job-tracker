@@ -38,15 +38,18 @@
   margin: 0.25rem 0.25rem 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
+  /* The stage's own color, from its data-stage (spec 011, AC-1). */
+  color: var(--stage);
 }
 
-.column--closed .column-header {
-  color: var(--text-muted);
+.column-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .column-count {
   font-weight: 400;
-  color: var(--text-muted);
 }
 
 .column-cards {

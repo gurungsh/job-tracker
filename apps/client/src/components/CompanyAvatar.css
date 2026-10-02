@@ -1,0 +1,15 @@
+/* The hue comes from the company name. Lightness is set per theme so the initials stay readable. */
+.company-avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 6px;
+  background: light-dark(hsl(var(--hue) 80% 92%), hsl(var(--hue) 45% 24%));
+  color: light-dark(hsl(var(--hue) 75% 22%), hsl(var(--hue) 85% 85%));
+}

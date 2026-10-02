@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 // Read from disk because the test runner blanks CSS imports.
 const css = fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "styles", "global.css"), "utf8");
+const avatarCss = fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", "CompanyAvatar.css"), "utf8");
 
 /** The `--name: value` pairs of the first rule whose selector is exactly `selector`. */
 function tokens(selector: string): Record<string, string> {
@@ -56,6 +57,72 @@ describe.each([
     const ratio = contrast(theme[foreground] as string, theme[background] as string);
 
     expect(ratio, `${foreground} ${theme[foreground] ?? ""} on ${background} ${theme[background] ?? ""}`).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// Stage colors (spec 011): each [data-stage="…"] rule sets --stage and --stage-soft as light-dark(light, dark).
+const STAGES = ["wishlist", "applied", "screening", "interviewing", "offer", "accepted", "rejected", "withdrawn"] as const;
+
+function stageColors(stage: string): { stage: [string, string]; soft: [string, string] } {
+  const rule = new RegExp(`\\[data-stage="${stage}"\\]\\s*{([^}]*)}`).exec(css);
+  if (!rule) throw new Error(`No stage rule for ${stage}`);
+  const pair = (token: string): [string, string] => {
+    const match = new RegExp(`${token}:\\s*light-dark\\((#[0-9a-fA-F]{6}),\\s*(#[0-9a-fA-F]{6})\\)`).exec(rule[1] ?? "");
+    if (!match) throw new Error(`No ${token} for ${stage}`);
+    return [match[1] as string, match[2] as string];
+  };
+  return { stage: pair("--stage"), soft: pair("--stage-soft") };
+}
+
+describe.each([
+  ["light", 0, light],
+  ["dark", 1, dark],
+] as const)("the stage colors in the %s theme", (_name, index, theme) => {
+  it.each(STAGES)("keeps %s readable on its tint, on a card, and on a column (AC-11)", (stage) => {
+    const colors = stageColors(stage);
+    const text = colors.stage[index];
+
+    expect(contrast(text, colors.soft[index]), `${stage} ${text} on its tint`).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(text, theme["--surface"] as string), `${stage} ${text} on the card`).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(text, theme["--column-bg"] as string), `${stage} ${text} on the column`).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("gives every stage its own color (AC-1)", () => {
+    const colors = STAGES.map((stage) => stageColors(stage).stage[index].toLowerCase());
+
+    expect(new Set(colors).size).toBe(STAGES.length);
+  });
+});
+
+// The company badge (spec 011, AC-5, AC-11): hue(var(--hue) S% L%) for light and dark, tried at all twelve hues.
+function hslToHex(hue: number, saturation: number, lightness: number): string {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  const a = s * Math.min(l, 1 - l);
+  const channelValue = (n: number) => {
+    const k = (n + hue / 30) % 12;
+    return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  const hex = (value: number) => Math.round(value * 255).toString(16).padStart(2, "0");
+  return `#${hex(channelValue(0))}${hex(channelValue(8))}${hex(channelValue(4))}`;
+}
+
+function avatarPair(property: "background" | "color"): { light: [number, number]; dark: [number, number] } {
+  const match = new RegExp(
+    `${property}:\\s*light-dark\\(hsl\\(var\\(--hue\\) (\\d+)% (\\d+)%\\),\\s*hsl\\(var\\(--hue\\) (\\d+)% (\\d+)%\\)\\)`,
+  ).exec(avatarCss);
+  if (!match) throw new Error(`No ${property} rule in CompanyAvatar.css`);
+  return { light: [Number(match[1]), Number(match[2])], dark: [Number(match[3]), Number(match[4])] };
+}
+
+describe.each(["light", "dark"] as const)("the company badge in the %s theme", (theme) => {
+  const background = avatarPair("background")[theme];
+  const text = avatarPair("color")[theme];
+
+  it.each(Array.from({ length: 12 }, (_, i) => i * 30))("keeps the initials readable at hue %i (AC-11)", (hue) => {
+    const ratio = contrast(hslToHex(hue, text[0], text[1]), hslToHex(hue, background[0], background[1]));
+
+    expect(ratio, `hue ${String(hue)}`).toBeGreaterThanOrEqual(4.5);
   });
 });
 

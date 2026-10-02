@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysInStage, formatDate, isOverdue, localDateOf, localToday, timeInStage } from "../../src/lib/dates.ts";
+import { daysInStage, formatDate, isOverdue, localDateOf, localToday, shortTimeInStage, timeInStage } from "../../src/lib/dates.ts";
 
 describe("localToday", () => {
   it("uses the local calendar date, not UTC", () => {
@@ -45,5 +45,21 @@ describe("formatting", () => {
 
   it("finds the local date of a timestamp", () => {
     expect(localDateOf(new Date(2026, 9, 1, 23, 30).toISOString())).toBe("2026-10-01");
+  });
+});
+
+describe("shortTimeInStage (spec 011, AC-9)", () => {
+  it.each([
+    [0, "Today"],
+    [1, "1 day"],
+    [2, "2 days"],
+    [12, "12 days"],
+    [365, "365 days"],
+  ])("says %j days as %j", (days, text) => {
+    expect(shortTimeInStage(days)).toBe(text);
+  });
+
+  it("says Today for a negative count, such as a stage dated a few hours ahead by clock drift", () => {
+    expect(shortTimeInStage(-1)).toBe("Today");
   });
 });

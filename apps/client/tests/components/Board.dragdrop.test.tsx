@@ -58,6 +58,9 @@ describe("Board drag and drop", () => {
     expect(updates(server)[0]?.path).toBe(`/api/applications/${String(server.applications[2]?.id)}`);
     expect(updates(server)[0]?.body).toMatchObject({ companyName: "Moving", jobTitle: "C", stage: "applied", nextStep: "Call", nextStepDue: "2026-11-01" });
     expect(server.applications[2]?.stage).toBe("applied");
+    // The card's badge follows the move (spec 011, AC-10).
+    const moved = within(column("Applied")).getByRole("button", { name: /Moving/ });
+    expect(within(moved).getByText("Applied").getAttribute("data-stage")).toBe("applied");
   });
 
   it.each(["Accepted", "Rejected", "Withdrawn"])("saves a drop into %s without asking (AC-6)", async (label) => {

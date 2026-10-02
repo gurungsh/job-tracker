@@ -2,6 +2,7 @@ import { type Application, type Company, STAGE_LABELS, STAGES, type Stage, isClo
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api.ts";
 import { applicationToInput, sortForBoard } from "../lib/applicationInput.ts";
+import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { ApplicationPanel } from "./ApplicationPanel.tsx";
 import { Card } from "./Card.tsx";
 import { localToday } from "../lib/dates.ts";
@@ -140,10 +141,12 @@ export function Board() {
           // The server sends applications already in board order (spec 002, AC-4).
           const cards = state.applications.filter((application) => application.stage === stage);
           const label = STAGE_LABELS[stage];
+          const StageIcon = STAGE_ICONS[stage];
           return (
             <section
               key={stage}
               aria-label={label}
+              data-stage={stage}
               className={[
                 "column",
                 isClosedStage(stage) && "column--closed",
@@ -171,7 +174,10 @@ export function Board() {
               }}
             >
               <h2 className="column-header">
-                <span>{label}</span> <span className="column-count">{cards.length}</span>
+                <span className="column-title">
+                  <StageIcon size={16} aria-hidden="true" /> <span>{label}</span>
+                </span>{" "}
+                <span className="column-count">{cards.length}</span>
               </h2>
               <div className="column-cards">
                 {cards.map((application) => (

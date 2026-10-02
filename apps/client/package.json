@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@job-tracker/shared": "0.0.0",
+    "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   }

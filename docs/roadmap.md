@@ -49,7 +49,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 008 | Contacts | *(Implemented)* Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 007 |
 | 009 | Requirements checklist | *(Implemented)* List a posting's required and preferred items, and check off the ones I meet. | 002 |
 | 010 | Light and dark themes | *(Implemented)* Switch between a light and a dark theme from the header. It starts from the device's setting and never flashes the wrong theme on load. | 000 |
-| 011 | Stage colors and richer cards | See each stage in its own color and icon. Cards also show a company initials badge, location, work mode, employment type, pay, and time in stage. | 010 |
+| 011 | Stage colors and richer cards | *(Implemented)* See each stage in its own color and icon. Cards also show a company initials badge, location, work mode, employment type, pay, and time in stage. | 010 |
 | 012 | Table view | See all applications in a table with search, filters for stage, work mode and employment type, and sortable columns. Filters live in the page address. A Kanban/Table switch moves between the two views. | 011 |
 | 013 | Application detail page | Click a card to open that application on its own page, with a link back to the board. The page shows the job's details, requirements, timeline, and contacts together, and I can change the stage, edit the application, or delete it from there. It replaces the side panel. | 011, 012 |
 | 014 | App shell and sidebar | Use a sidebar that lists every stage with a live count. Each one opens the table filtered to that stage. The header carries the app name. | 012 |
@@ -107,3 +107,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 009 implemented. All planned specs are done.
 - 2026-10-02: Added specs 010–017 for the UI features.
 - 2026-10-02: Marked 010 implemented.
+- 2026-10-02: Marked 011 implemented.

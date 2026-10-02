@@ -182,7 +182,7 @@ describe("salary summary", () => {
 });
 
 describe("board cards", () => {
-  it("show only the spec 002 content, even with every detail filled in (AC-11)", async () => {
+  it("show the summary line and pay from spec 011, but never the link, source, or description (spec 003 AC-11, changed by spec 011)", async () => {
     installFakeServer([
       {
         ...acme,
@@ -204,7 +204,14 @@ describe("board cards", () => {
 
     const card = await screen.findByRole("button", { name: /Acme Corp/ });
 
-    expect(card.textContent).toBe("Acme CorpEngineerFollow up Oct 5, 2026");
+    expect(card.textContent).toContain("Acme CorpEngineer");
+    expect(card.textContent).toContain("Austin, TX • Remote • Contract · 6 mo");
+    expect(card.textContent).toContain("$140k–$170k/yr");
+    expect(card.textContent).toContain("Follow up");
+    expect(card.textContent).toContain("Oct 5, 2026");
+    expect(card.textContent).not.toContain("jobs.acme.com");
+    expect(card.textContent).not.toContain("LinkedIn");
+    expect(card.textContent).not.toContain("Build things");
   });
 });
 

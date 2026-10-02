@@ -94,4 +94,29 @@ describe("Board", () => {
     expect(await screen.findByRole("button", { name: /Acme/ })).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
   });
+
+  it("shows each column's stage icon, name, and count in the stage's own color (spec 011, AC-1)", async () => {
+    installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "offer" })]);
+
+    render(<Board />);
+
+    const regions = await screen.findAllByRole("region");
+    expect(regions.map((region) => region.getAttribute("data-stage"))).toEqual([...STAGES]);
+    const icons = regions.map((region) => region.querySelector(".column-header svg")?.getAttribute("class"));
+    expect(icons.every(Boolean)).toBe(true);
+    expect(new Set(icons).size).toBe(STAGES.length);
+    const offer = column("Offer").querySelector(".column-header");
+    expect(offer?.textContent.replace(/\s+/g, " ").trim()).toBe("Offer 1");
+    expect(offer?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("gives a card the badge of the column it is in (spec 011, AC-2)", async () => {
+    installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "screening" })]);
+
+    render(<Board />);
+
+    const card = await screen.findByRole("button", { name: /Acme/ });
+    expect(within(column("Screening")).getByRole("button", { name: /Acme/ })).toBe(card);
+    expect(within(card).getByText("Screening").getAttribute("data-stage")).toBe("screening");
+  });
 });

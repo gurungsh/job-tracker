@@ -31,6 +31,12 @@ export function timeInStage(stageLabel: string, days: number): string {
   return `In ${stageLabel} for ${String(days)} ${days === 1 ? "day" : "days"}`;
 }
 
+/** How long a card has been in its stage, for the card's footer: "Today", "1 day", "5 days" (spec 011, AC-9). */
+export function shortTimeInStage(days: number): string {
+  if (days <= 0) return "Today";
+  return days === 1 ? "1 day" : `${String(days)} days`;
+}
+
 /** "2026-10-01" → "Oct 1, 2026" */
 export function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-").map(Number);

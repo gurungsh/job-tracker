@@ -22,3 +22,25 @@ export function salarySummary(min: number | null, max: number | null, period: Sa
   }
   return period ? `${range} ${PER[period]}` : range;
 }
+
+const SHORT_PER: Record<SalaryPeriod, string> = { annual: "/yr", hourly: "/hr" };
+
+/** 140000 → "$140k", 85 → "$85", 92500 → "$92,500". A whole number of thousands from $1,000 up gets a "k". */
+function shortDollars(amount: number): string {
+  return amount >= 1000 && amount % 1000 === 0 ? `$${String(amount / 1000)}k` : formatDollars(amount);
+}
+
+/** A short salary range for a card, such as "$140k–$170k/yr" or "From $85/hr" (spec 011, AC-7). Empty without an amount. */
+export function compactSalary(min: number | null, max: number | null, period: SalaryPeriod | null): string {
+  let range: string;
+  if (min !== null && max !== null) {
+    range = min === max ? shortDollars(min) : `${shortDollars(min)}–${shortDollars(max)}`;
+  } else if (min !== null) {
+    range = `From ${shortDollars(min)}`;
+  } else if (max !== null) {
+    range = `Up to ${shortDollars(max)}`;
+  } else {
+    return "";
+  }
+  return period ? `${range}${SHORT_PER[period]}` : range;
+}
