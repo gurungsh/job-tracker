@@ -26,7 +26,7 @@ describe("the detail page's shell (spec 013)", () => {
 
     expect(await screen.findByRole("heading", { level: 2, name: "Staff Engineer" })).toBeTruthy();
     expect(screen.getByText("Acme Corp")).toBeTruthy();
-    expect(screen.getByText("Hybrid • Contract · 6 mo")).toBeTruthy();
+    expect([...document.querySelectorAll(".detail-header .pill")].map((pill) => pill.textContent)).toEqual(["Hybrid", "Contract · 6 mo"]);
     expect(screen.getByRole("link", { name: "Back to board" }).getAttribute("href")).toBe("/");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -139,19 +139,40 @@ describe("the detail page's sections (spec 013)", () => {
     expect(screen.queryByRole("tablist")).toBeNull();
   });
 
-  it("lists the pay, location, source, next step, applied date, and time in stage as on a card (AC-3)", async () => {
+  it("lists the pay in full, location, source, next step, applied date, and when the stage last changed (spec 016, AC-10)", async () => {
     installFakeServer([full]);
 
     render(<AppAt path={`/applications/${String(full.id)}`} />);
     await screen.findByRole("region", { name: "Details" });
 
-    expect(fact("Stage").textContent).toContain("Screening");
-    expect(fact("Time in stage").textContent).toBe("5 days");
-    expect(fact("Pay").textContent).toBe("$140k–$170k/yr");
+    expect(fact("Pay").textContent).toBe("$140,000 – $170,000/yr");
     expect(fact("Location").textContent).toBe("Austin, TX");
     expect(fact("Source").textContent).toBe("Referral");
     expect(fact("Next step").textContent).toContain("Recruiter call");
     expect(fact("Applied").textContent).toBe("Sep 25, 2026");
+    expect(fact("In stage since").textContent).toBe("Oct 8, 2026, 10:00 AM");
+  });
+
+  it("lists the rows in order, and doesn't repeat the stage, which the menu in the header shows (spec 016, AC-10)", async () => {
+    installFakeServer([{ ...full, closedOn: "2026-10-11" }]);
+
+    render(<AppAt path={`/applications/${String(full.id)}`} />);
+    const details = await screen.findByRole("region", { name: "Details" });
+
+    expect([...details.querySelectorAll("dt")].map((dt) => dt.textContent)).toEqual([
+      "Pay", "Location", "Source", "Posting", "Next step", "Applied", "In stage since", "Closed",
+    ]);
+    expect(fact("Closed").textContent).toBe("Oct 11, 2026");
+    expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Stage" }).value).toBe("screening");
+  });
+
+  it("leaves out the Closed row for an application that isn't closed (spec 016, AC-10)", async () => {
+    installFakeServer([full]);
+
+    render(<AppAt path={`/applications/${String(full.id)}`} />);
+    const details = await screen.findByRole("region", { name: "Details" });
+
+    expect([...details.querySelectorAll("dt")].map((dt) => dt.textContent)).not.toContain("Closed");
   });
 
   it("marks a due date in the past Overdue, and not one that is today or later (AC-3)", async () => {
@@ -173,7 +194,7 @@ describe("the detail page's sections (spec 013)", () => {
     installFakeServer([full]);
     const { unmount } = render(<AppAt path={`/applications/${String(full.id)}`} />);
     await screen.findByRole("region", { name: "Details" });
-    const link = within(fact("Job link")).getByRole("link", { name: /Open posting/ });
+    const link = within(fact("Posting")).getByRole("link", { name: /Open posting/ });
     expect(link.getAttribute("href")).toBe("https://acme.example/jobs/1");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
@@ -183,8 +204,8 @@ describe("the detail page's sections (spec 013)", () => {
     installFakeServer([plain]);
     render(<AppAt path={`/applications/${String(plain.id)}`} />);
     await screen.findByRole("region", { name: "Details" });
-    expect(within(fact("Job link")).queryByRole("link")).toBeNull();
-    expect(fact("Job link").textContent).toBe("javascript:alert(1)");
+    expect(within(fact("Posting")).queryByRole("link")).toBeNull();
+    expect(fact("Posting").textContent).toBe("javascript:alert(1)");
   });
 
   it("shows – for every value that was never entered (AC-3)", async () => {
@@ -194,7 +215,7 @@ describe("the detail page's sections (spec 013)", () => {
     render(<AppAt path={`/applications/${String(bare.id)}`} />);
     await screen.findByRole("region", { name: "Details" });
 
-    for (const label of ["Pay", "Location", "Source", "Job link", "Next step", "Applied"]) {
+    for (const label of ["Pay", "Location", "Source", "Posting", "Next step", "Applied"]) {
       expect(fact(label).textContent, label).toBe("–");
     }
   });
@@ -203,6 +224,11 @@ describe("the detail page's sections (spec 013)", () => {
     expect(/\.detail-page\s*{[^}]*container-type:\s*inline-size/.test(css)).toBe(true);
     expect(css).toMatch(/@container \(max-width: 46rem\)/);
     expect(css).not.toMatch(/@media/);
+    // The header's controls stay on the title's line however long the title is, until the page is very narrow (spec 016, AC-2).
+    expect(/\.detail-header\s*{[^}]*flex-wrap:\s*nowrap/.test(css)).toBe(true);
+    expect(/\.detail-heading\s*{[^}]*flex:\s*1 1 0[^}]*min-width:\s*0/.test(css)).toBe(true);
+    expect(/\.detail-actions\s*{[^}]*flex-shrink:\s*0/.test(css)).toBe(true);
+    expect(/@container \(max-width: 34rem\)\s*{\s*\.detail-header\s*{[^}]*flex-wrap:\s*wrap/.test(css)).toBe(true);
     // Stacked sections fill the page's width, instead of keeping the grid's start alignment.
     expect(/@container[^{]*{[^}]*\.detail-layout\s*{[^}]*align-items:\s*stretch/.test(css)).toBe(true);
   });
@@ -231,7 +257,7 @@ describe("the detail page's sections (spec 013)", () => {
     render(<AppAt path={`/applications/${String(bare.id)}`} />);
 
     expect(await screen.findByText("No description saved.")).toBeTruthy();
-    expect(await screen.findByText(/No contacts yet/)).toBeTruthy();
+    expect(await screen.findByText(/Nobody recorded yet/)).toBeTruthy();
     expect(screen.getByRole("region", { name: "Timeline" })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Requirements" })).toBeTruthy();
   });
@@ -253,7 +279,6 @@ describe("changing the stage from the page (spec 013, AC-5)", () => {
     const timeline = screen.getByRole("region", { name: "Timeline" });
     expect(await within(timeline).findByText(movedText("wishlist", "applied"))).toBeTruthy();
     expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Stage" }).value).toBe("applied");
-    expect(screen.getByRole("region", { name: "Details" }).textContent).toContain("Applied");
     const mine = server.requests.filter((r) => r.path === `/api/applications/${String(wishlisted.id)}`);
     expect(mine.map((r) => r.method)).toEqual(["GET", "GET", "PUT"]);
     expect(mine[2]?.body).toEqual(applicationToInput(wishlisted, { stage: "applied" }));
@@ -269,7 +294,6 @@ describe("changing the stage from the page (spec 013, AC-5)", () => {
 
     expect((await screen.findByRole("alert")).textContent).toBe("Couldn't change the stage. Boom");
     expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Stage" }).value).toBe("wishlist");
-    expect(screen.getByRole("region", { name: "Details" }).textContent).toContain("Wishlist");
   });
 
   it("ends on the last stage chosen after two quick changes", async () => {
@@ -284,7 +308,6 @@ describe("changing the stage from the page (spec 013, AC-5)", () => {
       expect(server.applications[0]?.stage).toBe("screening");
       expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Stage" }).value).toBe("screening");
     });
-    expect(screen.getByRole("region", { name: "Details" }).textContent).toContain("Screening");
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -427,3 +450,39 @@ describe("editing and deleting from the page (spec 013, AC-6, AC-7, AC-8)", () =
     expect(screen.getByRole("heading", { level: 2, name: "Staff Engineer" })).toBeTruthy();
   });
 });
+
+describe("the detail page's header (spec 016, AC-2)", () => {
+  const pills = () => [...document.querySelectorAll(".detail-header .pill")].map((pill) => pill.textContent);
+
+  it("shows the avatar and company name, the job title, and the stage menu, Edit, and Delete on the right", async () => {
+    const app = application({ companyName: "Acme Corp", jobTitle: "Staff Engineer", stage: "interviewing" });
+    installFakeServer([app]);
+
+    render(<AppAt path={`/applications/${String(app.id)}`} />);
+    await screen.findByRole("heading", { level: 2, name: "Staff Engineer" });
+
+    expect(document.querySelector(".detail-company .company-avatar")).not.toBeNull();
+    expect(document.querySelector(".detail-company")?.textContent).toContain("Acme Corp");
+    const actions = document.querySelector(".detail-actions") as HTMLElement;
+    expect([...actions.children].map((child) => child.getAttribute("aria-label") ?? child.textContent)).toEqual(["Stage", "Edit", "Delete"]);
+    expect(within(actions).getByRole<HTMLSelectElement>("combobox", { name: "Stage" }).value).toBe("interviewing");
+    expect(within(actions).getByRole("button", { name: "Delete" }).classList.contains("danger")).toBe(true);
+  });
+
+  it.each([
+    ["both", { workMode: "remote", employmentType: "full_time" }, ["Remote", "Full-time"]],
+    ["only the work mode", { workMode: "onsite" }, ["Onsite"]],
+    ["only the employment type", { employmentType: "contract", contractLengthMonths: 3 }, ["Contract · 3 mo"]],
+    ["neither", {}, []],
+  ] as const)("shows a pill for each of the work mode and employment type that is set: %s", async (_name, fields, expected) => {
+    const app = application({ companyName: "Acme Corp", jobTitle: "Engineer", ...fields });
+    installFakeServer([app]);
+
+    render(<AppAt path={`/applications/${String(app.id)}`} />);
+    await screen.findByRole("heading", { level: 2, name: "Engineer" });
+
+    expect(pills()).toEqual(expected);
+    if (expected.length === 0) expect(document.querySelector(".detail-pills")).toBeNull();
+  });
+});
+

@@ -68,4 +68,30 @@ describe("ThemeToggle", () => {
     expect(children[1]).toContain("Dark theme");
     expect(await screen.findByRole("button", { name: "Add application" })).toBeTruthy();
   });
+
+  it("shows a sun and a moon in a pill, with the current theme on the filled disc (spec 016, AC-11)", async () => {
+    document.documentElement.setAttribute("data-theme", "light");
+    render(<ThemeToggle />);
+    const options = () => [...document.querySelectorAll(".theme-option")];
+
+    expect(options()).toHaveLength(2);
+    expect(options().every((option) => option.querySelector("svg") && option.getAttribute("aria-hidden") === "true")).toBe(true);
+    expect(options().map((option) => option.classList.contains("theme-option--current"))).toEqual([true, false]);
+
+    await userEvent.click(screen.getByRole("button"));
+
+    expect(options().map((option) => option.classList.contains("theme-option--current"))).toEqual([false, true]);
+    expect(screen.getByRole("button", { name: "Light theme" })).toBeTruthy();
+  });
+
+  it("works with Space as well as Enter (spec 016, AC-11)", async () => {
+    document.documentElement.setAttribute("data-theme", "light");
+    render(<ThemeToggle />);
+
+    screen.getByRole("button", { name: "Dark theme" }).focus();
+    await userEvent.keyboard(" ");
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
 });
+

@@ -7,10 +7,13 @@ import {
   activityUpdateSchema,
   fieldErrors,
 } from "@job-tracker/shared";
-import { type SyntheticEvent, useEffect, useId, useState } from "react";
+import { type ReactNode, type SyntheticEvent, useEffect, useId, useState } from "react";
 import { ApiError, api } from "../lib/api.ts";
+import { ACTIVITY_ICONS } from "../lib/activityIcons.ts";
 import { formatDate, localToday } from "../lib/dates.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { EntryActions } from "./EntryActions.tsx";
+import { SectionCard } from "./SectionCard.tsx";
 import "./Timeline.css";
 
 type TimelineProps = {
@@ -32,11 +35,12 @@ function sortEntries(entries: Activity[]): Activity[] {
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/** An application's history: entries I log, and the stage changes the server records (spec 007). */
+/** An application's history, in a card of its own: entries I log, and the stage changes the server records (specs 007 and 016). */
 export function Timeline({ applicationId, companyId, reloadKey }: TimelineProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Several entries can be edited at once, so opening one doesn't throw away what is typed in another (spec 016, edge cases).
+  const [editingIds, setEditingIds] = useState<number[]>([]);
   const [deleting, setDeleting] = useState<Activity | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -74,10 +78,12 @@ export function Timeline({ applicationId, companyId, reloadKey }: TimelineProps)
     }
   }
 
-  if (state.status === "loading") return <p className="timeline-status">Loading…</p>;
+  const card = (body: ReactNode) => <SectionCard title="Timeline">{body}</SectionCard>;
+
+  if (state.status === "loading") return card(<p className="timeline-status">Loading…</p>);
 
   if (state.status === "error") {
-    return (
+    return card(
       <div className="timeline-status" role="alert">
         <p>Couldn't load the timeline. {state.message}</p>
         <button
@@ -89,15 +95,20 @@ export function Timeline({ applicationId, companyId, reloadKey }: TimelineProps)
         >
           Try again
         </button>
-      </div>
+      </div>,
     );
   }
 
-  return (
+  const stopEditing = (id: number) => {
+    setEditingIds((ids) => ids.filter((editing) => editing !== id));
+  };
+
+  return card(
     <div className="timeline">
       <EntryForm
         heading="Add entry"
-        submitLabel="Add entry"
+        submitLabel="Log entry"
+        namesType
         initial={{ type: "note", occurredOn: localToday(), text: "", contactId: null }}
         contacts={state.contacts}
         resetAfterSave
@@ -121,49 +132,32 @@ export function Timeline({ applicationId, companyId, reloadKey }: TimelineProps)
         <ol className="timeline-list">
           {state.entries.map((entry) => (
             <li key={entry.id} className="timeline-entry">
-              {editingId === entry.id ? (
+              {editingIds.includes(entry.id) ? (
                 <EntryForm
                   heading="Edit entry"
                   submitLabel="Save"
                   initial={{ type: entry.type, occurredOn: entry.occurredOn, text: entry.text, contactId: entry.contactId }}
                   contacts={state.contacts}
                   onCancel={() => {
-                    setEditingId(null);
+                    stopEditing(entry.id);
                   }}
                   onSubmit={async (input) => {
                     const updated = await api.updateActivity(entry.id, input);
                     changeEntries((entries) => entries.map((e) => (e.id === entry.id ? updated : e)));
-                    setEditingId(null);
+                    stopEditing(entry.id);
                   }}
                 />
               ) : (
-                <>
-                  <div className="timeline-entry-head">
-                    <span className="timeline-type">{ACTIVITY_TYPE_LABELS[entry.type]}</span>
-                    <time dateTime={entry.occurredOn}>{formatDate(entry.occurredOn)}</time>
-                  </div>
-                  {entry.contactName && <p className="timeline-contact">with {entry.contactName}</p>}
-                  <p className="timeline-text">{entry.text}</p>
-                  <div className="timeline-entry-actions">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActionError(null);
-                        setEditingId(entry.id);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleting(entry);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </>
+                <EntryRow
+                  entry={entry}
+                  onEdit={() => {
+                    setActionError(null);
+                    setEditingIds((ids) => [...ids, entry.id]);
+                  }}
+                  onDelete={() => {
+                    setDeleting(entry);
+                  }}
+                />
               )}
             </li>
           ))}
@@ -183,6 +177,32 @@ export function Timeline({ applicationId, companyId, reloadKey }: TimelineProps)
           }}
         />
       )}
+    </div>,
+  );
+}
+
+/** One entry: a round mark for its type on the timeline's line, its text, a muted date line, and Edit and ✕ (spec 016, AC-4, AC-8). */
+function EntryRow({ entry, onEdit, onDelete }: { entry: Activity; onEdit: () => void; onDelete: () => void }) {
+  const Icon = ACTIVITY_ICONS[entry.type];
+  return (
+    <div className="timeline-row">
+      <span className="timeline-mark">
+        <Icon size={16} aria-hidden="true" />
+        <span className="visually-hidden">{ACTIVITY_TYPE_LABELS[entry.type]}</span>
+      </span>
+      <div className="timeline-body">
+        <p className="timeline-text">{entry.text}</p>
+        <p className="timeline-meta">
+          <time dateTime={entry.occurredOn}>{formatDate(entry.occurredOn)}</time>
+          {entry.contactName && (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span className="timeline-contact">with {entry.contactName}</span>
+            </>
+          )}
+        </p>
+      </div>
+      <EntryActions what="entry" text={entry.text} onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 }
@@ -195,6 +215,8 @@ type EntryFormProps = {
   initial: EntryValues;
   /** The company's contacts, for the Contact choice. */
   contacts: Contact[];
+  /** The add form's button is named for the chosen type, such as "Log note" (spec 016, AC-7). */
+  namesType?: boolean;
   /** Clear the text and go back to today after a save, for adding several entries in a row. */
   resetAfterSave?: boolean;
   onCancel?: () => void;
@@ -202,13 +224,14 @@ type EntryFormProps = {
 };
 
 /** The form for adding an entry and for editing one. Stage-change entries keep their type, so it isn't offered (AC-8). */
-function EntryForm({ heading, submitLabel, initial, contacts, resetAfterSave = false, onCancel, onSubmit }: EntryFormProps) {
+function EntryForm({ heading, submitLabel, initial, contacts, namesType = false, resetAfterSave = false, onCancel, onSubmit }: EntryFormProps) {
   const id = useId();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const keepsType = initial.type === "stage_change";
+  const buttonLabel = namesType ? `Log ${ACTIVITY_TYPE_LABELS[values.type].toLowerCase()}` : submitLabel;
 
   async function submit(event: SyntheticEvent) {
     event.preventDefault();
@@ -236,6 +259,7 @@ function EntryForm({ heading, submitLabel, initial, contacts, resetAfterSave = f
 
   return (
     <form className="entry-form" aria-label={heading} onSubmit={(event) => void submit(event)} noValidate>
+      <div className="entry-fields">
       {!keepsType && (
         <div className="field">
           <label htmlFor={`${id}-type`}>Type</label>
@@ -256,7 +280,7 @@ function EntryForm({ heading, submitLabel, initial, contacts, resetAfterSave = f
         </div>
       )}
       <div className="field">
-        <label htmlFor={`${id}-contact`}>Contact</label>
+        <label htmlFor={`${id}-contact`}>With</label>
         <select
           id={`${id}-contact`}
           value={values.contactId === null ? "" : String(values.contactId)}
@@ -286,11 +310,13 @@ function EntryForm({ heading, submitLabel, initial, contacts, resetAfterSave = f
         />
         {errors.occurredOn && <p className="field-error">{errors.occurredOn}</p>}
       </div>
+      </div>
       <div className="field">
-        <label htmlFor={`${id}-text`}>Text</label>
+        <label htmlFor={`${id}-text`}>What happened</label>
         <textarea
           id={`${id}-text`}
           rows={3}
+          placeholder="Anything worth remembering…"
           value={values.text}
           aria-invalid={errors.text ? true : undefined}
           onChange={(event) => {
@@ -311,7 +337,7 @@ function EntryForm({ heading, submitLabel, initial, contacts, resetAfterSave = f
           </button>
         )}
         <button type="submit" className="primary" disabled={saving}>
-          {submitLabel}
+          {buttonLabel}
         </button>
       </div>
     </form>

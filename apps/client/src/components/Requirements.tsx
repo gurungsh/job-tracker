@@ -5,11 +5,13 @@ import {
   type RequirementKind,
   fieldErrors,
   requirementInputSchema,
-  requirementsSummary,
+  requiredMetSummary,
 } from "@job-tracker/shared";
-import { type SyntheticEvent, useEffect, useId, useState } from "react";
+import { type ReactNode, type SyntheticEvent, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ApiError, api } from "../lib/api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { EntryActions } from "./EntryActions.tsx";
+import { SectionCard } from "./SectionCard.tsx";
 import "./Requirements.css";
 
 type RequirementsProps = { applicationId: number };
@@ -23,15 +25,19 @@ function sortItems(items: Requirement[]): Requirement[] {
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/** A posting's requirements, with a checkbox for each one I meet (spec 009). */
+/** A posting's requirements, with a checkbox for each one I meet (spec 009), in a card of its own (spec 016). */
 export function Requirements({ applicationId }: RequirementsProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Several rows can be edited at once, so opening one doesn't throw away what is typed in another (spec 016, edge cases).
+  const [editingIds, setEditingIds] = useState<number[]>([]);
+  const [adding, setAdding] = useState(false);
+  const addToggle = useRef<HTMLButtonElement>(null);
+  const wasAdding = useRef(false);
   const [deleting, setDeleting] = useState<Requirement | null>(null);
   const [savingIds, setSavingIds] = useState<number[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
-  // The kind chosen for the last item added stays, for adding several of one kind in a row (AC-3).
+  // The kind chosen for the last item added stays, for adding several of one kind in a row (spec 009, AC-3).
   const [newKind, setNewKind] = useState<RequirementKind>("required");
 
   useEffect(() => {
@@ -48,6 +54,12 @@ export function Requirements({ applicationId }: RequirementsProps) {
       current = false;
     };
   }, [applicationId, loadCount]);
+
+  // When the add form closes its "+ Add" button comes back, and takes focus, so keyboard use isn't lost (spec 016, AC-6).
+  useEffect(() => {
+    if (!adding && wasAdding.current) addToggle.current?.focus();
+    wasAdding.current = adding;
+  }, [adding]);
 
   function changeItems(change: (items: Requirement[]) => Requirement[]) {
     setState((current) => (current.status === "ready" ? { status: "ready", items: sortItems(change(current.items)) } : current));
@@ -77,10 +89,17 @@ export function Requirements({ applicationId }: RequirementsProps) {
     }
   }
 
-  if (state.status === "loading") return <p className="requirements-status">Loading…</p>;
+  const card = (action: ReactNode, body: ReactNode) => (
+    <SectionCard title="Requirements" action={action}>
+      {body}
+    </SectionCard>
+  );
+
+  if (state.status === "loading") return card(null, <p className="requirements-status">Loading…</p>);
 
   if (state.status === "error") {
-    return (
+    return card(
+      null,
       <div className="requirements-status" role="alert">
         <p>Couldn't load the requirements. {state.message}</p>
         <button
@@ -92,27 +111,51 @@ export function Requirements({ applicationId }: RequirementsProps) {
         >
           Try again
         </button>
-      </div>
+      </div>,
     );
   }
 
-  const summary = requirementsSummary(state.items);
+  const summary = requiredMetSummary(state.items);
+  const stopEditing = (id: number) => {
+    setEditingIds((ids) => ids.filter((editing) => editing !== id));
+  };
 
-  return (
+  // "+ Add" is hidden while the form is open, so there is never a second button with the same name (spec 016, AC-6).
+  const addButton = adding ? null : (
+    <button
+      ref={addToggle}
+      type="button"
+      className="text-button"
+      aria-label="Add requirement"
+      onClick={() => {
+        setAdding(true);
+      }}
+    >
+      + Add
+    </button>
+  );
+
+  return card(
+    addButton,
     <div className="requirements">
       {summary && <p className="requirements-summary">{summary}</p>}
 
-      <RequirementForm
-        heading="Add requirement"
-        submitLabel="Add requirement"
-        kind={newKind}
-        onKindChange={setNewKind}
-        resetAfterSave
-        onSubmit={async (input) => {
-          const created = await api.createRequirement(applicationId, input);
-          changeItems((items) => [...items, created]);
-        }}
-      />
+      {adding && (
+        <RequirementForm
+          heading="Add requirement"
+          submitLabel="Save"
+          kind={newKind}
+          onKindChange={setNewKind}
+          onCancel={() => {
+            setAdding(false);
+          }}
+          onSubmit={async (input) => {
+            const created = await api.createRequirement(applicationId, input);
+            changeItems((items) => [...items, created]);
+            setAdding(false);
+          }}
+        />
+      )}
 
       {actionError && (
         <p className="requirements-error" role="alert">
@@ -121,27 +164,27 @@ export function Requirements({ applicationId }: RequirementsProps) {
       )}
 
       {state.items.length === 0 ? (
-        <p className="requirements-status">No requirements yet. Add the items from the posting above.</p>
+        <p className="requirements-status">No requirements yet. Use + Add to list the items from the posting.</p>
       ) : (
         <ul className="requirements-list">
           {state.items.map((item) => (
             <li key={item.id} className="requirement">
-              {editingId === item.id ? (
+              {editingIds.includes(item.id) ? (
                 <RequirementForm
                   heading="Edit requirement"
                   submitLabel="Save"
                   initial={item}
                   onCancel={() => {
-                    setEditingId(null);
+                    stopEditing(item.id);
                   }}
                   onSubmit={async (input) => {
                     const updated = await api.updateRequirement(item.id, { ...input, met: item.met });
                     changeItems((items) => items.map((i) => (i.id === item.id ? updated : i)));
-                    setEditingId(null);
+                    stopEditing(item.id);
                   }}
                 />
               ) : (
-                <>
+                <div className="requirement-row">
                   <label className="requirement-check">
                     <input
                       type="checkbox"
@@ -151,29 +194,20 @@ export function Requirements({ applicationId }: RequirementsProps) {
                     />
                     <span className="requirement-text">{item.text}</span>
                   </label>
-                  <div className="requirement-meta">
-                    <span className="requirement-kind">{REQUIREMENT_KIND_LABELS[item.kind]}</span>
-                    <span className="requirement-actions">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActionError(null);
-                          setEditingId(item.id);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleting(item);
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </span>
-                  </div>
-                </>
+                  {/* Outside the label, so the checkbox keeps the requirement's own text as its name. */}
+                  {item.kind === "preferred" && <span className="pill">Nice to have</span>}
+                  <EntryActions
+                    what="requirement"
+                    text={item.text}
+                    onEdit={() => {
+                      setActionError(null);
+                      setEditingIds((ids) => [...ids, item.id]);
+                    }}
+                    onDelete={() => {
+                      setDeleting(item);
+                    }}
+                  />
+                </div>
               )}
             </li>
           ))}
@@ -193,7 +227,7 @@ export function Requirements({ applicationId }: RequirementsProps) {
           }}
         />
       )}
-    </div>
+    </div>,
   );
 }
 
@@ -205,14 +239,12 @@ type RequirementFormProps = {
   /** When adding, the kind to offer, kept by the parent between additions. */
   kind?: RequirementKind;
   onKindChange?: (kind: RequirementKind) => void;
-  /** Clear the text after a save, for adding several items in a row. */
-  resetAfterSave?: boolean;
   onCancel?: () => void;
   onSubmit: (input: { text: string; kind: RequirementKind }) => Promise<void>;
 };
 
 /** The form for adding a requirement and for editing one. */
-function RequirementForm({ heading, submitLabel, initial, kind, onKindChange, resetAfterSave = false, onCancel, onSubmit }: RequirementFormProps) {
+function RequirementForm({ heading, submitLabel, initial, kind, onKindChange, onCancel, onSubmit }: RequirementFormProps) {
   const id = useId();
   const [text, setText] = useState(initial?.text ?? "");
   const [ownKind, setOwnKind] = useState<RequirementKind>(initial?.kind ?? "required");
@@ -220,6 +252,14 @@ function RequirementForm({ heading, submitLabel, initial, kind, onKindChange, re
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const currentKind = kind ?? ownKind;
+  // The text box is one line tall until the text needs more, and grows to fit it in every browser (spec 016, AC-6).
+  const textBox = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const box = textBox.current;
+    if (!box) return;
+    box.style.height = "auto";
+    if (box.scrollHeight > 0) box.style.height = `${String(box.scrollHeight + box.offsetHeight - box.clientHeight)}px`;
+  }, [text]);
 
   async function submit(event: SyntheticEvent) {
     event.preventDefault();
@@ -234,7 +274,6 @@ function RequirementForm({ heading, submitLabel, initial, kind, onKindChange, re
     setSaving(true);
     try {
       await onSubmit({ text: result.data.text, kind: result.data.kind });
-      if (resetAfterSave) setText("");
     } catch (error) {
       if (error instanceof ApiError && Object.keys(error.fields).length > 0) setErrors(error.fields);
       else setFormError(`Couldn't save the requirement. ${errorText(error)}`);
@@ -245,23 +284,28 @@ function RequirementForm({ heading, submitLabel, initial, kind, onKindChange, re
 
   return (
     <form className="requirement-form" aria-label={heading} onSubmit={(event) => void submit(event)} noValidate>
-      <div className="field">
-        <label htmlFor={`${id}-text`}>Text</label>
+      {/* The text and the kind sit on one line with no visible labels. They keep their names for screen readers (spec 016, AC-6). */}
+      <div className="requirement-fields">
         <textarea
+          ref={textBox}
           id={`${id}-text`}
-          rows={2}
+          aria-label="Text"
+          placeholder="Requirement"
+          rows={1}
+          autoFocus
           value={text}
           aria-invalid={errors.text ? true : undefined}
           onChange={(event) => {
             setText(event.target.value);
           }}
+          onKeyDown={(event) => {
+            // One line tall, like a text field: Enter saves, and Shift+Enter makes a new line.
+            if (event.key === "Enter" && !event.shiftKey) void submit(event);
+          }}
         />
-        {errors.text && <p className="field-error">{errors.text}</p>}
-      </div>
-      <div className="field">
-        <label htmlFor={`${id}-kind`}>Kind</label>
         <select
           id={`${id}-kind`}
+          aria-label="Kind"
           value={currentKind}
           onChange={(event) => {
             const next = event.target.value as RequirementKind;
@@ -275,8 +319,9 @@ function RequirementForm({ heading, submitLabel, initial, kind, onKindChange, re
             </option>
           ))}
         </select>
-        {errors.kind && <p className="field-error">{errors.kind}</p>}
       </div>
+      {errors.text && <p className="field-error">{errors.text}</p>}
+      {errors.kind && <p className="field-error">{errors.kind}</p>}
       {formError && (
         <p className="requirements-error" role="alert">
           {formError}

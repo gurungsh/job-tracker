@@ -1,4 +1,4 @@
-import { Menu, X } from "lucide-react";
+import { Briefcase, Menu, X } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { NARROW_QUERY, useMediaQuery } from "../lib/useMediaQuery.ts";
@@ -80,6 +80,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
             </button>
           )}
+          {/* A logo tile beside the name. It is decoration, and the name is the link (spec 016, AC-11). */}
+          <span className="app-logo" aria-hidden="true">
+            <Briefcase size={20} />
+          </span>
           <h1>
             <Link to="/">Job Tracker</Link>
           </h1>

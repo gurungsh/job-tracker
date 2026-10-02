@@ -44,3 +44,22 @@ export function compactSalary(min: number | null, max: number | null, period: Sa
   }
   return period ? `${range}${SHORT_PER[period]}` : range;
 }
+
+/**
+ * A salary written in full for an application's page, such as "$85,000 – $95,000/yr" or "$85/hr" (spec 016, AC-10).
+ * Empty without an amount. The form's own summary and the cards' wording are separate (specs 003 and 011).
+ */
+export function payLine(min: number | null, max: number | null, period: SalaryPeriod | null): string {
+  let range: string;
+  if (min !== null && max !== null) {
+    range = min === max ? formatDollars(min) : `${formatDollars(min)} – ${formatDollars(max)}`;
+  } else if (min !== null) {
+    range = `From ${formatDollars(min)}`;
+  } else if (max !== null) {
+    range = `Up to ${formatDollars(max)}`;
+  } else {
+    return "";
+  }
+  return period ? `${range}${SHORT_PER[period]}` : range;
+}
+

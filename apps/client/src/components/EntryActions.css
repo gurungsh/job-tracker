@@ -1,0 +1,7 @@
+/* Never shrinks, so a long text beside it wraps instead of pushing the controls away (spec 016, AC-12). */
+.entry-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+}

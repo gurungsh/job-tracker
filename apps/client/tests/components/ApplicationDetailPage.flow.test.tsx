@@ -175,20 +175,22 @@ describe("working with the sections on the page (spec 013, AC-12, AC-16)", () =>
     const requirements = within(screen.getByRole("region", { name: "Requirements" }));
 
     const entryForm = within(await screen.findByRole("form", { name: "Add entry" }));
-    await userEvent.type(entryForm.getByLabelText("Text"), "Phone screen went well");
-    await userEvent.click(entryForm.getByRole("button", { name: "Add entry" }));
+    await userEvent.type(entryForm.getByLabelText("What happened"), "Phone screen went well");
+    await userEvent.click(entryForm.getByRole("button", { name: "Log note" }));
     expect(await timeline.findByText("Phone screen went well")).toBeTruthy();
 
+    await userEvent.click(await contacts.findByRole("button", { name: "Add contact" }));
     const contactForm = within(await contacts.findByRole("form", { name: "Add contact" }));
     await userEvent.type(contactForm.getByLabelText("Name"), "Sam Recruiter");
-    await userEvent.click(contactForm.getByRole("button", { name: "Add contact" }));
+    await userEvent.click(contactForm.getByRole("button", { name: "Save" }));
     expect(await contacts.findByText("Sam Recruiter")).toBeTruthy();
 
+    await userEvent.click(await requirements.findByRole("button", { name: "Add requirement" }));
     const requirementForm = within(await requirements.findByRole("form", { name: "Add requirement" }));
     await userEvent.type(requirementForm.getByLabelText("Text"), "5 years of TypeScript");
-    await userEvent.click(requirementForm.getByRole("button", { name: "Add requirement" }));
+    await userEvent.click(requirementForm.getByRole("button", { name: "Save" }));
     expect(await requirements.findByText("5 years of TypeScript")).toBeTruthy();
-    expect(requirements.getByText("Required: 0 of 1 met")).toBeTruthy();
+    expect(requirements.getByText("0/1 required met")).toBeTruthy();
 
     expect(server.activities.some((a) => a.text === "Phone screen went well")).toBe(true);
     expect(server.contacts.map((c) => c.name)).toEqual(["Sam Recruiter"]);
@@ -199,10 +201,11 @@ describe("working with the sections on the page (spec 013, AC-12, AC-16)", () =>
     installFakeServer([page]);
     render(<AppAt path={`/applications/${String(page.id)}`} />);
     const contacts = within(await screen.findByRole("region", { name: "Contacts" }));
+    await userEvent.click(await contacts.findByRole("button", { name: "Add contact" }));
     const contactForm = within(await contacts.findByRole("form", { name: "Add contact" }));
 
     await userEvent.type(contactForm.getByLabelText("Name"), "Sam Recruiter");
-    await userEvent.click(contactForm.getByRole("button", { name: "Add contact" }));
+    await userEvent.click(contactForm.getByRole("button", { name: "Save" }));
 
     const entryForm = within(await screen.findByRole("form", { name: "Add entry" }));
     expect(await entryForm.findByRole("option", { name: "Sam Recruiter" })).toBeTruthy();
@@ -211,9 +214,9 @@ describe("working with the sections on the page (spec 013, AC-12, AC-16)", () =>
   it("reaches the link back, the stage menu, Edit, Delete, and each section's controls with Tab (AC-16)", async () => {
     installFakeServer([page]);
     render(<AppAt path={`/applications/${String(page.id)}`} />);
-    await screen.findByRole("form", { name: "Add contact" });
+    await screen.findByRole("button", { name: "Add contact" });
     await screen.findByRole("form", { name: "Add entry" });
-    await screen.findByRole("form", { name: "Add requirement" });
+    await screen.findByRole("button", { name: "Add requirement" });
 
     const reached = new Set<Element>();
     for (let i = 0; i < 60; i += 1) {
@@ -226,9 +229,9 @@ describe("working with the sections on the page (spec 013, AC-12, AC-16)", () =>
       screen.getByRole("combobox", { name: "Stage" }),
       screen.getByRole("button", { name: "Edit" }),
       screen.getByRole("button", { name: "Delete" }),
-      within(screen.getByRole("form", { name: "Add requirement" })).getByLabelText("Text"),
-      within(screen.getByRole("form", { name: "Add entry" })).getByLabelText("Text"),
-      within(screen.getByRole("form", { name: "Add contact" })).getByLabelText("Name"),
+      screen.getByRole("button", { name: "Add requirement" }),
+      within(screen.getByRole("form", { name: "Add entry" })).getByLabelText("What happened"),
+      screen.getByRole("button", { name: "Add contact" }),
     ]) {
       expect(reached.has(control), control.outerHTML.slice(0, 60)).toBe(true);
     }
@@ -258,26 +261,27 @@ describe("a half-typed timeline entry (spec 013, AC-5, AC-12)", () => {
     installFakeServer([page]);
     render(<AppAt path={`/applications/${String(page.id)}`} />);
     const entryForm = within(await screen.findByRole("form", { name: "Add entry" }));
-    await userEvent.type(entryForm.getByLabelText("Text"), "Call with the recruiter");
+    await userEvent.type(entryForm.getByLabelText("What happened"), "Call with the recruiter");
 
     const contacts = within(screen.getByRole("region", { name: "Contacts" }));
+    await userEvent.click(await contacts.findByRole("button", { name: "Add contact" }));
     await userEvent.type(await contacts.findByLabelText("Name"), "Sam Recruiter");
-    await userEvent.click(contacts.getByRole("button", { name: "Add contact" }));
+    await userEvent.click(contacts.getByRole("button", { name: "Save" }));
 
     expect(await entryForm.findByRole("option", { name: "Sam Recruiter" })).toBeTruthy();
-    expect(entryForm.getByLabelText<HTMLTextAreaElement>("Text").value).toBe("Call with the recruiter");
+    expect(entryForm.getByLabelText<HTMLTextAreaElement>("What happened").value).toBe("Call with the recruiter");
   });
 
   it("is kept when I change the stage", async () => {
     installFakeServer([page]);
     render(<AppAt path={`/applications/${String(page.id)}`} />);
     const entryForm = within(await screen.findByRole("form", { name: "Add entry" }));
-    await userEvent.type(entryForm.getByLabelText("Text"), "Thinking about next steps");
+    await userEvent.type(entryForm.getByLabelText("What happened"), "Thinking about next steps");
 
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Stage" }), "screening");
 
     const timeline = within(screen.getByRole("region", { name: "Timeline" }));
     expect(await timeline.findByText(movedText("applied", "screening"))).toBeTruthy();
-    expect(entryForm.getByLabelText<HTMLTextAreaElement>("Text").value).toBe("Thinking about next steps");
+    expect(entryForm.getByLabelText<HTMLTextAreaElement>("What happened").value).toBe("Thinking about next steps");
   });
 });

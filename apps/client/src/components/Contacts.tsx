@@ -1,12 +1,13 @@
 import { type Contact, contactInputSchema, fieldErrors } from "@job-tracker/shared";
-import { type SyntheticEvent, useEffect, useId, useState } from "react";
+import { type ReactNode, type SyntheticEvent, useEffect, useId, useRef, useState } from "react";
 import { ApiError, api } from "../lib/api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { EntryActions } from "./EntryActions.tsx";
+import { SectionCard } from "./SectionCard.tsx";
 import "./Contacts.css";
 
 type ContactsProps = {
   companyId: number;
-  companyName: string;
   /** Called after a contact is added, changed, or deleted, so a timeline that offers the contacts can reload (spec 013, AC-12). */
   onChange?: () => void;
 };
@@ -20,11 +21,15 @@ function sortContacts(contacts: Contact[]): Contact[] {
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/** The people at an application's company, shared by every application there (spec 008). */
-export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
+/** The people at an application's company, shared by every application there (spec 008), in a card of its own (spec 016). */
+export function Contacts({ companyId, onChange }: ContactsProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // Several people can be edited at once, so opening one doesn't throw away what is typed in another (spec 016, edge cases).
+  const [editingIds, setEditingIds] = useState<number[]>([]);
+  const [adding, setAdding] = useState(false);
+  const addToggle = useRef<HTMLButtonElement>(null);
+  const wasAdding = useRef(false);
   const [deleting, setDeleting] = useState<Contact | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -42,6 +47,12 @@ export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
       current = false;
     };
   }, [companyId, loadCount]);
+
+  // When the add form closes its "+ Add" button comes back, and takes focus, so keyboard use isn't lost (spec 016, AC-6).
+  useEffect(() => {
+    if (!adding && wasAdding.current) addToggle.current?.focus();
+    wasAdding.current = adding;
+  }, [adding]);
 
   function changeContacts(change: (contacts: Contact[]) => Contact[]) {
     setState((current) =>
@@ -61,10 +72,17 @@ export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
     }
   }
 
-  if (state.status === "loading") return <p className="contacts-status">Loading…</p>;
+  const card = (action: ReactNode, body: ReactNode) => (
+    <SectionCard title="Contacts" action={action}>
+      {body}
+    </SectionCard>
+  );
+
+  if (state.status === "loading") return card(null, <p className="contacts-status">Loading…</p>);
 
   if (state.status === "error") {
-    return (
+    return card(
+      null,
       <div className="contacts-status" role="alert">
         <p>Couldn't load the contacts. {state.message}</p>
         <button
@@ -76,22 +94,46 @@ export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
         >
           Try again
         </button>
-      </div>
+      </div>,
     );
   }
 
-  return (
+  const stopEditing = (id: number) => {
+    setEditingIds((ids) => ids.filter((editing) => editing !== id));
+  };
+
+  // "+ Add" is hidden while the form is open, so there is never a second button with the same name (spec 016, AC-6).
+  const addButton = adding ? null : (
+    <button
+      ref={addToggle}
+      type="button"
+      className="text-button"
+      aria-label="Add contact"
+      onClick={() => {
+        setAdding(true);
+      }}
+    >
+      + Add
+    </button>
+  );
+
+  return card(
+    addButton,
     <div className="contacts">
-      <h3 className="contacts-heading">People at {companyName}</h3>
-      <ContactForm
-        heading="Add contact"
-        submitLabel="Add contact"
-        resetAfterSave
-        onSubmit={async (input) => {
-          const created = await api.createContact(companyId, input);
-          changeContacts((contacts) => [...contacts, created]);
-        }}
-      />
+      {adding && (
+        <ContactForm
+          heading="Add contact"
+          submitLabel="Save"
+          onCancel={() => {
+            setAdding(false);
+          }}
+          onSubmit={async (input) => {
+            const created = await api.createContact(companyId, input);
+            changeContacts((contacts) => [...contacts, created]);
+            setAdding(false);
+          }}
+        />
+      )}
 
       {actionError && (
         <p className="contacts-error" role="alert">
@@ -100,54 +142,50 @@ export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
       )}
 
       {state.contacts.length === 0 ? (
-        <p className="contacts-status">No contacts yet. Add the people you deal with at {companyName} above.</p>
+        <p className="contacts-status">Nobody recorded yet — add the recruiter or hiring manager you're talking to.</p>
       ) : (
         <ul className="contacts-list">
           {state.contacts.map((contact) => (
             <li key={contact.id} className="contact">
-              {editingId === contact.id ? (
+              {editingIds.includes(contact.id) ? (
                 <ContactForm
                   heading="Edit contact"
                   submitLabel="Save"
                   initial={contact}
                   onCancel={() => {
-                    setEditingId(null);
+                    stopEditing(contact.id);
                   }}
                   onSubmit={async (input) => {
                     const updated = await api.updateContact(contact.id, input);
                     changeContacts((contacts) => contacts.map((c) => (c.id === contact.id ? updated : c)));
-                    setEditingId(null);
+                    stopEditing(contact.id);
                   }}
                 />
               ) : (
-                <>
-                  <p className="contact-name">
-                    <strong>{contact.name}</strong>
-                    {contact.role && <span className="contact-role"> · {contact.role}</span>}
-                  </p>
-                  {contact.email && <p className="contact-line">{contact.email}</p>}
-                  {contact.phone && <p className="contact-line">{contact.phone}</p>}
-                  {contact.notes && <p className="contact-notes">{contact.notes}</p>}
-                  <div className="contact-actions">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActionError(null);
-                        setEditingId(contact.id);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleting(contact);
-                      }}
-                    >
-                      Delete
-                    </button>
+                <div className="contact-row">
+                  <div className="contact-info">
+                    <p className="contact-name">{contact.name}</p>
+                    {contact.role && <p className="contact-role">{contact.role}</p>}
+                    {contact.email && (
+                      <p className="contact-line">
+                        <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                      </p>
+                    )}
+                    {contact.phone && <p className="contact-line">{contact.phone}</p>}
+                    {contact.notes && <p className="contact-notes">{contact.notes}</p>}
                   </div>
-                </>
+                  <EntryActions
+                    what="contact"
+                    text={contact.name}
+                    onEdit={() => {
+                      setActionError(null);
+                      setEditingIds((ids) => [...ids, contact.id]);
+                    }}
+                    onDelete={() => {
+                      setDeleting(contact);
+                    }}
+                  />
+                </div>
               )}
             </li>
           ))}
@@ -167,7 +205,7 @@ export function Contacts({ companyId, companyName, onChange }: ContactsProps) {
           }}
         />
       )}
-    </div>
+    </div>,
   );
 }
 
@@ -184,8 +222,6 @@ type ContactFormProps = {
   heading: string;
   submitLabel: string;
   initial?: Contact;
-  /** Clear the form after a save, for adding several contacts in a row. */
-  resetAfterSave?: boolean;
   onCancel?: () => void;
   onSubmit: (input: ContactValues) => Promise<void>;
 };
@@ -198,11 +234,12 @@ const FIELDS: { name: keyof ContactValues; label: string }[] = [
 ];
 
 /** The form for adding a contact and for editing one. */
-function ContactForm({ heading, submitLabel, initial, resetAfterSave = false, onCancel, onSubmit }: ContactFormProps) {
+function ContactForm({ heading, submitLabel, initial, onCancel, onSubmit }: ContactFormProps) {
   const id = useId();
-  const empty: ContactValues = { name: "", role: "", email: "", phone: "", notes: "" };
   const [values, setValues] = useState<ContactValues>(
-    initial ? { name: initial.name, role: initial.role ?? "", email: initial.email ?? "", phone: initial.phone ?? "", notes: initial.notes ?? "" } : empty,
+    initial
+      ? { name: initial.name, role: initial.role ?? "", email: initial.email ?? "", phone: initial.phone ?? "", notes: initial.notes ?? "" }
+      : { name: "", role: "", email: "", phone: "", notes: "" },
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -221,7 +258,6 @@ function ContactForm({ heading, submitLabel, initial, resetAfterSave = false, on
     setSaving(true);
     try {
       await onSubmit(values);
-      if (resetAfterSave) setValues(empty);
     } catch (error) {
       if (error instanceof ApiError && Object.keys(error.fields).length > 0) setErrors(error.fields);
       else setFormError(`Couldn't save the contact. ${errorText(error)}`);
@@ -240,6 +276,7 @@ function ContactForm({ heading, submitLabel, initial, resetAfterSave = false, on
             value={values[name]}
             aria-invalid={errors[name] ? true : undefined}
             autoComplete="off"
+            autoFocus={name === "name"}
             onChange={(event) => {
               setValues({ ...values, [name]: event.target.value });
             }}

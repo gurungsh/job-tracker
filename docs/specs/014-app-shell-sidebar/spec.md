@@ -27,11 +27,11 @@ To see how many applications are at a stage, or to look at just one stage, I hav
 ## Non-goals (out of scope)
 
 - Moving the Add application button. It stays in the board's toolbar. A later spec moves it into the left navigation bar, which shares this column.
-- Other sidebar entries, such as a link to a user guide or to settings. Spec 018 adds the guide link to the header.
+- Other sidebar entries, such as a link to a user guide or to settings. Spec 020 adds the guide link to the header.
 - Collapsing or resizing the sidebar on a wide screen, or remembering whether it was open.
 - Dragging a card onto a sidebar entry to change its stage.
 - Counts that follow the table's search or other filters. The counts are always totals for the stage.
-- A stage filter on the board (spec 016).
+- A stage filter on the board (spec 018).
 - New fields, new stages, or any change to what the board, table, or detail page show or do, other than the frame around them.
 
 ## User stories
@@ -133,3 +133,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Implemented.
 - 2026-10-02: The guide link is now spec 018 and the board stage filter spec 016, because the Add button in the sidebar became spec 015. The Add button still moves into this spec's left column, in spec 015. Nothing else changed.
 - 2026-10-02: Spec 015 moved the Add application button into this spec's left column, above the stage list, on every screen, and to the top of the drawer on a narrow screen. Where the non-goal and AC-12 say it stays in the board's toolbar, read the sidebar's button.
+- 2026-10-02: The guide link is now spec 020 and the board stage filter spec 018, because specs 016 and 017 were added before them. Nothing else changed.

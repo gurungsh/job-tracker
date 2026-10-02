@@ -42,6 +42,20 @@ describe("the app shell (spec 014)", () => {
     expect(screen.getByRole("button", { name: /theme/ })).toBeTruthy();
   });
 
+  it("has a logo tile beside the app name, which is still the link to the board (spec 016, AC-11)", async () => {
+    installFakeServer([acme]);
+    renderAt("/");
+    await screen.findByRole("button", { name: /Acme Corp/ });
+
+    const logo = document.querySelector(".app-logo") as HTMLElement;
+    expect(logo.querySelector("svg")).not.toBeNull();
+    expect(logo.getAttribute("aria-hidden")).toBe("true");
+    const link = screen.getByRole("link", { name: "Job Tracker" });
+    expect(logo.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(logo.parentElement).toBe(link.closest(".app-header-start"));
+    expect(link.getAttribute("href")).toBe("/");
+  });
+
   it("puts the sidebar beside the page's main area, not inside it", async () => {
     installFakeServer([acme]);
     renderAt("/");

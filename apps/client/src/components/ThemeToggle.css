@@ -1,6 +1,23 @@
-.theme-toggle {
+/* A pill holding a sun and a moon. The current theme sits on a filled disc, so it doesn't rest on color alone. */
+button.theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  white-space: nowrap;
+  gap: 0.125rem;
+  padding: 0.2rem;
+  background: var(--surface);
+  border-radius: 999px;
+}
+
+.theme-option {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  color: var(--text-muted);
+  border-radius: 50%;
+}
+
+.theme-option--current {
+  color: var(--accent-text);
+  background: var(--accent);
 }

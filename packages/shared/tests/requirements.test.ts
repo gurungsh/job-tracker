@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fieldErrors, requirementInputSchema, requirementsSummary } from "../src/index.ts";
+import { fieldErrors, requirementInputSchema, requiredMetSummary } from "../src/index.ts";
 
 describe("requirementInputSchema", () => {
   it("accepts text and a kind, trims the text, and starts unmet (AC-3)", () => {
@@ -29,21 +29,25 @@ describe("requirementInputSchema", () => {
   });
 });
 
-describe("requirementsSummary", () => {
+describe("requiredMetSummary (spec 016, AC-3)", () => {
   const item = (kind: "required" | "preferred", met: boolean) => ({ kind, met });
 
-  it("counts each kind, required first (AC-6)", () => {
+  it("counts the required ones that are met, out of the required ones", () => {
     const items = [item("preferred", true), item("required", true), item("required", false), item("preferred", false), item("required", true)];
 
-    expect(requirementsSummary(items)).toBe("Required: 2 of 3 met · Preferred: 1 of 2 met");
+    expect(requiredMetSummary(items)).toBe("2/3 required met");
   });
 
-  it("leaves out a kind with no items (AC-6)", () => {
-    expect(requirementsSummary([item("preferred", false)])).toBe("Preferred: 0 of 1 met");
-    expect(requirementsSummary([item("required", true)])).toBe("Required: 1 of 1 met");
+  it("never counts a preferred one, met or not", () => {
+    expect(requiredMetSummary([item("required", false), item("preferred", true), item("preferred", true)])).toBe("0/1 required met");
   });
 
-  it("is empty when there are no items (AC-6)", () => {
-    expect(requirementsSummary([])).toBe("");
+  it("is empty with no required ones, including when there are only preferred ones", () => {
+    expect(requiredMetSummary([item("preferred", false)])).toBe("");
+    expect(requiredMetSummary([])).toBe("");
+  });
+
+  it("says when all of them are met", () => {
+    expect(requiredMetSummary([item("required", true)])).toBe("1/1 required met");
   });
 });

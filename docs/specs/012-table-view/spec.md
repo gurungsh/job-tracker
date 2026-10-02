@@ -31,7 +31,7 @@ The board is good for seeing where each application is, but it can't answer ques
 - Choosing which columns to show, resizing or reordering columns, or saving named views.
 - Paging. All matching rows show on one page.
 - Remembering the last view used. The board is where the app opens.
-- The application detail page (spec 013), the sidebar (spec 014), and a stage filter on the board (spec 016).
+- The application detail page (spec 013), the sidebar (spec 014), and a stage filter on the board (spec 018).
 
 ## User stories
 
@@ -181,3 +181,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Spec 014 added a sidebar whose entries open this table filtered to one stage, with the search, other filters, and sort cleared, or unfiltered from "All applications". The table's own address, filters, and switch work as before, and the table still has no Add button, which moves with the later navigation bar.
 - 2026-10-02: The stage filter on the board is now spec 016, because the Add button in the sidebar became spec 015. Nothing else changed.
 - 2026-10-02: Spec 015 put the Add application button at the top of the sidebar, so adding now works from the table too. The non-goal that says the table has no Add button no longer applies. Saving from the table keeps its search, filters, and sort, and shows the new row only if it matches them.
+- 2026-10-02: The stage filter on the board is now spec 018, because specs 016 and 017 were added before it. Nothing else changed.

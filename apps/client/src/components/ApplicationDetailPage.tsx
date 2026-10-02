@@ -1,17 +1,17 @@
 import { type Application, type Company, STAGES, STAGE_LABELS, type Stage, WORK_MODE_LABELS, isValidJobLink } from "@job-tracker/shared";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ApiError, api } from "../lib/api.ts";
 import { applicationToInput } from "../lib/applicationInput.ts";
-import { daysInStage, formatDate, isOverdue, localToday, shortTimeInStage } from "../lib/dates.ts";
+import { formatDate, formatDateTime, isOverdue, localToday } from "../lib/dates.ts";
 import { employmentLabel } from "../lib/jobSummary.ts";
-import { compactSalary } from "../lib/salary.ts";
-import { STAGE_ICONS } from "../lib/stageIcons.ts";
+import { payLine } from "../lib/salary.ts";
 import { useApplicationsStore } from "../lib/useApplications.tsx";
 import { readOrigin } from "../lib/viewOrigin.ts";
 import { ApplicationDialog } from "./ApplicationDialog.tsx";
 import { CompanyAvatar } from "./CompanyAvatar.tsx";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { SectionCard } from "./SectionCard.tsx";
 import { Contacts } from "./Contacts.tsx";
 import { Requirements } from "./Requirements.tsx";
 import { Timeline } from "./Timeline.tsx";
@@ -160,9 +160,8 @@ function Detail({ id }: { id: number }) {
   }
 
   const { application } = state;
-  const kind = [application.workMode ? WORK_MODE_LABELS[application.workMode] : null, employmentLabel(application)]
-    .filter(Boolean)
-    .join(" • ");
+  // The work mode and the employment type, each as a small pill, for each one that is set (spec 016, AC-2).
+  const pills = [application.workMode ? WORK_MODE_LABELS[application.workMode] : null, employmentLabel(application)].filter(Boolean);
 
   return (
     <div className="detail-page">
@@ -176,7 +175,15 @@ function Detail({ id }: { id: number }) {
             {application.companyName}
           </span>
           <h2 className="detail-title">{application.jobTitle}</h2>
-          {kind && <p className="detail-kind">{kind}</p>}
+          {pills.length > 0 && (
+            <div className="detail-pills">
+              {pills.map((label) => (
+                <span key={label} className="pill">
+                  {label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <div className="detail-actions">
           <select
@@ -213,33 +220,26 @@ function Detail({ id }: { id: number }) {
 
       <div className="detail-layout">
         <div className="detail-main">
-          <Section title="Requirements">
-            <Requirements applicationId={application.id} />
-          </Section>
-          <Section title="Timeline">
-            <Timeline reloadKey={timelineKey} applicationId={application.id} companyId={application.companyId} />
-          </Section>
-          <Section title="Job description">
+          <Requirements applicationId={application.id} />
+          <Timeline reloadKey={timelineKey} applicationId={application.id} companyId={application.companyId} />
+          <SectionCard title="Job description">
             {application.jobDescription ? (
               <p className="detail-description">{application.jobDescription}</p>
             ) : (
               <p className="detail-empty">No description saved.</p>
             )}
-          </Section>
+          </SectionCard>
         </div>
         <div className="detail-side">
-          <Section title="Details" className="detail-section--details">
+          <SectionCard title="Details" className="detail-section--details">
             <Facts application={application} />
-          </Section>
-          <Section title="Contacts">
-            <Contacts
-              companyId={application.companyId}
-              companyName={application.companyName}
-              onChange={() => {
-                setTimelineKey((count) => count + 1);
-              }}
-            />
-          </Section>
+          </SectionCard>
+          <Contacts
+            companyId={application.companyId}
+            onChange={() => {
+              setTimelineKey((count) => count + 1);
+            }}
+          />
         </div>
       </div>
 
@@ -274,34 +274,20 @@ function Detail({ id }: { id: number }) {
   );
 }
 
-function Section({ title, className, children }: { title: string; className?: string; children: ReactNode }) {
-  const id = useId();
-  return (
-    <section className={className ? `detail-section ${className}` : "detail-section"} aria-labelledby={id}>
-      <h3 id={id}>{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-/** The application's facts as labels and values. A value that was never entered shows "–" (spec 013, AC-3). */
+/**
+ * The application's facts as labels and values. A value that was never entered shows "–" (spec 013, AC-3). The stage is
+ * in the header's menu, so it isn't repeated here (spec 016, AC-10).
+ */
 function Facts({ application }: { application: Application }) {
-  const StageIcon = STAGE_ICONS[application.stage];
-  const pay = compactSalary(application.salaryMin, application.salaryMax, application.salaryPeriod);
+  const pay = payLine(application.salaryMin, application.salaryMax, application.salaryPeriod);
   const { nextStep, nextStepDue, jobLink } = application;
   const overdue = nextStepDue !== null && isOverdue(nextStepDue, localToday());
   return (
     <dl className="detail-facts">
-      <Fact label="Stage">
-        <span className="detail-stage" data-stage={application.stage}>
-          <StageIcon size={16} aria-hidden="true" /> {STAGE_LABELS[application.stage]}
-        </span>
-      </Fact>
-      <Fact label="Time in stage">{shortTimeInStage(daysInStage(application.stageChangedAt))}</Fact>
       <Fact label="Pay">{pay || null}</Fact>
       <Fact label="Location">{application.location}</Fact>
       <Fact label="Source">{application.source}</Fact>
-      <Fact label="Job link">
+      <Fact label="Posting">
         {jobLink &&
           (isValidJobLink(jobLink) ? (
             <a href={jobLink} target="_blank" rel="noopener noreferrer">
@@ -324,6 +310,7 @@ function Facts({ application }: { application: Application }) {
         )}
       </Fact>
       <Fact label="Applied">{application.appliedOn && formatDate(application.appliedOn)}</Fact>
+      <Fact label="In stage since">{formatDateTime(application.stageChangedAt)}</Fact>
       {application.closedOn && <Fact label="Closed">{formatDate(application.closedOn)}</Fact>}
     </dl>
   );

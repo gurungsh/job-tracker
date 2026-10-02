@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysInStage, formatDate, isOverdue, localDateOf, localToday, shortTimeInStage, timeInStage } from "../../src/lib/dates.ts";
+import { daysInStage, formatDate, formatDateTime, isOverdue, localDateOf, localToday, shortTimeInStage, timeInStage } from "../../src/lib/dates.ts";
 
 describe("localToday", () => {
   it("uses the local calendar date, not UTC", () => {
@@ -63,3 +63,17 @@ describe("shortTimeInStage (spec 011, AC-9)", () => {
     expect(shortTimeInStage(-1)).toBe("Today");
   });
 });
+
+describe("formatDateTime (spec 016, AC-10)", () => {
+  it("writes the date and the time in this computer's time zone", () => {
+    expect(formatDateTime(new Date(2026, 9, 1, 4, 53).toISOString())).toBe("Oct 1, 2026, 4:53 AM");
+    expect(formatDateTime(new Date(2026, 11, 25, 15, 5).toISOString())).toBe("Dec 25, 2026, 3:05 PM");
+  });
+
+  it("uses a plain space before AM and PM, and says noon and midnight clearly", () => {
+    expect(formatDateTime(new Date(2026, 0, 2, 12, 0).toISOString())).toBe("Jan 2, 2026, 12:00 PM");
+    expect(formatDateTime(new Date(2026, 0, 2, 0, 0).toISOString())).toBe("Jan 2, 2026, 12:00 AM");
+    expect(formatDateTime(new Date(2026, 0, 2, 9, 30).toISOString())).not.toContain("\u202f");
+  });
+});
+

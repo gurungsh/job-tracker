@@ -38,6 +38,17 @@
   padding: 0.35rem;
 }
 
+.app-logo {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--accent-text);
+  background: var(--accent);
+  border-radius: var(--radius);
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 1.25rem;

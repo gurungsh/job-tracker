@@ -110,3 +110,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Approved.
 - 2026-10-02: Implementation started.
 - 2026-10-02: Implemented.
+- 2026-10-02: Spec 016 changed how the theme button looks. It is now a sun and a moon in a pill, with the current theme on a filled disc, instead of a glyph and the word "Dark theme" or "Light theme". Its accessible name is unchanged, so AC-1 holds, and it still works with Enter and Space.

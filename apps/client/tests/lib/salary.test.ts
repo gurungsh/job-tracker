@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactSalary, formatDollars, salarySummary } from "../../src/lib/salary.ts";
+import { compactSalary, formatDollars, payLine, salarySummary } from "../../src/lib/salary.ts";
 
 describe("formatDollars", () => {
   it("adds a dollar sign and commas", () => {
@@ -57,3 +57,24 @@ describe("compactSalary (spec 011, AC-7)", () => {
     expect(compactSalary(140_000, 170_000, null)).toBe("$140k–$170k");
   });
 });
+
+describe("payLine (spec 016, AC-10)", () => {
+  it.each([
+    [85_000, 95_000, "annual", "$85,000 – $95,000/yr"],
+    [85, 95, "hourly", "$85 – $95/hr"],
+    [140_000, 140_000, "annual", "$140,000/yr"],
+    [85, null, "hourly", "From $85/hr"],
+    [85_000, null, "annual", "From $85,000/yr"],
+    [null, 95_000, "annual", "Up to $95,000/yr"],
+    [85_000, 95_000, null, "$85,000 – $95,000"],
+    [92_500, null, null, "From $92,500"],
+  ] as const)("writes %j to %j with period %j as %j", (min, max, period, text) => {
+    expect(payLine(min, max, period)).toBe(text);
+  });
+
+  it("is empty without an amount, even with a period", () => {
+    expect(payLine(null, null, null)).toBe("");
+    expect(payLine(null, null, "annual")).toBe("");
+  });
+});
+

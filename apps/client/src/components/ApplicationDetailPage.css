@@ -21,15 +21,18 @@
   color: var(--accent);
 }
 
+/* The stage menu, Edit, and Delete stay on the title's line, however long the title is. The title takes what is left and
+   wraps inside it, and the controls keep their size (spec 016, AC-2). */
 .detail-header {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
 }
 
 .detail-heading {
+  flex: 1 1 0;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -47,9 +50,11 @@
   font-size: 1.5rem;
 }
 
-.detail-kind {
-  margin: 0.25rem 0 0;
-  color: var(--text-muted);
+.detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
 }
 
 .detail-layout {
@@ -65,21 +70,6 @@
   flex-direction: column;
   gap: 1rem;
   min-width: 0;
-}
-
-.detail-section {
-  min-width: 0;
-  /* A very long word, such as a long company name in the Contacts heading, wraps instead of widening the page (AC-15). */
-  overflow-wrap: anywhere;
-  padding: 1rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.detail-section > h3 {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
 }
 
 .detail-description {
@@ -119,17 +109,19 @@
 .detail-fact a {
   color: var(--accent);
 }
-
-.detail-stage {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--stage);
-  font-weight: 600;
-}
-
 .detail-overdue {
   color: var(--overdue);
+}
+
+/* On a very narrow page, such as a phone, the controls go under the title instead of squeezing it. */
+@container (max-width: 34rem) {
+  .detail-header {
+    flex-wrap: wrap;
+  }
+
+  .detail-heading {
+    flex-basis: 100%;
+  }
 }
 
 /* When the page is narrow, such as on a phone or beside the sidebar on a small window, the sections stack in one column, with Details first (spec 013, AC-15). */
@@ -159,9 +151,18 @@
 
 .detail-actions {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* The stage menu looks like the other fields, with the same border and corners (spec 016, AC-2). */
+.detail-actions select {
+  padding: 0.4rem 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
 .detail-error {

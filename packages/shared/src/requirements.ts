@@ -32,12 +32,13 @@ export type Requirement = {
   updatedAt: string;
 };
 
-/** "Required: 3 of 5 met · Preferred: 1 of 2 met". A kind with no items is left out, and no items gives an empty string (spec 009, AC-6). */
-export function requirementsSummary(requirements: readonly Pick<Requirement, "kind" | "met">[]): string {
-  return REQUIREMENT_KINDS.flatMap((kind) => {
-    const items = requirements.filter((r) => r.kind === kind);
-    if (items.length === 0) return [];
-    const met = items.filter((r) => r.met).length;
-    return [`${REQUIREMENT_KIND_LABELS[kind]}: ${String(met)} of ${String(items.length)} met`];
-  }).join(" · ");
+/**
+ * "2/3 required met". Only required requirements count, and a preferred one never does. With no required ones the
+ * result is an empty string (spec 016, AC-3).
+ */
+export function requiredMetSummary(requirements: readonly Pick<Requirement, "kind" | "met">[]): string {
+  const required = requirements.filter((r) => r.kind === "required");
+  if (required.length === 0) return "";
+  const met = required.filter((r) => r.met).length;
+  return `${String(met)}/${String(required.length)} required met`;
 }

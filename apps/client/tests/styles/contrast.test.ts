@@ -160,8 +160,9 @@ describe("the detail page styles", () => {
 // and an entry that is hovered or selected sits on --column-bg. Its text is --text, a stage's color, or --text-muted,
 // and every one of those pairings is checked above, in both themes.
 describe("the app shell styles", () => {
-  const checkedTextTokens = ["--text", "--text-muted", "--accent", "--stage"];
-  const files = ["AppShell.css", "Sidebar.css"];
+  // --accent-text is the text on an --accent background, such as the logo tile and the theme switch's current disc.
+  const checkedTextTokens = ["--text", "--text-muted", "--accent", "--accent-text", "--stage"];
+  const files = ["AppShell.css", "Sidebar.css", "ThemeToggle.css"];
   const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", file), "utf8");
 
   it.each(files)("%s uses only color tokens (AC-11)", (file) => {
@@ -208,6 +209,64 @@ describe("the Add application button", () => {
 
   it("leaves nothing of the board's old toolbar in its styles (AC-11)", () => {
     expect(read("components/Board.css")).not.toContain("board-toolbar");
+  });
+});
+
+// The redesigned boxes on an application's page (spec 016, AC-1, AC-4, AC-12) add no colors of their own. Their text is
+// one of the tokens below, each paired with --surface or --column-bg in the checked pairs above, and the ✕ and Edit
+// buttons only change to pairs that are checked too.
+describe("the redesigned detail page styles", () => {
+  const files = ["SectionCard.css", "EntryActions.css", "Requirements.css", "Timeline.css", "Contacts.css", "ApplicationDetailPage.css"];
+  const allowedText = ["--text", "--text-muted", "--accent", "--danger", "--overdue", "--stage"];
+  const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", file), "utf8");
+
+  it.each(files)("%s uses only color tokens, and sets text only in colors whose contrast is checked (AC-1)", (file) => {
+    const source = read(`components/${file}`);
+    const used = [...source.matchAll(/(?<![-\w])color:\s*var\((--[\w-]+)\)/g)].map((match) => match[1] as string);
+
+    expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    for (const token of used) expect(allowedText, token).toContain(token);
+  });
+
+  it("styles the Edit and ✕ buttons with checked pairs: muted on the card, then --text on --column-bg, and --danger on --danger-bg (AC-4)", () => {
+    const css = read("styles/global.css");
+
+    expect(css).toMatch(/button\.text-button\s*{[^}]*color:\s*var\(--text-muted\)/);
+    expect(css).toMatch(/button\.text-button:hover\s*{[^}]*color:\s*var\(--text\)[^}]*background:\s*var\(--column-bg\)/);
+    expect(css).toMatch(/button\.icon-button\s*{[^}]*color:\s*var\(--text-muted\)/);
+    expect(css).toMatch(/button\.icon-button:hover\s*{[^}]*color:\s*var\(--danger\)[^}]*background:\s*var\(--danger-bg\)/);
+  });
+
+  it("shows the hover and focus label as --bg on --text, the page's own text and background pair, reversed (AC-4)", () => {
+    const css = read("styles/global.css");
+
+    expect(css).toMatch(/\[data-tip\]::after\s*{[^}]*color:\s*var\(--bg\)[^}]*background:\s*var\(--text\)/);
+    expect(css).toMatch(/button\.icon-button\.icon-button--edit:hover\s*{[^}]*color:\s*var\(--text\)[^}]*background:\s*var\(--column-bg\)/);
+  });
+
+  it("gives the ✕ a target of at least 2rem, with the app's focus ring left in place (AC-4, AC-12)", () => {
+    const css = read("styles/global.css");
+
+    expect(css).toMatch(/button\.icon-button\s*{[^}]*width:\s*2rem[^}]*height:\s*2rem/);
+    expect(css).toMatch(/:focus-visible\s*{[^}]*outline:\s*2px solid var\(--accent\)/);
+  });
+
+  it("marks a pill in muted text on --column-bg, a checked pair (AC-2, AC-3)", () => {
+    expect(read("styles/global.css")).toMatch(/\.pill\s*{[^}]*color:\s*var\(--text-muted\)[^}]*background:\s*var\(--column-bg\)/);
+  });
+
+  it("lets an entry's text wrap and shrink while its controls keep their size, so a long text can't push them away (AC-12)", () => {
+    expect(read("components/EntryActions.css")).toMatch(/\.entry-actions\s*{[^}]*flex-shrink:\s*0/);
+    expect(read("components/Timeline.css")).toMatch(/\.timeline-body\s*{[^}]*min-width:\s*0/);
+    expect(read("components/Timeline.css")).toMatch(/\.timeline-text\s*{[^}]*overflow-wrap:\s*anywhere/);
+    expect(read("components/Contacts.css")).toMatch(/\.contact-info\s*{[^}]*min-width:\s*0/);
+    expect(read("components/Contacts.css")).toMatch(/\.contact p\s*{[^}]*overflow-wrap:\s*anywhere/);
+    expect(read("components/Requirements.css")).toMatch(/\.requirement-check\s*{[^}]*min-width:\s*0/);
+    expect(read("components/Requirements.css")).toMatch(/\.requirement-text\s*{[^}]*overflow-wrap:\s*anywhere/);
+  });
+
+  it("keeps the ✕ out of the way of Edit, with a gap between them (AC-12)", () => {
+    expect(read("components/EntryActions.css")).toMatch(/\.entry-actions\s*{[^}]*gap:\s*0\.25rem/);
   });
 });
 
