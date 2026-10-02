@@ -41,3 +41,4 @@ Copy `plan.md` and `tasks.md` from the templates only after the previous documen
 | 006 | [Board drag and drop](006-board-drag-drop/)    | Implemented | `feature/board-drag-drop`    |
 | 007 | [Activity timeline](007-activity-timeline/)    | Implemented | `feature/activity-timeline`  |
 | 008 | [Contacts](008-contacts/)                      | Implemented | `feature/contacts`           |
+| 009 | [Requirements checklist](009-requirements-checklist/) | Implemented | `feature/requirements-checklist` |

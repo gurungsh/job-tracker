@@ -22,6 +22,7 @@ import { type ReactNode, type SyntheticEvent, useCallback, useEffect, useId, use
 import { ApiError, api } from "../lib/api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { Contacts } from "./Contacts.tsx";
+import { Requirements } from "./Requirements.tsx";
 import { Timeline } from "./Timeline.tsx";
 import { daysInStage, formatDate, localDateOf, timeInStage } from "../lib/dates.ts";
 import { salarySummary } from "../lib/salary.ts";
@@ -57,7 +58,7 @@ type FormValues = {
 
 const amount = new Intl.NumberFormat("en-US");
 
-const TAB_LABELS = { details: "Details", timeline: "Timeline", contacts: "Contacts" } as const;
+const TAB_LABELS = { details: "Details", timeline: "Timeline", contacts: "Contacts", requirements: "Requirements" } as const;
 
 function initialValues(application?: Application): FormValues {
   return {
@@ -91,7 +92,7 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Existing applications have a timeline tab. The form stays mounted underneath, so unsaved edits survive (spec 007, AC-14).
-  const [tab, setTab] = useState<"details" | "timeline" | "contacts">("details");
+  const [tab, setTab] = useState<"details" | "timeline" | "contacts" | "requirements">("details");
   const title = application ? "Edit application" : "Add application";
 
   const changed = JSON.stringify(values) !== JSON.stringify(initialValues(application));
@@ -187,7 +188,7 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
       </header>
       {application && (
         <div className="panel-tabs" role="tablist">
-          {(["details", "timeline", "contacts"] as const).map((name) => (
+          {(["details", "timeline", "contacts", "requirements"] as const).map((name) => (
             <button
               key={name}
               type="button"
@@ -206,6 +207,7 @@ export function ApplicationPanel({ application, companies, onSaved, onDeleted, o
       {application && tab === "contacts" && (
         <Contacts companyId={application.companyId} companyName={application.companyName} />
       )}
+      {application && tab === "requirements" && <Requirements applicationId={application.id} />}
       <form className="panel-form" onSubmit={(event) => void save(event)} noValidate hidden={tab !== "details"}>
 
         <div className="panel-body">

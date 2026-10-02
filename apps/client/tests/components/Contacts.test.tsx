@@ -26,12 +26,12 @@ const addForm = () => screen.getByRole("form", { name: "Add contact" });
 const cardsText = () => screen.getAllByRole("listitem").map((item) => item.textContent);
 
 describe("the Contacts tab", () => {
-  it("is offered for an existing application, after Details and Timeline, and not for a new one (AC-1)", async () => {
+  it("is offered for an existing application, after Details and Timeline, and not for a new one (AC-1; spec 009 adds a tab after it)", async () => {
     installFakeServer([acme]);
     render(<Board />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
-    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Details", "Timeline", "Contacts"]);
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["Details", "Timeline", "Contacts", "Requirements"]);
     await userEvent.click(screen.getByRole("button", { name: "Close" }));
 
     await userEvent.click(screen.getByRole("button", { name: "Add application" }));

@@ -7,6 +7,8 @@ import type {
   Company,
   Contact,
   ContactInput,
+  Requirement,
+  RequirementInput,
 } from "@job-tracker/shared";
 import { reportError } from "./errorReporting.ts";
 
@@ -41,6 +43,13 @@ export const api = {
     request<Contact>("POST", `/api/companies/${String(companyId)}/contacts`, input),
   updateContact: (id: number, input: ContactInput) => request<Contact>("PUT", `/api/contacts/${String(id)}`, input),
   deleteContact: (id: number) => request<undefined>("DELETE", `/api/contacts/${String(id)}`),
+  listRequirements: (applicationId: number) =>
+    request<Requirement[]>("GET", `/api/applications/${String(applicationId)}/requirements`),
+  createRequirement: (applicationId: number, input: RequirementInput) =>
+    request<Requirement>("POST", `/api/applications/${String(applicationId)}/requirements`, input),
+  updateRequirement: (id: number, input: RequirementInput) =>
+    request<Requirement>("PUT", `/api/requirements/${String(id)}`, input),
+  deleteRequirement: (id: number) => request<undefined>("DELETE", `/api/requirements/${String(id)}`),
 };
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {

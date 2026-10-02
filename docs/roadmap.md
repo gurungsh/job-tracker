@@ -47,7 +47,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 006 | Board drag and drop | *(Implemented)* Move cards between columns by dragging them with the mouse. The stage changes as it does in the edit form. | 002 |
 | 007 | Activity timeline | *(Implemented)* Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
 | 008 | Contacts | *(Implemented)* Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 007 |
-| 009 | Requirements checklist | List a posting's required and preferred items, and check off the ones I meet. | 002 |
+| 009 | Requirements checklist | *(Implemented)* List a posting's required and preferred items, and check off the ones I meet. | 002 |
 
 ## Later, maybe
 
@@ -73,6 +73,7 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-01: File restructure is added as spec 005, ahead of the remaining features, so new features are built in the new layout. Drag and drop and later specs moved down one number.
 - 2026-10-01: Timeline entries are shown in a Timeline tab in the side panel. All entries, including automatic stage-change ones, can be edited and deleted. Creation is recorded too.
 - 2026-10-02: Contacts are managed in a Contacts tab in the side panel, with name, role, email, phone, and notes. Deleting a contact keeps the entries that named it.
+- 2026-10-02: Requirements are managed in a Requirements tab in the side panel. Each has text, a required or preferred kind, and a met checkbox. They list required first, then preferred, in the order added. A count shows at the top of the tab, not on cards.
 
 ## Changelog
 
@@ -89,3 +90,5 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 007 implemented.
 - 2026-10-02: Decisions for 008 added.
 - 2026-10-02: Marked 008 implemented.
+- 2026-10-02: Decisions for 009 added.
+- 2026-10-02: Marked 009 implemented. All planned specs are done.

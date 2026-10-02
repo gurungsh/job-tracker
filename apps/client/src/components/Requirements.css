@@ -1,0 +1,82 @@
+.requirements {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.requirements-summary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.requirements-status {
+  margin: 0;
+  padding: 1rem;
+  color: var(--text-muted);
+}
+
+.requirements-status[role="alert"],
+.requirements-error {
+  color: var(--danger);
+}
+
+.requirements-error {
+  margin: 0;
+}
+
+.requirement-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.requirement-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.requirements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.requirement {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.requirement-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.requirement-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.requirement-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.requirement-actions {
+  display: flex;
+  gap: 0.5rem;
+}

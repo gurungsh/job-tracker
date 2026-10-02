@@ -11,6 +11,7 @@ import { contactsRouter } from "./contacts/router.ts";
 import { healthRouter, type RequestCounts } from "./health.ts";
 import { type Logger, silentLogger } from "./logger.ts";
 import { requestIdOf, requestLog } from "./requestLog.ts";
+import { requirementsRouter } from "./requirements/router.ts";
 
 export type AppOptions = {
   db: DatabaseSync;
@@ -31,6 +32,7 @@ export function createApp({ db, clientDir, logger = silentLogger }: AppOptions):
   app.use("/api/applications", applicationsRouter(db));
   app.use("/api", activitiesRouter(db));
   app.use("/api", contactsRouter(db));
+  app.use("/api", requirementsRouter(db));
   app.use("/api/companies", companiesRouter(db));
   app.use("/api/client-errors", clientErrorsRouter(logger));
 

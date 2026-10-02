@@ -24,13 +24,13 @@ afterEach(() => {
 });
 
 describe("real migrations", () => {
-  it("create the companies, applications, activities, and contacts tables", () => {
+  it("create the companies, applications, activities, contacts, and requirements tables", () => {
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all()
       .map((row) => row.name);
 
-    expect(tables).toEqual(["activities", "applications", "companies", "contacts", "schema_migrations"]);
+    expect(tables).toEqual(["activities", "applications", "companies", "contacts", "requirements", "schema_migrations"]);
   });
 
   it("make company names unique regardless of case", () => {
@@ -98,6 +98,7 @@ describe("migration 0002 (job details)", () => {
         "0002_add_job_details.sql",
         "0003_create_activities.sql",
         "0004_create_contacts.sql",
+        "0005_create_requirements.sql",
       ]);
       const row = oldDb.prepare(`SELECT job_title, ${detailColumns.join(", ")} FROM applications`).get();
       expect(row).toEqual({ job_title: "Engineer", ...Object.fromEntries(detailColumns.map((column) => [column, null])) });
@@ -195,7 +196,7 @@ describe("migration 0004 (contacts)", () => {
     const oldDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-old-migrations-"));
     const oldDb = openDatabase(path.join(tempDir, "old3.db"));
     try {
-      for (const file of fs.readdirSync(migrationsDir).filter((name) => !name.startsWith("0004"))) {
+      for (const file of fs.readdirSync(migrationsDir).filter((name) => !name.startsWith("0004") && !name.startsWith("0005"))) {
         fs.copyFileSync(path.join(migrationsDir, file), path.join(oldDir, file));
       }
       migrate(oldDb, oldDir);
@@ -210,7 +211,7 @@ describe("migration 0004 (contacts)", () => {
         .prepare("INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at) VALUES (?, 'note', '2026-10-01', 'kept', ?, ?)")
         .run(applicationId, now, now);
 
-      expect(migrate(oldDb, migrationsDir)).toEqual(["0004_create_contacts.sql"]);
+      expect(migrate(oldDb, migrationsDir)).toEqual(["0004_create_contacts.sql", "0005_create_requirements.sql"]);
       expect(oldDb.prepare("SELECT text, contact_id FROM activities").get()).toEqual({ text: "kept", contact_id: null });
       expect(oldDb.prepare("SELECT COUNT(*) AS n FROM contacts").get()).toEqual({ n: 0 });
     } finally {
@@ -243,5 +244,47 @@ describe("migration 0004 (contacts)", () => {
     db.prepare("DELETE FROM applications WHERE id = ?").run(applicationId);
 
     expect(db.prepare("SELECT COUNT(*) AS n FROM contacts").get()).toEqual({ n: 1 });
+  });
+});
+
+describe("migration 0005 (requirements)", () => {
+  function addApplication(): number {
+    const { lastInsertRowid: companyId } = db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+    const { lastInsertRowid } = db
+      .prepare(
+        `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+         VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+      )
+      .run(companyId, now, now, now);
+    return Number(lastInsertRowid);
+  }
+
+  const insert = (applicationId: number, kind: string, met = 0) =>
+    db
+      .prepare("INSERT INTO requirements (application_id, text, kind, met, created_at, updated_at) VALUES (?, 'Go', ?, ?, ?, ?)")
+      .run(applicationId, kind, met, now, now);
+
+  it("starts empty for existing applications (spec 009, AC-12)", () => {
+    addApplication();
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM requirements").get()).toEqual({ n: 0 });
+  });
+
+  it("rejects an unknown kind, a met value other than 0 or 1, and an unknown application", () => {
+    const id = addApplication();
+
+    expect(() => insert(id, "nice")).toThrow(/CHECK/);
+    expect(() => insert(id, "required", 2)).toThrow(/CHECK/);
+    expect(() => insert(999, "required")).toThrow(/FOREIGN KEY/);
+  });
+
+  it("removes an application's requirements when it is deleted (spec 009, AC-11)", () => {
+    const id = addApplication();
+    insert(id, "required");
+    insert(id, "preferred", 1);
+
+    db.prepare("DELETE FROM applications WHERE id = ?").run(id);
+
+    expect(db.prepare("SELECT COUNT(*) AS n FROM requirements").get()).toEqual({ n: 0 });
   });
 });

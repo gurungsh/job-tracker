@@ -137,3 +137,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Approved. Changing company clears the entries' contact links.
 - 2026-10-02: Implementation started.
 - 2026-10-02: Implemented.
+- 2026-10-02: Spec 009 added a Requirements tab after Contacts, so an existing application now shows four tabs. AC-1 holds with that tab added after the ones it names.

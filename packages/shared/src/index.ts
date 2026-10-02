@@ -9,4 +9,5 @@ export * from "./applications.ts";
 export * from "./contacts.ts";
 export * from "./jobDetails.ts";
 export * from "./observability.ts";
+export * from "./requirements.ts";
 export * from "./stages.ts";

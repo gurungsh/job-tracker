@@ -6,11 +6,13 @@ import {
   type ApplicationInput,
   type Company,
   type Contact,
+  type Requirement,
   activityInputSchema,
   activityUpdateSchema,
   applicationInputSchema,
   contactInputSchema,
   fieldErrors,
+  requirementInputSchema,
 } from "@job-tracker/shared";
 import { vi } from "vitest";
 
@@ -21,6 +23,7 @@ export type FakeServer = {
   companies: Company[];
   activities: Activity[];
   contacts: Contact[];
+  requirements: Requirement[];
   requests: { method: string; path: string; body: unknown }[];
   /** Makes the next requests fail as if the server were down, until called again with false. */
   setOffline: (offline: boolean) => void;
@@ -76,6 +79,14 @@ export function activity(fields: Partial<Activity> & Pick<Activity, "application
   };
 }
 
+let nextRequirementId = 900;
+
+export function requirement(fields: Partial<Requirement> & Pick<Requirement, "applicationId">): Requirement {
+  nextRequirementId += 1;
+  const now = "2026-10-01T12:00:00.000Z";
+  return { id: nextRequirementId, text: "A requirement", kind: "required", met: false, createdAt: now, updatedAt: now, ...fields };
+}
+
 let nextContactId = 700;
 
 export function contact(fields: Partial<Contact> & Pick<Contact, "companyId" | "name">): Contact {
@@ -90,6 +101,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
     companies: companyNames.map((name, index) => ({ id: index + 1, name })),
     activities: [],
     contacts: [],
+    requirements: [],
     requests: [],
     setOffline: (value) => {
       offline = value;
@@ -138,6 +150,13 @@ export function installFakeServer(applications: Application[] = [], companyNames
       .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()) || a.id - b.id);
   }
 
+  /** Required first, then preferred, each in the order added (spec 009, AC-4). */
+  function requirementsOf(applicationId: number): Requirement[] {
+    return server.requirements
+      .filter((r) => r.applicationId === applicationId)
+      .sort((a, b) => (a.kind === b.kind ? a.id - b.id : a.kind === "required" ? -1 : 1));
+  }
+
   // The server's timeline order: newest date first, then the last one added (spec 007, AC-3).
   function timelineOf(applicationId: number): Activity[] {
     return server.activities
@@ -180,6 +199,29 @@ export function installFakeServer(applications: Application[] = [], companyNames
     }
     if (Number.isFinite(activityId) && activityIndex >= 0 && method === "DELETE") {
       server.activities.splice(activityIndex, 1);
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+
+    const requirementsApplicationId = Number(/^\/api\/applications\/(\d+)\/requirements$/.exec(path)?.[1]);
+    if (Number.isFinite(requirementsApplicationId) && (method === "GET" || method === "POST")) {
+      if (method === "GET") return json(requirementsOf(requirementsApplicationId));
+      const parsed = requirementInputSchema.safeParse(body);
+      if (!parsed.success) return json({ error: "Invalid requirement", fields: fieldErrors(parsed.error) }, 400);
+      const created = requirement({ applicationId: requirementsApplicationId, ...parsed.data });
+      server.requirements.push(created);
+      return json(created, 201);
+    }
+    const requirementId = Number(/^\/api\/requirements\/(\d+)$/.exec(path)?.[1]);
+    const requirementIndex = server.requirements.findIndex((r) => r.id === requirementId);
+    if (Number.isFinite(requirementId) && requirementIndex >= 0 && method === "PUT") {
+      const parsed = requirementInputSchema.safeParse(body);
+      if (!parsed.success) return json({ error: "Invalid requirement", fields: fieldErrors(parsed.error) }, 400);
+      const updatedRequirement = { ...(server.requirements[requirementIndex] as Requirement), ...parsed.data };
+      server.requirements[requirementIndex] = updatedRequirement;
+      return json(updatedRequirement);
+    }
+    if (Number.isFinite(requirementId) && requirementIndex >= 0 && method === "DELETE") {
+      server.requirements.splice(requirementIndex, 1);
       return Promise.resolve(new Response(null, { status: 204 }));
     }
 
