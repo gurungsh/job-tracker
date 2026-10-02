@@ -1,0 +1,91 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card:hover {
+  border-color: var(--accent);
+}
+
+.card-company,
+.card-title,
+.card-next-step {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.card-company {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+.card-next {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.card-due {
+  color: var(--text-muted);
+}
+
+.card-due--overdue {
+  align-self: flex-start;
+  color: var(--overdue);
+  background: var(--overdue-bg);
+  border-radius: 4px;
+  padding: 0 0.3rem;
+}
+
+.card--dragging {
+  opacity: 0.4;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.card-details,
+.card-pay {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.card-pay {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.card-age {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

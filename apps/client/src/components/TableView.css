@@ -1,0 +1,127 @@
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.table-toolbar input[type="search"] {
+  min-width: 16rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.table-toolbar input[type="search"]::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.table-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.applications-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.applications-table th,
+.applications-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.applications-table th {
+  background: var(--column-bg);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.applications-table tbody tr {
+  cursor: pointer;
+}
+
+.applications-table tbody tr:hover {
+  background: var(--column-bg);
+}
+
+.applications-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cell-text {
+  display: block;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cell-stage,
+.cell-age {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.cell-stage {
+  color: var(--stage);
+  font-weight: 600;
+}
+
+.cell-age {
+  color: var(--text-muted);
+}
+
+.cell-next {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-due {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cell-due--overdue {
+  align-self: flex-start;
+  color: var(--overdue);
+  background: var(--overdue-bg);
+  border-radius: 4px;
+  padding: 0 0.3rem;
+}
+
+/* The job title is a button so the keyboard can open a row, but it reads as text. */
+.table-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  text-align: left;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
+.sort-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+}

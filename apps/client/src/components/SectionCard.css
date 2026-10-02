@@ -1,0 +1,27 @@
+.section-card {
+  min-width: 0;
+  /* A very long word, such as a long company name, wraps instead of widening the page (spec 013, AC-15). */
+  overflow-wrap: anywhere;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.section-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-card-header h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

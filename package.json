@@ -1,0 +1,31 @@
+{
+  "name": "job-tracker",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/server",
+    "apps/client",
+    "packages/shared"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "dev": "concurrently --kill-others --names server,client --prefix-colors blue,magenta \"npm run dev -w @job-tracker/server\" \"npm run dev -w @job-tracker/client\"",
+    "build": "npm run build -w @job-tracker/client",
+    "start": "npm run start -w @job-tracker/server"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "typescript": "~6.0",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
+  }
+}

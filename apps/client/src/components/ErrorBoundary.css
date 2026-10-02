@@ -1,0 +1,22 @@
+/* Shown instead of a blank page when rendering crashes (spec 004, AC-12). */
+.crash {
+  max-width: 28rem;
+  margin: 15vh auto 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  text-align: center;
+}
+
+.crash h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.crash p {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    image: job-tracker
+    ports:
+      # Only reachable from this machine.
+      - "127.0.0.1:8080:3000"
+    environment:
+      DATABASE_PATH: /app/data/job-tracker.db
+    volumes:
+      # Docker's database is kept apart from the one npm run dev uses.
+      - ./data/docker:/app/data
+    restart: "no"

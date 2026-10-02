@@ -1,0 +1,61 @@
+/* The Add application button above the stage list, as wide as the sidebar (spec 015, AC-1). */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.sidebar ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  color: var(--text);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+}
+
+.sidebar-entry:hover {
+  background: var(--column-bg);
+}
+
+/* The entry for what the table shows (spec 014, AC-5). */
+.sidebar-entry[aria-current="page"] {
+  background: var(--column-bg);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A stage's icon and name take its color (spec 011), and a count stays quiet. */
+.sidebar-entry[data-stage] {
+  color: var(--stage);
+}
+
+.sidebar-count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,10 @@
+ALTER TABLE applications ADD COLUMN job_link TEXT;
+ALTER TABLE applications ADD COLUMN location TEXT;
+ALTER TABLE applications ADD COLUMN work_mode TEXT CHECK (work_mode IN ('onsite', 'hybrid', 'remote'));
+ALTER TABLE applications ADD COLUMN employment_type TEXT CHECK (employment_type IN ('full_time', 'contract', 'part_time'));
+ALTER TABLE applications ADD COLUMN contract_length_months INTEGER CHECK (contract_length_months BETWEEN 1 AND 120);
+ALTER TABLE applications ADD COLUMN salary_min INTEGER CHECK (salary_min BETWEEN 0 AND 10000000);
+ALTER TABLE applications ADD COLUMN salary_max INTEGER CHECK (salary_max BETWEEN 0 AND 10000000);
+ALTER TABLE applications ADD COLUMN salary_period TEXT CHECK (salary_period IN ('annual', 'hourly'));
+ALTER TABLE applications ADD COLUMN source TEXT;
+ALTER TABLE applications ADD COLUMN job_description TEXT;

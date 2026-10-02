@@ -1,0 +1,174 @@
+.detail-page {
+  /* The page switches to one column by its own width, because the sidebar takes part of the screen (spec 014, AC-12). */
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.detail-status {
+  color: var(--text-muted);
+}
+
+.detail-status[role="alert"] {
+  color: var(--danger);
+}
+
+.detail-back {
+  align-self: flex-start;
+  color: var(--accent);
+}
+
+/* The stage menu, Edit, and Delete stay on the title's line, however long the title is. The title takes what is left and
+   wraps inside it, and the controls keep their size (spec 016, AC-2). */
+.detail-header {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.detail-heading {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail-company {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.detail-title {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+}
+
+.detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 1rem;
+  align-items: start;
+}
+
+.detail-main,
+.detail-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.detail-description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.detail-empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.detail-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.detail-fact {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.detail-fact dt {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.detail-fact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detail-fact a {
+  color: var(--accent);
+}
+.detail-overdue {
+  color: var(--overdue);
+}
+
+/* On a very narrow page, such as a phone, the controls go under the title instead of squeezing it. */
+@container (max-width: 34rem) {
+  .detail-header {
+    flex-wrap: wrap;
+  }
+
+  .detail-heading {
+    flex-basis: 100%;
+  }
+}
+
+/* When the page is narrow, such as on a phone or beside the sidebar on a small window, the sections stack in one column, with Details first (spec 013, AC-15). */
+@container (max-width: 46rem) {
+  .detail-layout {
+    display: flex;
+    flex-direction: column;
+    /* The sections fill the page's width, not just their content's. */
+    align-items: stretch;
+  }
+
+  .detail-main,
+  .detail-side {
+    display: contents;
+  }
+
+  .detail-section--details {
+    order: -1;
+  }
+}
+
+.detail-due {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.detail-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The stage menu looks like the other fields, with the same border and corners (spec 016, AC-2). */
+.detail-actions select {
+  padding: 0.4rem 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.detail-error {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-radius: 6px;
+}

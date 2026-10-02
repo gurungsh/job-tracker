@@ -1,0 +1,17 @@
+# Personal data never goes into the image.
+data/
+**/*.db
+**/*.db-*
+
+# Rebuilt inside the image.
+node_modules/
+**/node_modules/
+**/dist/
+coverage/
+
+# Not needed at runtime.
+.git/
+docs/
+*.log
+.DS_Store
+**/tests/

@@ -1,0 +1,19 @@
+{
+  "name": "@job-tracker/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "node --watch src/index.ts",
+    "start": "NODE_ENV=production node src/index.ts"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.0"
+  },
+  "dependencies": {
+    "@job-tracker/shared": "0.0.0",
+    "express": "^5.2.1"
+  }
+}
