@@ -4,7 +4,6 @@ import { daysInStage, formatDate, isOverdue, shortTimeInStage } from "../lib/dat
 import { jobSummary } from "../lib/jobSummary.ts";
 import { compactSalary } from "../lib/salary.ts";
 import { CompanyAvatar } from "./CompanyAvatar.tsx";
-import { StageBadge } from "./StageBadge.tsx";
 import "./Card.css";
 
 type CardProps = {
@@ -20,7 +19,7 @@ type CardProps = {
 };
 
 export function Card({ application, today, onOpen, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
-  const { companyName, jobTitle, nextStep, nextStepDue, stage } = application;
+  const { companyName, jobTitle, nextStep, nextStepDue } = application;
   const overdue = nextStepDue !== null && isOverdue(nextStepDue, today);
   const details = jobSummary(application);
   const pay = compactSalary(application.salaryMin, application.salaryMax, application.salaryPeriod);
@@ -59,7 +58,6 @@ export function Card({ application, today, onOpen, dragging, draggable, onDragSt
         </span>
       )}
       <span className="card-footer">
-        <StageBadge stage={stage} />
         <span className="card-age" title="Time in this stage">
           <Clock size={14} aria-hidden="true" /> {shortTimeInStage(daysInStage(application.stageChangedAt))}
         </span>

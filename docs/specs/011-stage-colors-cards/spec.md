@@ -16,7 +16,7 @@ The board looks the same in every column: gray columns with plain text cards. I 
 
 ## Goals
 
-- Give each of the eight stages its own color and icon, used for column titles and stage badges.
+- Give each of the eight stages its own color and icon, used for column titles, and for stage badges in views that list stages together.
 - Show a small initials badge beside each company name, so companies are easy to pick out.
 - Show on each card the job's location, work mode, and employment type, its pay, and how long it has been in its stage.
 - Keep dragging, clicking, and everything else about the board as it is.
@@ -25,6 +25,7 @@ The board looks the same in every column: gray columns with plain text cards. I 
 
 - Company logos, or anything fetched from the internet. The initials badge is made from the company name alone.
 - A sidebar or counts outside the board (spec 014), or the table view (spec 012).
+- A stage badge on board cards: the column a card sits in already names its stage, so the badge would only repeat it. Views that list applications from several stages together (the table view, spec 012) show one.
 - Letting me choose stage colors or icons.
 - Changing the side panel, or what can be edited.
 - Showing contacts, requirements, or timeline details on cards.
@@ -44,9 +45,9 @@ The board looks the same in every column: gray columns with plain text cards. I 
   - **When** I look at the eight columns
   - **Then** each column title shows its stage's own icon, its name, and its count, all in that stage's color. No two stages share a color or an icon, and a column keeps a neutral background.
 - **AC-2** (US-1)
-  - **Given** any card
-  - **When** I look at the bottom of it
-  - **Then** I see a stage badge with the stage's name on a tint of the stage's color, the same color as that column's title.
+  - **Given** any card on the board
+  - **When** I look at it
+  - **Then** it doesn't repeat the stage name or show a stage badge. The column it sits in already names the stage, in its color.
 - **AC-3** (US-2)
   - **Given** any card
   - **When** I look at the top of it
@@ -81,11 +82,11 @@ The board looks the same in every column: gray columns with plain text cards. I 
 - **AC-9** (US-4)
   - **Given** any card
   - **When** I look at the bottom of it
-  - **Then** next to the stage badge I see a clock and how long the application has been in its stage: "Today", "1 day", or "5 days". Pointing at it says "Time in this stage".
+  - **Then** I see a clock and how long the application has been in its stage: "Today", "1 day", or "5 days". Pointing at it says "Time in this stage". It is the only thing in the footer.
 - **AC-10** (US-1, US-4)
   - **Given** a card
   - **When** I drag it to another column, or change its stage in the side panel
-  - **Then** its badge, color, and time in stage show the new stage, and clicking and dragging work exactly as in specs 002 and 006.
+  - **Then** it appears in the new column, its time in stage starts again at "Today", and clicking and dragging work exactly as in specs 002 and 006.
 - **AC-11** (US-5)
   - **Given** either theme
   - **When** I look at stage names, counts, badges, and initials
@@ -119,7 +120,7 @@ The board looks the same in every column: gray columns with plain text cards. I 
 
 Resolve these before setting the status to `Approved`.
 
-- [x] Does every card show a stage badge? **Yes**, on every card.
+- [x] Does every card show a stage badge? **No.** It was added first, then removed after review, because every card in a column repeated that column's stage.
 - [x] How is pay written on a card? **A compact form**, such as "$140k–$170k/yr".
 
 ## Changelog
@@ -130,3 +131,4 @@ Resolve these before setting the status to `Approved`.
 - 2026-10-02: Clarified when the badge shows "?": only when the name has nothing to take an initial from, so a name that starts with an emoji or symbol uses that character, as the edge case says.
 - 2026-10-02: Implemented.
 - 2026-10-02: Spec 012 adds the table view this spec left out of scope. It reuses this spec's stage colors and icons, pay and time-in-stage wording, and "Overdue" marker. The cards are unchanged.
+- 2026-10-02: Removed the stage badge from board cards after review (AC-2, AC-9, AC-10, and the goals and non-goals changed to match). The column already names the stage. The badge component stays for the table view in spec 012.

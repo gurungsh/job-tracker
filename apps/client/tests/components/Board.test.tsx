@@ -110,13 +110,14 @@ describe("Board", () => {
     expect(offer?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
   });
 
-  it("gives a card the badge of the column it is in (spec 011, AC-2)", async () => {
+  it("doesn't repeat a column's stage on its cards (spec 011, AC-2)", async () => {
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "screening" })]);
 
     render(<AppAt />);
 
     const card = await screen.findByRole("button", { name: /Acme/ });
     expect(within(column("Screening")).getByRole("button", { name: /Acme/ })).toBe(card);
-    expect(within(card).getByText("Screening").getAttribute("data-stage")).toBe("screening");
+    expect(card.querySelector(".stage-badge")).toBeNull();
+    expect(within(card).queryByText("Screening")).toBeNull();
   });
 });

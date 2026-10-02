@@ -90,7 +90,7 @@ describe("Card", () => {
     expect(within(card).getByText("Overdue")).toBeTruthy();
   });
 
-  it("shows the stage badge, in the stage's color, with the time in stage beside it (AC-2, AC-9)", () => {
+  it("doesn't repeat the stage on the card, and shows only the time in stage in its footer (AC-2, AC-9)", () => {
     const { card } = renderCard({
       companyName: "Acme",
       jobTitle: "Engineer",
@@ -98,7 +98,10 @@ describe("Card", () => {
       stageChangedAt: new Date(2026, 9, 8, 15, 0).toISOString(),
     });
 
-    expect(within(card).getByText("Interviewing").getAttribute("data-stage")).toBe("interviewing");
+    expect(card.querySelector(".stage-badge")).toBeNull();
+    expect(within(card).queryByText("Interviewing")).toBeNull();
+    const footer = card.querySelector(".card-footer");
+    expect(footer?.children).toHaveLength(1);
     const age = card.querySelector(".card-age");
     expect(age?.textContent.trim()).toBe("5 days");
     expect(age?.getAttribute("title")).toBe("Time in this stage");

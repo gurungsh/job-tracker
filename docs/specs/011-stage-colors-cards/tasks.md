@@ -23,6 +23,7 @@
 - [x] **T8:** Note the card change in the changelogs of specs 003, 007, 008, and 009, where their criteria say cards are unchanged (AC-8)
 - [x] **T9:** Run the browser checks in both themes against the production build and a Docker image copy, and record them below (AC-1 to AC-13)
 - [x] **T10:** Set the spec status to Implemented, and update the specs index and roadmap
+- [x] **T11:** After review, remove the stage badge from board cards, and amend the spec, plan, tests, and browser checks to match (AC-2, AC-9, AC-10)
 
 ## Verification
 
@@ -50,3 +51,13 @@
   - The earlier browser checks still pass: 18 for the timeline, 12 for requirements, and 9 for themes. For contacts, 16 of 17 pass, and the 17th expects exactly three tabs, which spec 009 changed.
 - Not covered in the browser: "5 days" and "1 day" in the footer, because the server sets the stage date to now. Unit and component tests cover them. The check script is not committed.
 Record anything discovered during implementation that changed the plan, and update `plan.md` or `spec.md` to match.
+
+### Amendment: stage badge removed from board cards (2026-10-02)
+
+- After review, the stage badge on every card was dropped: every card in a column repeated that column's stage. AC-2, AC-9, and AC-10 in the spec, and the matching parts of the plan, were reworded. The notes and browser results above describe the first version, with the badge, and are kept as history.
+- The card's footer now holds only the clock and the time in stage. `StageBadge` and its test stay for the table view (spec 012). Nothing else used the badge or the footer.
+- Browser checks were rerun by the assistant against the production build and a test copy of the Docker image, in both themes. All 12 checks passed on each of the four runs, with the changed ones now checking that:
+  - no card shows a stage badge, and none of a card's parts (apart from its job title) repeats its column's stage name (AC-2);
+  - the footer holds one thing, the clock and "Today" with its tooltip (AC-9);
+  - a card dragged to another column, or moved with the stage field in the panel, lands in the new column, shows "Today", and has no badge (AC-10).
+- The earlier browser checks still pass: 18 for the timeline, 12 for requirements, and 9 for themes. For contacts, 16 of 17 pass, and the 17th expects exactly three tabs, which spec 009 changed.
