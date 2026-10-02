@@ -3,7 +3,7 @@
 | Field   | Value      |
 | ------- | ---------- |
 | Status  | Approved   |
-| Updated | 2026-10-01 |
+| Updated | 2026-10-02 |
 
 This is the big picture: what job-tracker will become, and the order in which specs will build it. It is a guide, not a contract. Each feature still gets its own approved `spec.md`, `plan.md`, and `tasks.md` before any code, and this page changes whenever what we learn changes the plan.
 
@@ -48,17 +48,24 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 007 | Activity timeline | *(Implemented)* Log notes, emails, calls, and interviews on an application, and see stage changes recorded automatically. | 002 |
 | 008 | Contacts | *(Implemented)* Keep the people at each company, see them on that company's applications, and link activities to them. | 002, 007 |
 | 009 | Requirements checklist | *(Implemented)* List a posting's required and preferred items, and check off the ones I meet. | 002 |
+| 010 | Light and dark themes | Switch between a light and a dark theme from the header. It starts from the device's setting and never flashes the wrong theme on load. | 000 |
+| 011 | Stage colors and richer cards | See each stage in its own color and icon. Cards also show a company initials badge, location, work mode, employment type, pay, and time in stage. | 010 |
+| 012 | Table view | See all applications in a table with search, filters for stage, work mode and employment type, and sortable columns. Filters live in the page address. A Kanban/Table switch moves between the two views. | 011 |
+| 013 | Application detail page | Click a card to open that application on its own page, with a link back to the board. The page shows the job's details, requirements, timeline, and contacts together, and I can change the stage, edit the application, or delete it from there. It replaces the side panel. | 011, 012 |
+| 014 | App shell and sidebar | Use a sidebar that lists every stage with a live count. Each one opens the table filtered to that stage. The header carries the app name. | 012 |
+| 015 | Board stage filter and card menu | Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
+| 016 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 015 |
+| 017 | User guide | Open a built-in walkthrough of every screen from the header. | 010–016 |
 
 ## Later, maybe
 
 These ideas aren't scheduled. They will get a number only when they're picked up.
 
 - Archiving closed applications, so the board stays focused on active ones
-- Search and filtering on the board
 - A "what's next" view that lists upcoming next steps by due date
 - Editing company details, such as website, industry, and notes
 - Reordering cards within a column by hand, and keeping that order
-- Dragging on touch screens and with the keyboard
+- Dragging on touch screens
 
 ## Decided
 
@@ -73,6 +80,12 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-01: File restructure is added as spec 005, ahead of the remaining features, so new features are built in the new layout. Drag and drop and later specs moved down one number.
 - 2026-10-01: Timeline entries are shown in a Timeline tab in the side panel. All entries, including automatic stage-change ones, can be edited and deleted. Creation is recorded too.
 - 2026-10-02: Contacts are managed in a Contacts tab in the side panel, with name, role, email, phone, and notes. Deleting a contact keeps the entries that named it.
+- 2026-10-02: The UI features are added as eight small specs, 010 to 017, in an order where each builds on the one before.
+- 2026-10-02: The table's filters live in the page address, so a filtered view can be reloaded or bookmarked. That needs a router, which spec 012 adds as a dependency.
+- 2026-10-02: Stage icons come from an icon library, which spec 011 adds as a dependency.
+- 2026-10-02: Clicking a card opens the application on its own page instead of the side panel, so spec 013 replaces the panel for existing applications. It comes after the table view because it needs the router that spec 012 adds.
+- 2026-10-02: Keyboard dragging is in scope from spec 016, which changes spec 006's "mouse only" decision.
+- 2026-10-02: Still out of scope for specs 010 to 017: currencies other than USD, archiving, fetching company logos from the internet, and accounts or a profile menu.
 - 2026-10-02: Requirements are managed in a Requirements tab in the side panel. Each has text, a required or preferred kind, and a met checkbox. They list required first, then preferred, in the order added. A count shows at the top of the tab, not on cards.
 
 ## Changelog
@@ -92,3 +105,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 008 implemented.
 - 2026-10-02: Decisions for 009 added.
 - 2026-10-02: Marked 009 implemented. All planned specs are done.
+- 2026-10-02: Added specs 010–017 for the UI features.
