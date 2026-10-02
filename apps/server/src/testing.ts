@@ -3,8 +3,10 @@ import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import type { LogLevel } from "@job-tracker/shared";
 import type { Express } from "express";
 import { afterEach } from "vitest";
+import { createLogger, type LogEntry, type Logger } from "./logger.ts";
 import { migrate } from "./migrate.ts";
 
 const migrationsDir = path.join(import.meta.dirname, "..", "migrations");
@@ -32,4 +34,16 @@ export function migratedDatabase(): DatabaseSync {
   db.exec("PRAGMA foreign_keys = ON");
   migrate(db, migrationsDir);
   return db;
+}
+
+/** A logger that keeps every entry in `entries` instead of writing it anywhere. */
+export function collectingLogger(level: LogLevel = "debug"): { logger: Logger; entries: LogEntry[] } {
+  const entries: LogEntry[] = [];
+  const logger = createLogger({
+    level,
+    terminal: (_line, entry) => {
+      entries.push(entry);
+    },
+  });
+  return { logger, entries };
 }

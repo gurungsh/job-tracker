@@ -5,21 +5,11 @@ import type { ErrorResponse, HealthResponse } from "@job-tracker/shared";
 import express from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, errorHandler } from "./app.ts";
-import { migratedDatabase, startServer as start } from "./testing.ts";
+import type { Logger } from "./logger.ts";
+import { requestLog } from "./requestLog.ts";
+import { collectingLogger, migratedDatabase, startServer as start } from "./testing.ts";
 
 const db = migratedDatabase();
-
-describe("GET /api/health", () => {
-  it("returns 200 with status ok", async () => {
-    const baseUrl = await start(createApp({ db }));
-
-    const response = await fetch(`${baseUrl}/api/health`);
-
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as HealthResponse;
-    expect(body).toEqual({ status: "ok" } satisfies HealthResponse);
-  });
-});
 
 describe("unknown API routes", () => {
   it("return 404 with an error body", async () => {
@@ -33,21 +23,59 @@ describe("unknown API routes", () => {
 });
 
 describe("errorHandler", () => {
-  it("returns 500 with a generic error body and logs the error", async () => {
-    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  function appThatThrows(logger: Logger) {
     const app = express();
-    app.get("/boom", () => {
+    app.use(requestLog(logger));
+    app.use(express.json());
+    app.post("/boom", (req) => {
+      logger.info("Working on it", { got: (req.body as { name?: string }).name });
       throw new Error("secret details");
     });
-    app.use(errorHandler);
-    const baseUrl = await start(app);
+    app.use(errorHandler(logger));
+    return app;
+  }
 
-    const response = await fetch(`${baseUrl}/boom`);
+  it("returns 500 with a generic error and the request ID, and logs the error under that ID", async () => {
+    const { logger, entries } = collectingLogger();
+    const baseUrl = await start(appThatThrows(logger));
 
+    const response = await fetch(`${baseUrl}/boom`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "x" }),
+    });
+
+    const requestId = response.headers.get("x-request-id") ?? undefined;
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: "Internal server error" } satisfies ErrorResponse);
-    expect(log).toHaveBeenCalledWith(expect.objectContaining({ message: "secret details" }));
-    log.mockRestore();
+    expect(await response.json()).toEqual({ error: "Internal server error", requestId } satisfies ErrorResponse);
+
+    await vi.waitFor(() => {
+      expect(entries).toHaveLength(3);
+    });
+    expect(entries.map((entry) => [entry.msg.replace(/\d+ms/, "Nms"), entry.requestId])).toEqual([
+      ["Working on it", requestId],
+      ["Unhandled error", requestId],
+      ["POST /boom 500 Nms", requestId],
+    ]);
+    expect(entries[1]?.error).toMatchObject({ message: "secret details" });
+  });
+
+  it("answers an unreadable body with 400 and doesn't log an error", async () => {
+    const { logger, entries } = collectingLogger();
+    const baseUrl = await start(appThatThrows(logger));
+
+    const response = await fetch(`${baseUrl}/boom`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{nope",
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Request body is not valid JSON" } satisfies ErrorResponse);
+    await vi.waitFor(() => {
+      expect(entries).toHaveLength(1);
+    });
+    expect(entries[0]?.level).toBe("debug");
   });
 });
 
@@ -91,7 +119,7 @@ describe("serving the built client", () => {
 
     const health = await fetch(`${baseUrl}/api/health`);
     expect(health.status).toBe(200);
-    expect(await health.json()).toEqual({ status: "ok" } satisfies HealthResponse);
+    expect(await health.json()).toMatchObject({ status: "ok" } satisfies Partial<HealthResponse>);
 
     const unknown = await fetch(`${baseUrl}/api/nope`);
     expect(unknown.status).toBe(404);

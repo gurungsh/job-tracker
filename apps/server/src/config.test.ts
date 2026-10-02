@@ -10,6 +10,8 @@ describe("loadConfig", () => {
       port: 3000,
       databasePath: path.join(repoRoot, "data", "job-tracker.db"),
       clientDir: undefined,
+      logLevel: "debug",
+      logDir: path.join(repoRoot, "data", "logs"),
     });
   });
 
@@ -30,5 +32,29 @@ describe("loadConfig", () => {
   it("serves the built client only when NODE_ENV is production", () => {
     expect(loadConfig({ NODE_ENV: "production" }).clientDir).toBe(path.join(repoRoot, "apps", "client", "dist"));
     expect(loadConfig({ NODE_ENV: "development" }).clientDir).toBeUndefined();
+  });
+
+  it("logs at debug by default, and at info in production", () => {
+    expect(loadConfig({}).logLevel).toBe("debug");
+    expect(loadConfig({ NODE_ENV: "development" }).logLevel).toBe("debug");
+    expect(loadConfig({ NODE_ENV: "production" }).logLevel).toBe("info");
+    // An empty value counts as unset, as DATABASE_PATH does.
+    expect(loadConfig({ NODE_ENV: "production", LOG_LEVEL: "" }).logLevel).toBe("info");
+  });
+
+  it("uses LOG_LEVEL when set, in any mode", () => {
+    expect(loadConfig({ LOG_LEVEL: "warn" }).logLevel).toBe("warn");
+    expect(loadConfig({ NODE_ENV: "production", LOG_LEVEL: "debug" }).logLevel).toBe("debug");
+    expect(loadConfig({ NODE_ENV: "production", LOG_LEVEL: "error" }).logLevel).toBe("error");
+  });
+
+  it("rejects an unknown LOG_LEVEL, listing the valid levels", () => {
+    expect(() => loadConfig({ LOG_LEVEL: "verbose" })).toThrow(
+      'LOG_LEVEL must be one of debug, info, warn, error, got "verbose"',
+    );
+  });
+
+  it("puts the log folder next to the database", () => {
+    expect(loadConfig({ DATABASE_PATH: "/srv/app/data/job-tracker.db" }).logDir).toBe("/srv/app/data/logs");
   });
 });

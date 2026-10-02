@@ -100,6 +100,7 @@ export function installFakeServer(applications: Application[] = [], companyNames
 
     if (method === "GET" && path === "/api/applications") return json(server.applications);
     if (method === "GET" && path === "/api/companies") return json(server.companies);
+    if (method === "POST" && path === "/api/client-errors") return Promise.resolve(new Response(null, { status: 204 }));
     if (method === "POST" && path === "/api/applications") {
       const created = save(body as ApplicationInput);
       server.applications.push(created);

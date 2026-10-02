@@ -1,4 +1,5 @@
 import type { Application, ApplicationInput, Company } from "@job-tracker/shared";
+import { reportError } from "./errorReporting.ts";
 
 /** A failed API call. `status` is 0 when the server couldn't be reached. */
 export class ApiError extends Error {
@@ -37,11 +38,20 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   try {
     response = await fetch(path, method === "GET" ? undefined : init);
   } catch {
+    reportError({ kind: "api", message: `${method} ${path} failed: network error`, api: { method, path, status: 0 } });
     throw new ApiError("Can't reach the server. Check that it's running and try again.", 0);
   }
 
   if (response.status === 204) return undefined as T;
   const data: unknown = await response.json().catch(() => undefined);
+  if (response.status >= 500) {
+    // The server logs its own 5xx errors too. This catches ones from a proxy, or a server that's restarting (spec 004, AC-13).
+    reportError({
+      kind: "api",
+      message: `${method} ${path} failed with ${String(response.status)}`,
+      api: { method, path, status: response.status },
+    });
+  }
   if (!response.ok) {
     const { error, fields } = (data ?? {}) as { error?: string; fields?: Record<string, string> };
     throw new ApiError(error ?? `The server returned an error (${String(response.status)}).`, response.status, fields);

@@ -24,9 +24,9 @@ The app runs but tracks nothing yet. This is the first slice that makes it usefu
 ## Non-goals (out of scope)
 
 - The job details: link, location, work mode, employment type and contract length, salary, source, and description (spec 003).
-- Drag and drop on the board, or reordering cards by hand (spec 004).
-- The activity timeline, including stage-change history entries (spec 005). This spec keeps only the current stage-changed date.
-- Contacts (spec 006) and requirements (spec 007).
+- Drag and drop on the board, or reordering cards by hand (spec 005).
+- The activity timeline, including stage-change history entries (spec 006). This spec keeps only the current stage-changed date.
+- Contacts (spec 007) and requirements (spec 008).
 - A company screen, or renaming, merging, or deleting companies.
 - Archiving, search, filtering, or a "what's next" view.
 - Currencies other than USD.

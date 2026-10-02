@@ -25,6 +25,12 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // The server logs through its logger (spec 004, AC-5).
+    files: ["apps/server/src/**"],
+    ignores: ["**/*.test.ts"],
+    rules: { "no-console": "error" },
+  },
+  {
     files: ["apps/client/**"],
     languageOptions: { globals: globals.browser },
     ...reactHooks.configs.flat.recommended,

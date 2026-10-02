@@ -1,5 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ClientErrorReport } from "@job-tracker/shared";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api } from "./api.ts";
+import { resetErrorReporting } from "./errorReporting.ts";
+import { installFakeServer, json as fakeJson } from "./testing/fakeServer.ts";
 
 function stubFetch(response: Response | Error) {
   const fetchMock = vi.fn(() => (response instanceof Error ? Promise.reject(response) : Promise.resolve(response)));
@@ -59,5 +62,70 @@ describe("api", () => {
     stubFetch(new Response("Bad gateway", { status: 502 }));
 
     await expect(api.listCompanies()).rejects.toMatchObject({ message: "The server returned an error (502).", status: 502 });
+  });
+});
+
+describe("reporting failed API calls (spec 004, AC-13)", () => {
+  beforeEach(() => {
+    resetErrorReporting();
+  });
+
+  function setup() {
+    const server = installFakeServer();
+    const reports = () =>
+      server.requests.filter((r) => r.path === "/api/client-errors").map((r) => r.body as ClientErrorReport);
+    return { server, reports };
+  }
+
+  it("reports a 5xx response, and the error message is unchanged", async () => {
+    const { server, reports } = setup();
+    server.override((_method, path) =>
+      path === "/api/applications" ? new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 }) : undefined,
+    );
+
+    await expect(api.listApplications()).rejects.toMatchObject({ message: "Internal server error", status: 500 });
+
+    expect(reports()).toEqual([
+      expect.objectContaining({
+        kind: "api",
+        message: "GET /api/applications failed with 500",
+        api: { method: "GET", path: "/api/applications", status: 500 },
+      }),
+    ]);
+  });
+
+  it("reports a network error with status 0, and the error message is unchanged", async () => {
+    const fetchMock = vi.fn((path: string, _init?: RequestInit) =>
+      path === "/api/client-errors" ? fakeJson(null, 204) : Promise.reject(new TypeError("Failed to fetch")),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(api.deleteApplication(3)).rejects.toMatchObject({
+      message: "Can't reach the server. Check that it's running and try again.",
+      status: 0,
+    });
+
+    const reportCall = fetchMock.mock.calls.find(([path]) => path === "/api/client-errors");
+    expect(JSON.parse(reportCall?.[1]?.body as string)).toMatchObject({
+      kind: "api",
+      message: "DELETE /api/applications/3 failed: network error",
+      api: { method: "DELETE", path: "/api/applications/3", status: 0 },
+    });
+  });
+
+  it("doesn't report a 4xx response", async () => {
+    const { server, reports } = setup();
+    server.override((method) =>
+      method === "POST" ? new Response(JSON.stringify({ error: "Invalid application", fields: {} }), { status: 400 }) : undefined,
+    );
+
+    await expect(api.updateApplication(999, { companyName: "Acme", jobTitle: "Engineer" })).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(api.createApplication({ companyName: "Acme", jobTitle: "Engineer" })).rejects.toMatchObject({
+      status: 400,
+    });
+
+    expect(reports()).toEqual([]);
   });
 });

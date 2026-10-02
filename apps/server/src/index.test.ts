@@ -19,10 +19,10 @@ afterEach(() => {
   fs.rmSync(tempDir, { recursive: true, force: true });
 });
 
-function startServer(): { output: () => string; exited: Promise<number | null> } {
+function startServer(env: NodeJS.ProcessEnv = {}): { output: () => string; exited: Promise<number | null> } {
   let output = "";
   const proc = spawn(process.execPath, [entry], {
-    env: { ...process.env, NODE_ENV: "test", PORT: "0", DATABASE_PATH: path.join(tempDir, "test.db") },
+    env: { ...process.env, LOG_LEVEL: "", NODE_ENV: "test", PORT: "0", DATABASE_PATH: path.join(tempDir, "test.db"), ...env },
   });
   child = proc;
   proc.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
@@ -50,5 +50,46 @@ describe("server process", () => {
 
     expect(code).toBe(0);
     expect(Date.now() - stoppedAt).toBeLessThan(5000);
+  });
+});
+
+describe("startup logging", () => {
+  it("logs starting, each migration, and listening, in the terminal and in a log file next to the database", async () => {
+    const server = startServer();
+    await waitFor(() => server.output().includes("Server listening"));
+
+    const output = server.output();
+    expect(output).toMatch(/^\S+ INFO {2}Server starting port=0 databasePath=\S+ logDir=\S+ logLevel=debug$/m);
+    expect(output).toMatch(/^\S+ INFO {2}Migration applied name=0001_create_companies_and_applications\.sql$/m);
+    expect(output).toMatch(/^\S+ INFO {2}Server listening on http:\/\/localhost:\d+ port=\d+$/m);
+
+    const logDir = path.join(tempDir, "logs");
+    const [file] = fs.readdirSync(logDir);
+    expect(file).toMatch(/^\d{4}-\d{2}-\d{2}\.log$/);
+    const messages = fs
+      .readFileSync(path.join(logDir, file ?? ""), "utf8")
+      .trimEnd()
+      .split("\n")
+      .map((line) => (JSON.parse(line) as { msg: string }).msg);
+    expect(messages[0]).toBe("Server starting");
+    expect(messages).toContain("Migration applied");
+  });
+
+  it("logs the shutdown signal", async () => {
+    const server = startServer();
+    await waitFor(() => server.output().includes("Server listening"));
+
+    child?.kill("SIGTERM");
+    await server.exited;
+
+    expect(server.output()).toMatch(/^\S+ INFO {2}Received SIGTERM, shutting down signal=SIGTERM$/m);
+  });
+
+  it("exits with code 1 on an unknown LOG_LEVEL, listing the valid levels", async () => {
+    const server = startServer({ LOG_LEVEL: "verbose" });
+
+    expect(await server.exited).toBe(1);
+    expect(server.output()).toMatch(/ERROR Server failed to start\./);
+    expect(server.output()).toContain('LOG_LEVEL must be one of debug, info, warn, error, got "verbose"');
   });
 });
