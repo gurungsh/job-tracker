@@ -4,12 +4,15 @@ Every feature in job-tracker begins here, before any code is written. Small chan
 
 ## The loop
 
+```mermaid
+flowchart LR
+  S["spec.md<br/>what and why"] -->|approve| P["plan.md<br/>how"]
+  P -->|approve| T["tasks.md<br/>ordered steps<br/>Tier 3 only"]
+  T -->|approve| I["implement<br/>on a feature branch"]
+  I -->|review| M["merge into<br/>development"]
 ```
- ┌─────────┐  approve  ┌─────────┐  approve  ┌──────────┐  approve  ┌───────────┐  review  ┌──────────────┐
- │ spec.md │ ────────► │ plan.md │ ────────► │ tasks.md │ ────────► │ implement │ ───────► │    merge     │
- └─────────┘           └─────────┘           └──────────┘           └───────────┘          └──────────────┘
-  what & why            how                   ordered steps          feature branch          into development
-```
+
+A Tier 2 feature skips `tasks.md`: its plan ends with a Tasks checklist, and the plan's approval leads straight to implementing.
 
 1. **Spec:** describe the problem, the user stories, and testable acceptance criteria. Leave out implementation details. Resolve open questions before approving.
 2. **Plan:** choose the technical approach (data model, API, UI, tests) and trace every decision to an acceptance criterion.
@@ -26,7 +29,7 @@ mkdir docs/specs/NNN-<short-name>
 cp docs/specs/_templates/spec.md docs/specs/NNN-<short-name>/spec.md
 ```
 
-Copy `plan.md` from the template only after the spec is approved. Copy `tasks.md` only for a Tier 3 feature, after the plan is approved. Specs 000 to 016 were written in the Tier 3 shape and stay as they are.
+Copy `plan.md` from the template only after the spec is approved. Copy `tasks.md` only for a Tier 3 feature, after the plan is approved. Specs 000 to 017 were written in the Tier 3 shape and stay as they are.
 
 ## Index
 

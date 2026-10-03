@@ -193,9 +193,9 @@ describe("the app shell styles", () => {
   });
 });
 
-// The Add application button in the sidebar (spec 015, AC-10) is the app's primary button, whose text and background
+// The Add Application button in the sidebar (spec 015, AC-10) is the app's primary button, whose text and background
 // are the --accent-text on --accent pair checked above. Its own rules must not change either color.
-describe("the Add application button", () => {
+describe("the Add Application button", () => {
   const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", file), "utf8");
 
   it("uses the primary button's colors, which are the checked accent pair (AC-10)", () => {
@@ -311,8 +311,9 @@ describe("the archive styles", () => {
     expect(source).toMatch(/\.card-wrap:hover > \.archive-button/);
   });
 
-  it("keeps the company name from running under the buttons on a card", () => {
-    expect(read("components/ArchiveButton.css")).toMatch(/\.card-wrap \.card-header\s*{[^}]*padding-right:\s*4rem/);
+  it("keeps the buttons in the bottom right corner of a card, in a footer row with room for them", () => {
+    expect(read("components/ArchiveButton.css")).toMatch(/\.card-wrap > \.archive-button\s*{[^}]*bottom:/);
+    expect(read("components/ArchiveButton.css")).toMatch(/\.card-wrap \.card-footer\s*{[^}]*min-height:\s*2rem/);
   });
 
   it("uses the 2rem icon button size, a target large enough for a phone", () => {
@@ -333,6 +334,13 @@ describe("the board's stage filter and card menu styles (spec 018)", () => {
     expect(used.length).toBeGreaterThan(0);
     for (const token of used) expect(["--text", "--text-muted", "--stage"], token).toContain(token);
     expect(read("CardMenu.css")).toMatch(/\.card-menu-list\s*{[^}]*background:\s*var\(--surface\)/);
+  });
+
+  it("opens the list downward, so a card at the top of a column keeps the whole list below the header", () => {
+    const list = /\.card-menu-list\s*{([^}]*)}/.exec(read("CardMenu.css"))?.[1] ?? "";
+
+    expect(list).toMatch(/top:\s*calc\(100% \+ 0\.25rem\)/);
+    expect(list).not.toMatch(/bottom:/);
   });
 
   it("hides the button on a card only where there is hover, so it is always there on a touch screen and on keyboard focus", () => {

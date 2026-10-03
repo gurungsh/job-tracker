@@ -54,10 +54,10 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    const message = await screen.findByText("No applications yet. Use the Add application button in the sidebar to add your first one.");
+    const message = await screen.findByText("No applications yet. Use the Add Application button in the sidebar to add your first one.");
     expect(message.textContent).not.toMatch(/board/i);
     // The button it points to is really in the sidebar (spec 015, AC-7).
-    expect(screen.getByRole("button", { name: "Add application" }).closest(".app-sidebar")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Add Application" }).closest(".app-sidebar")).not.toBeNull();
     // The closed stages are hidden to start (spec 018, AC-1).
     expect(screen.getAllByRole("region")).toHaveLength(5);
   });

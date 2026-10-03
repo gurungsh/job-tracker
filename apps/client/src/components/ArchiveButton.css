@@ -1,11 +1,11 @@
-/* On a card, the button sits over its top right corner and shows when the card is pointed at or has focus inside it. */
+/* On a card, the button sits over its bottom right corner and shows when the card is pointed at or has focus inside it. */
 .card-wrap {
   position: relative;
 }
 
 .card-wrap > .archive-button {
   position: absolute;
-  top: 0.25rem;
+  bottom: 0.3rem;
   right: 0.25rem;
 }
 
@@ -31,7 +31,7 @@ button.archive-button:hover {
   background: var(--column-bg);
 }
 
-/* The Move and Archive buttons cover the card's top right corner, so the company name stops short of them (spec 018). */
-.card-wrap .card-header {
-  padding-right: 4rem;
+/* The Move and Archive buttons cover the card's bottom right corner, so the footer row keeps room for them (spec 018). */
+.card-wrap .card-footer {
+  min-height: 2rem;
 }

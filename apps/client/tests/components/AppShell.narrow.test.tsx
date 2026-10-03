@@ -109,8 +109,8 @@ describe("the sidebar on a narrow screen (spec 014, AC-8, AC-9, AC-10)", () => {
     await userEvent.keyboard("{Enter}");
 
     expect(drawer()?.contains(document.activeElement)).toBe(true);
-    // The Add application button is first in the drawer (spec 015, AC-6), so focus starts on it.
-    expect(document.activeElement).toBe(within(drawer() as HTMLElement).getByRole("button", { name: "Add application" }));
+    // The Add Application button is first in the drawer (spec 015, AC-6), so focus starts on it.
+    expect(document.activeElement).toBe(within(drawer() as HTMLElement).getByRole("button", { name: "Add Application" }));
   });
 
   it("keeps Tab inside the open drawer, and has no sidebar links to tab to when it is closed (AC-10)", async () => {
@@ -162,7 +162,7 @@ describe("the sidebar on a narrow screen (spec 014, AC-8, AC-9, AC-10)", () => {
 });
 
 describe("adding from the narrow drawer (spec 015, AC-6)", () => {
-  const addInDrawer = () => within(drawer() as HTMLElement).getByRole("button", { name: "Add application" });
+  const addInDrawer = () => within(drawer() as HTMLElement).getByRole("button", { name: "Add Application" });
 
   it("has the Add button first in the drawer, above All applications, and none in the header", async () => {
     await renderNarrow();
@@ -171,8 +171,8 @@ describe("adding from the narrow drawer (spec 015, AC-6)", () => {
     const button = addInDrawer();
     expect(button.parentElement?.firstElementChild).toBe(button);
     expect(button.compareDocumentPosition(sidebarLinks()[0] as HTMLElement)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(within(screen.getByRole("banner")).queryByRole("button", { name: "Add application" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Add application" })).toBe(button);
+    expect(within(screen.getByRole("banner")).queryByRole("button", { name: "Add Application" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add Application" })).toBe(button);
   });
 
   it("closes the drawer and opens the form when chosen, and has no Add button in the page while the drawer is closed", async () => {
@@ -183,16 +183,16 @@ describe("adding from the narrow drawer (spec 015, AC-6)", () => {
 
     expect(drawer()).toBeNull();
     expect(menuButton().getAttribute("aria-expanded")).toBe("false");
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(screen.queryByRole("button", { name: "Add application" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add Application" })).toBeNull();
   });
 
   it("puts focus on the menu button when the form closes, whether by Escape or after saving", async () => {
     await renderNarrow();
     await userEvent.click(menuButton());
     await userEvent.click(addInDrawer());
-    await screen.findByRole("dialog", { name: "Add application" });
+    await screen.findByRole("dialog", { name: "Add Application" });
 
     await userEvent.keyboard("{Escape}");
 
@@ -201,7 +201,7 @@ describe("adding from the narrow drawer (spec 015, AC-6)", () => {
 
     await userEvent.click(menuButton());
     await userEvent.click(addInDrawer());
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     await userEvent.type(within(dialog).getByLabelText("Company"), "Initech");
     await userEvent.type(within(dialog).getByLabelText("Job title"), "Analyst");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));

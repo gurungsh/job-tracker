@@ -90,8 +90,8 @@ describe("the app shell (spec 014)", () => {
     installFakeServer([acme]);
     renderAt("/");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
-    expect(screen.getByRole("dialog", { name: "Add application" })).toBeTruthy();
+    await userEvent.click(await screen.findByRole("button", { name: "Add Application" }));
+    expect(screen.getByRole("dialog", { name: "Add Application" })).toBeTruthy();
     await userEvent.keyboard("{Escape}");
     await userEvent.click(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ }));
 

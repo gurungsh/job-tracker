@@ -15,8 +15,8 @@ afterEach(() => {
 });
 
 async function openAddDialog() {
-  await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
-  return screen.getByRole("dialog", { name: "Add application" });
+  await userEvent.click(await screen.findByRole("button", { name: "Add Application" }));
+  return screen.getByRole("dialog", { name: "Add Application" });
 }
 
 describe("adding an application", () => {
@@ -117,9 +117,9 @@ describe("the application dialog (spec 013, AC-6, AC-13, AC-16)", () => {
   it("is a modal that keeps Tab inside, and gives focus back to the Add button when it closes", async () => {
     installFakeServer();
     render(<AppAt />);
-    const addButton = await screen.findByRole("button", { name: "Add application" });
+    const addButton = await screen.findByRole("button", { name: "Add Application" });
     await userEvent.click(addButton);
-    const dialog = screen.getByRole("dialog", { name: "Add application" });
+    const dialog = screen.getByRole("dialog", { name: "Add Application" });
 
     expect(dialog.getAttribute("aria-modal")).toBe("true");
     expect(dialog.contains(document.activeElement)).toBe(true);

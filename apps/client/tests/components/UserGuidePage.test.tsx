@@ -66,7 +66,7 @@ describe("the user guide page (spec 020)", () => {
   it.each([
     ["board", "dragging", "Move to", "stage filter"],
     ["table", "search", "sort", "filter"],
-    ["sidebar", "close an application", "Archived", "Add application"],
+    ["sidebar", "close an application", "Archived", "Add Application"],
     ["adding", "Company", "job title", "website"],
     ["application", "Requirements", "timeline", "Contacts"],
     ["archiving", "Archive", "Restore", "Archived"],

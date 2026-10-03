@@ -22,7 +22,7 @@ function stageAddress(stage: Stage): string {
 
 /**
  * Every stage with its count, and "All applications" with the total, each opening the table (spec 014, AC-1 to AC-5, AC-7).
- * `onNavigate` is called when an entry is chosen, so a drawer can close. The Add application button is first, above the
+ * `onNavigate` is called when an entry is chosen, so a drawer can close. The Add Application button is first, above the
  * stage list and outside the navigation, since it does something rather than going somewhere (spec 015, AC-1).
  */
 export function Sidebar({
@@ -53,7 +53,7 @@ export function Sidebar({
     <div className="sidebar">
       <button ref={addRef} type="button" className="primary sidebar-add" onClick={onAdd}>
         <Plus size={16} aria-hidden="true" />
-        Add application
+        Add Application
       </button>
       <nav aria-label="Stages">
         <ul>
