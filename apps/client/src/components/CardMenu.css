@@ -24,7 +24,7 @@ button.card-menu-button:hover {
 .card-menu-list {
   position: absolute;
   z-index: 20;
-  bottom: calc(100% + 0.25rem);
+  top: calc(100% + 0.25rem);
   right: 0;
   display: flex;
   flex-direction: column;

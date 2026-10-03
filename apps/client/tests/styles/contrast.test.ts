@@ -336,6 +336,13 @@ describe("the board's stage filter and card menu styles (spec 018)", () => {
     expect(read("CardMenu.css")).toMatch(/\.card-menu-list\s*{[^}]*background:\s*var\(--surface\)/);
   });
 
+  it("opens the list downward, so a card at the top of a column keeps the whole list below the header", () => {
+    const list = /\.card-menu-list\s*{([^}]*)}/.exec(read("CardMenu.css"))?.[1] ?? "";
+
+    expect(list).toMatch(/top:\s*calc\(100% \+ 0\.25rem\)/);
+    expect(list).not.toMatch(/bottom:/);
+  });
+
   it("hides the button on a card only where there is hover, so it is always there on a touch screen and on keyboard focus", () => {
     const source = read("CardMenu.css");
 
