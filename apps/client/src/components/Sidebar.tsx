@@ -1,7 +1,8 @@
 import { STAGE_LABELS, STAGES, type Stage } from "@job-tracker/shared";
-import { List, Plus } from "lucide-react";
+import { Archive, List, Plus } from "lucide-react";
 import type { Ref } from "react";
 import { Link, useLocation } from "react-router";
+import { activeApplications, archivedApplications } from "../lib/archived.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { stageCounts } from "../lib/stageCounts.ts";
 import { parseTableQuery, toSearchParams } from "../lib/tableQuery.ts";
@@ -11,8 +12,11 @@ import "./Sidebar.css";
 const number = new Intl.NumberFormat("en-US");
 
 /** The table with only this stage as its filter, so the search, other filters, and sort are cleared (spec 014, AC-4). */
+/** The table with only archived applications (spec 017, AC-4). */
+const ARCHIVED_ADDRESS = `/table?${toSearchParams({ search: "", stages: [], workModes: [], employmentTypes: [], archived: true, sort: null }).toString()}`;
+
 function stageAddress(stage: Stage): string {
-  const params = toSearchParams({ search: "", stages: [stage], workModes: [], employmentTypes: [], sort: null });
+  const params = toSearchParams({ search: "", stages: [stage], workModes: [], employmentTypes: [], archived: false, sort: null });
   return `/table?${params.toString()}`;
 }
 
@@ -33,11 +37,15 @@ export function Sidebar({
   const { state } = useApplicationsStore();
   const { pathname, search } = useLocation();
   // Counts are left out until the list is loaded, or if it couldn't be, rather than showing wrong ones (AC-7).
-  const counts = state.status === "ready" ? stageCounts(state.applications) : null;
-  const total = state.status === "ready" ? state.applications.length : null;
+  const active = state.status === "ready" ? activeApplications(state.applications) : null;
+  const counts = active ? stageCounts(active) : null;
+  const total = active ? active.length : null;
+  const archivedCount = state.status === "ready" ? archivedApplications(state.applications).length : null;
 
   // Only the table's stage filter selects an entry, whatever else is set (AC-5).
-  const chosen = pathname === "/table" ? parseTableQuery(new URLSearchParams(search)).stages : undefined;
+  const query = pathname === "/table" ? parseTableQuery(new URLSearchParams(search)) : undefined;
+  const archivedSelected = query?.archived === true;
+  const chosen = query && !query.archived ? query.stages : undefined;
   const allSelected = chosen?.length === 0;
   const selectedStage = chosen?.length === 1 ? chosen[0] : undefined;
 
@@ -79,6 +87,18 @@ export function Sidebar({
               </li>
             );
           })}
+          <li>
+            <Link
+              to={ARCHIVED_ADDRESS}
+              className="sidebar-entry"
+              aria-current={archivedSelected ? "page" : undefined}
+              onClick={onNavigate}
+            >
+              <Archive size={16} aria-hidden="true" />
+              <span className="sidebar-name">Archived</span>
+              {archivedCount !== null && <span className="sidebar-count">{number.format(archivedCount)}</span>}
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

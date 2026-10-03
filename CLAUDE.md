@@ -24,6 +24,7 @@ Documents live in `docs/specs/NNN-short-name/`. Specs 000 to 016 follow the Tier
 - Never rebase onto, force-push, or delete `main`, `development`, or feature branches. The owner does that.
 - Check off tasks as they're completed, in `tasks.md` (Tier 3) or the plan's Tasks checklist (Tier 2). If the implementation must diverge from the docs, update the docs in the same branch and point out the change.
 - Keep `docs/specs/README.md`'s index table in sync with spec statuses.
+- For every change, update the root `README.md` if it is required: when what the app does, its commands, configuration, API, or layout changes, or when an existing line there is no longer true. Do it in the same branch.
 - Use American English and USD.
 
 ## Keeping work small

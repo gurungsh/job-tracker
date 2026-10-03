@@ -53,6 +53,7 @@ describe("Sidebar entries (spec 014, AC-1, AC-2)", () => {
       "Accepted1",
       "Rejected1",
       "Withdrawn0",
+      "Archived0",
     ]);
   });
 
@@ -71,10 +72,11 @@ describe("Sidebar entries (spec 014, AC-1, AC-2)", () => {
     await nav().findByText("5");
 
     for (const link of entries()) expect(link.querySelector("svg"), link.textContent).not.toBeNull();
-    expect(entries().slice(1).map((link) => link.getAttribute("data-stage"))).toEqual([
+    expect(entries().slice(1, 9).map((link) => link.getAttribute("data-stage"))).toEqual([
       "wishlist", "applied", "screening", "interviewing", "offer", "accepted", "rejected", "withdrawn",
     ]);
     expect(entries()[0]?.hasAttribute("data-stage")).toBe(false);
+    expect(entries()[9]?.hasAttribute("data-stage")).toBe(false);
   });
 
   it("writes a count in the thousands with a comma, in the same entry", async () => {
@@ -99,6 +101,7 @@ describe("Sidebar entries (spec 014, AC-1, AC-2)", () => {
       "/table?stage=accepted",
       "/table?stage=rejected",
       "/table?stage=withdrawn",
+      "/table?archived=1",
     ]);
   });
 });
@@ -108,11 +111,11 @@ describe("Sidebar before the list is there (spec 014, AC-7)", () => {
     installFakeServer(SAMPLE());
     renderSidebar();
 
-    expect(entries()).toHaveLength(9);
+    expect(entries()).toHaveLength(10);
     expect(document.querySelectorAll(".sidebar-count")).toHaveLength(0);
 
     await nav().findByText("5");
-    expect(document.querySelectorAll(".sidebar-count")).toHaveLength(9);
+    expect(document.querySelectorAll(".sidebar-count")).toHaveLength(10);
   });
 
   it("shows the entries, working, without counts when the list can't be loaded", async () => {
@@ -121,7 +124,7 @@ describe("Sidebar before the list is there (spec 014, AC-7)", () => {
     renderSidebar();
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(entries()).toHaveLength(9);
+    expect(entries()).toHaveLength(10);
     expect(document.querySelectorAll(".sidebar-count")).toHaveLength(0);
     await userEvent.click(nav().getByRole("link", { name: "Offer" }));
     expect(screen.getByTestId("where").textContent).toBe("/table?stage=offer");
@@ -264,5 +267,55 @@ describe("Sidebar's Add application button (spec 015, AC-1, AC-8, AC-10)", () =>
     expect(document.activeElement).toBe(addButton());
     await userEvent.tab();
     expect(document.activeElement).toBe(screen.getByRole("link", { name: /^All applications/ }));
+  });
+});
+
+describe("Sidebar Archived entry (spec 017, AC-3, AC-4)", () => {
+  const withArchived = () => [
+    ...SAMPLE(),
+    application({ companyName: "Wonka", jobTitle: "F", stage: "applied", archivedAt: "2026-10-02T09:00:00.000Z" }),
+    application({ companyName: "Stark", jobTitle: "G", stage: "rejected", archivedAt: "2026-10-02T09:00:00.000Z" }),
+  ];
+
+  it("shows Archived last, with how many are archived, and leaves them out of the stage counts and the total", async () => {
+    installFakeServer(withArchived());
+    renderSidebar();
+
+    await nav().findByText("5");
+
+    const texts = entries().map((link) => link.textContent);
+    expect(texts[0]).toBe("All applications5");
+    expect(texts).toContain("Applied2");
+    expect(texts).toContain("Rejected1");
+    expect(texts.at(-1)).toBe("Archived2");
+  });
+
+  it("opens the table of only archived applications, and marks only Archived as current there", async () => {
+    installFakeServer(withArchived());
+    renderSidebar();
+    await nav().findByText("5");
+
+    await userEvent.click(nav().getByRole("link", { name: /^Archived/ }));
+
+    expect(screen.getByTestId("where").textContent).toBe("/table?archived=1");
+    expect(current()).toEqual(["Archived2"]);
+  });
+
+  it("marks Archived as current whatever else is set, and none of the stage entries", async () => {
+    installFakeServer(withArchived());
+    renderSidebar("/table?archived=1&stage=applied&q=wonka");
+    await nav().findByText("5");
+
+    expect(current()).toEqual(["Archived2"]);
+  });
+
+  it("goes back to marking a stage when the table is left", async () => {
+    installFakeServer(withArchived());
+    renderSidebar("/table?archived=1");
+    await nav().findByText("5");
+
+    await userEvent.click(nav().getByRole("link", { name: /^Applied/ }));
+
+    expect(current()).toEqual(["Applied2"]);
   });
 });

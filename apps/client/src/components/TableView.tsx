@@ -11,6 +11,7 @@ import { Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { daysInStage, formatDate, isOverdue, localToday, shortTimeInStage } from "../lib/dates.ts";
+import { useArchiveActions } from "../lib/useArchiveActions.ts";
 import { employmentLabel } from "../lib/jobSummary.ts";
 import { compactSalary } from "../lib/salary.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
@@ -18,6 +19,7 @@ import { type SortColumn, type TableQuery, parseTableQuery, toSearchParams } fro
 import { filterApplications, sortApplications } from "../lib/tableRows.ts";
 import { useApplicationsContext } from "../lib/useApplications.tsx";
 import { useOpenApplication } from "../lib/useOpenApplication.ts";
+import { ArchiveButton } from "./ArchiveButton.tsx";
 import { FilterDropdown } from "./FilterDropdown.tsx";
 import "./TableView.css";
 
@@ -49,7 +51,20 @@ function NextStep({ application, today }: { application: Application; today: str
   );
 }
 
-function Row({ application, today, onOpen }: { application: Application; today: string; onOpen: (a: Application) => void }) {
+function Row({
+  application,
+  today,
+  onOpen,
+  onArchive,
+  restore,
+}: {
+  application: Application;
+  today: string;
+  onOpen: (a: Application) => void;
+  /** Archives the row's application, or restores it in the Archived view (spec 017, AC-2, AC-5). */
+  onArchive: (a: Application) => void;
+  restore: boolean;
+}) {
   const StageIcon = STAGE_ICONS[application.stage];
   const pay = compactSalary(application.salaryMin, application.salaryMax, application.salaryPeriod);
   return (
@@ -95,6 +110,9 @@ function Row({ application, today, onOpen }: { application: Application; today: 
           <Clock size={14} aria-hidden="true" /> {shortTimeInStage(daysInStage(application.stageChangedAt))}
         </span>
       </td>
+      <td className="cell-actions">
+        <ArchiveButton application={application} restore={restore} onClick={onArchive} />
+      </td>
     </tr>
   );
 }
@@ -116,11 +134,13 @@ const WORK_MODE_OPTIONS = WORK_MODES.map((value) => ({ value, label: WORK_MODE_L
 const EMPLOYMENT_OPTIONS = EMPLOYMENT_TYPES.map((value) => ({ value, label: EMPLOYMENT_TYPE_LABELS[value] }));
 
 export function TableView() {
-  const { applications } = useApplicationsContext();
+  const { applications: active, archivedApplications } = useApplicationsContext();
   const openApplication = useOpenApplication();
+  const { archive, restore, error: archiveError, dismissError } = useArchiveActions();
   const [params, setParams] = useSearchParams();
   const query = parseTableQuery(params);
   const today = localToday();
+  const applications = query.archived ? archivedApplications : active;
 
   // The address holds the search, filters, and sort. Changes replace the entry, so Back leaves the table (spec 012, AC-2, AC-13).
   const update = (changes: Partial<TableQuery>) => {
@@ -138,7 +158,11 @@ export function TableView() {
   }, [query.search]);
 
   if (applications.length === 0) {
-    return <p className="board-empty">No applications yet. Use the Add application button in the sidebar to add your first one.</p>;
+    return query.archived ? (
+      <p className="board-empty">Nothing is archived.</p>
+    ) : (
+      <p className="board-empty">No applications yet. Use the Add application button in the sidebar to add your first one.</p>
+    );
   }
 
   const rows = sortApplications(filterApplications(applications, query), query.sort);
@@ -150,6 +174,14 @@ export function TableView() {
 
   return (
     <>
+      {archiveError && (
+        <div className="board-error" role="alert">
+          <span>{archiveError}</span>
+          <button type="button" onClick={dismissError}>
+            Dismiss
+          </button>
+        </div>
+      )}
       <div className="table-toolbar" role="group" aria-label="Search and filters">
         <input
           type="search"
@@ -218,11 +250,21 @@ export function TableView() {
                     </th>
                   );
                 })}
+                <th scope="col">
+                  <span className="visually-hidden">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((application) => (
-                <Row key={application.id} application={application} today={today} onOpen={openApplication} />
+                <Row
+                  key={application.id}
+                  application={application}
+                  today={today}
+                  onOpen={openApplication}
+                  onArchive={query.archived ? restore : archive}
+                  restore={query.archived}
+                />
               ))}
             </tbody>
           </table>

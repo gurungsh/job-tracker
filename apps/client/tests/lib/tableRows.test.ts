@@ -5,7 +5,7 @@ import type { SortColumn, TableQuery } from "../../src/lib/tableQuery.ts";
 import { application } from "../support/fakeServer.ts";
 
 const NOW = new Date(2026, 9, 10, 9, 0);
-const none: TableQuery = { search: "", stages: [], workModes: [], employmentTypes: [], sort: null };
+const none: TableQuery = { search: "", stages: [], workModes: [], employmentTypes: [], archived: false, sort: null };
 
 function names(applications: Application[]) {
   return applications.map((a) => a.companyName);
@@ -46,7 +46,7 @@ describe("filterApplications (spec 012, AC-6 to AC-9)", () => {
   });
 
   it("requires the search and every filter to match (AC-9)", () => {
-    const query: TableQuery = { search: "acme", stages: ["applied"], workModes: ["remote"], employmentTypes: ["full_time"], sort: null };
+    const query: TableQuery = { search: "acme", stages: ["applied"], workModes: ["remote"], employmentTypes: ["full_time"], archived: false, sort: null };
     expect(names(filterApplications(list, query))).toEqual(["Acme Corp"]);
     expect(filterApplications(list, { ...none, search: "acme", stages: ["applied"], workModes: ["onsite"] })).toEqual([]);
   });

@@ -6,10 +6,12 @@ type FilterDropdownProps<T extends string> = {
   options: readonly { value: T; label: string }[];
   selected: readonly T[];
   onChange: (selected: T[]) => void;
+  /** What Deselect All does when clearing isn't allowed, such as the board's stages (spec 021, AC-7). */
+  onDeselectAll?: () => void;
 };
 
-/** A button that opens a list of checkboxes, one per value (spec 012, AC-7, AC-8, AC-22). */
-export function FilterDropdown<T extends string>({ label, options, selected, onChange }: FilterDropdownProps<T>) {
+/** A button that opens a list of checkboxes, one per value (spec 012, AC-7, AC-8, AC-22), with a Select All / Deselect All button (spec 021, AC-5, AC-6). */
+export function FilterDropdown<T extends string>({ label, options, selected, onChange, onDeselectAll }: FilterDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -31,6 +33,13 @@ export function FilterDropdown<T extends string>({ label, options, selected, onC
     // Keep the order of `options`, however the boxes are checked.
     const next = options.map((option) => option.value).filter((v) => (v === value ? !selected.includes(v) : selected.includes(v)));
     onChange(next);
+  };
+
+  const allSelected = options.every((option) => selected.includes(option.value));
+  const toggleAll = () => {
+    if (!allSelected) onChange(options.map((option) => option.value));
+    else if (onDeselectAll) onDeselectAll();
+    else onChange([]);
   };
 
   return (
@@ -70,6 +79,9 @@ export function FilterDropdown<T extends string>({ label, options, selected, onC
       </button>
       {open && (
         <div className="filter-dropdown-list" id={listId} role="group" aria-label={label}>
+          <button type="button" className="filter-dropdown-all" onClick={toggleAll}>
+            {allSelected ? "Deselect All" : "Select All"}
+          </button>
           {options.map((option) => (
             <label key={option.value}>
               <input

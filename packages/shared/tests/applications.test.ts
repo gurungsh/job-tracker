@@ -10,6 +10,7 @@ describe("applicationInputSchema", () => {
   it("accepts just a company and a job title, defaulting the rest", () => {
     expect(applicationInputSchema.parse({ companyName: "Acme", jobTitle: "Engineer" })).toEqual({
       companyName: "Acme",
+      companyWebsite: null,
       jobTitle: "Engineer",
       stage: "wishlist",
       nextStep: null,
@@ -189,6 +190,29 @@ describe("applicationInputSchema job details", () => {
       location: "Location must be 200 characters or fewer",
       source: "Source must be 200 characters or fewer",
       jobDescription: "Job description must be 50,000 characters or fewer",
+    });
+  });
+});
+
+describe("applicationInputSchema companyWebsite (spec 017, AC-7)", () => {
+  const base = { companyName: "Acme", jobTitle: "Engineer" };
+
+  it("adds https:// to a website typed without a scheme, and keeps one that has it", () => {
+    expect(applicationInputSchema.parse({ ...base, companyWebsite: " acme.com " }).companyWebsite).toBe("https://acme.com");
+    expect(applicationInputSchema.parse({ ...base, companyWebsite: "http://acme.com" }).companyWebsite).toBe("http://acme.com");
+  });
+
+  it.each([["", null], [null, null], [undefined, null], ["   ", null]])("treats %j as no website", (typed, saved) => {
+    expect(applicationInputSchema.parse({ ...base, companyWebsite: typed }).companyWebsite).toBe(saved);
+  });
+
+  it("rejects an address that isn't http or https, and one that is too long", () => {
+    expect(errorsFor({ ...base, companyWebsite: "ftp://acme.com" })).toEqual({
+      companyWebsite: "Website must be a web address starting with http:// or https://",
+    });
+    expect(errorsFor({ ...base, companyWebsite: "not a site" })).toHaveProperty("companyWebsite");
+    expect(errorsFor({ ...base, companyWebsite: `acme.com/${"a".repeat(2000)}` })).toEqual({
+      companyWebsite: "Website must be 2,000 characters or fewer",
     });
   });
 });

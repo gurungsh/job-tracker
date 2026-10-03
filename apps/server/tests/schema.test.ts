@@ -99,6 +99,7 @@ describe("migration 0002 (job details)", () => {
         "0003_create_activities.sql",
         "0004_create_contacts.sql",
         "0005_create_requirements.sql",
+        "0006_archive_website_entry_times.sql",
       ]);
       const row = oldDb.prepare(`SELECT job_title, ${detailColumns.join(", ")} FROM applications`).get();
       expect(row).toEqual({ job_title: "Engineer", ...Object.fromEntries(detailColumns.map((column) => [column, null])) });
@@ -196,7 +197,7 @@ describe("migration 0004 (contacts)", () => {
     const oldDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-old-migrations-"));
     const oldDb = openDatabase(path.join(tempDir, "old3.db"));
     try {
-      for (const file of fs.readdirSync(migrationsDir).filter((name) => !name.startsWith("0004") && !name.startsWith("0005"))) {
+      for (const file of fs.readdirSync(migrationsDir).filter((name) => !/^000[456]/.test(name))) {
         fs.copyFileSync(path.join(migrationsDir, file), path.join(oldDir, file));
       }
       migrate(oldDb, oldDir);
@@ -211,7 +212,11 @@ describe("migration 0004 (contacts)", () => {
         .prepare("INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at) VALUES (?, 'note', '2026-10-01', 'kept', ?, ?)")
         .run(applicationId, now, now);
 
-      expect(migrate(oldDb, migrationsDir)).toEqual(["0004_create_contacts.sql", "0005_create_requirements.sql"]);
+      expect(migrate(oldDb, migrationsDir)).toEqual([
+        "0004_create_contacts.sql",
+        "0005_create_requirements.sql",
+        "0006_archive_website_entry_times.sql",
+      ]);
       expect(oldDb.prepare("SELECT text, contact_id FROM activities").get()).toEqual({ text: "kept", contact_id: null });
       expect(oldDb.prepare("SELECT COUNT(*) AS n FROM contacts").get()).toEqual({ n: 0 });
     } finally {
@@ -286,5 +291,55 @@ describe("migration 0005 (requirements)", () => {
     db.prepare("DELETE FROM applications WHERE id = ?").run(id);
 
     expect(db.prepare("SELECT COUNT(*) AS n FROM requirements").get()).toEqual({ n: 0 });
+  });
+});
+
+describe("migration 0006 (archive, website, entry time)", () => {
+  it("leaves existing data unarchived, without a website, and without a time (spec 017, AC-12)", () => {
+    const oldDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-tracker-old-migrations-"));
+    const oldDb = openDatabase(path.join(tempDir, "old6.db"));
+    try {
+      for (const file of fs.readdirSync(migrationsDir).filter((name) => !name.startsWith("0006"))) {
+        fs.copyFileSync(path.join(migrationsDir, file), path.join(oldDir, file));
+      }
+      migrate(oldDb, oldDir);
+      const { lastInsertRowid: companyId } = oldDb.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+      const { lastInsertRowid: applicationId } = oldDb
+        .prepare(
+          `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+           VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+        )
+        .run(companyId, now, now, now);
+      oldDb
+        .prepare("INSERT INTO activities (application_id, type, occurred_on, text, created_at, updated_at) VALUES (?, 'note', '2026-10-01', 'kept', ?, ?)")
+        .run(applicationId, now, now);
+
+      expect(migrate(oldDb, migrationsDir)).toEqual(["0006_archive_website_entry_times.sql"]);
+      expect(oldDb.prepare("SELECT job_title, archived_at FROM applications").get()).toEqual({ job_title: "Engineer", archived_at: null });
+      expect(oldDb.prepare("SELECT name, website FROM companies").get()).toEqual({ name: "Acme", website: null });
+      expect(oldDb.prepare("SELECT text, occurred_time FROM activities").get()).toEqual({ text: "kept", occurred_time: null });
+    } finally {
+      oldDb.close();
+      fs.rmSync(oldDir, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts a time of day or none, and rejects anything else", () => {
+    const { lastInsertRowid: companyId } = db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run("Acme", now);
+    const { lastInsertRowid: applicationId } = db
+      .prepare(
+        `INSERT INTO applications (company_id, job_title, stage, stage_changed_at, created_at, updated_at)
+         VALUES (?, 'Engineer', 'applied', ?, ?, ?)`,
+      )
+      .run(companyId, now, now, now);
+    const insert = (time: string | null) =>
+      db
+        .prepare("INSERT INTO activities (application_id, type, occurred_on, occurred_time, text, created_at, updated_at) VALUES (?, 'note', '2026-10-01', ?, 'x', ?, ?)")
+        .run(applicationId, time, now, now);
+
+    expect(() => insert("14:30")).not.toThrow();
+    expect(() => insert(null)).not.toThrow();
+    expect(() => insert("2:30 PM")).toThrow(/CHECK/);
+    expect(() => insert("14:60")).toThrow(/CHECK/);
   });
 });

@@ -18,10 +18,10 @@ export type Clock = { today: string; now: string };
 type Row = Record<string, SQLOutputValue>;
 
 const selectApplications = `
-  SELECT a.id, a.company_id, c.name AS company_name, a.job_title, a.stage, a.next_step, a.next_step_due,
+  SELECT a.id, a.company_id, c.name AS company_name, c.website AS company_website, a.job_title, a.stage, a.next_step, a.next_step_due,
          a.applied_on, a.closed_on, a.stage_changed_at, a.created_at, a.updated_at,
          a.job_link, a.location, a.work_mode, a.employment_type, a.contract_length_months,
-         a.salary_min, a.salary_max, a.salary_period, a.source, a.job_description
+         a.salary_min, a.salary_max, a.salary_period, a.source, a.job_description, a.archived_at
   FROM applications a
   JOIN companies c ON c.id = a.company_id`;
 
@@ -35,14 +35,14 @@ export function listApplications(db: DatabaseSync): Application[] {
 
 export function listCompanies(db: DatabaseSync): Company[] {
   return db
-    .prepare("SELECT id, name FROM companies ORDER BY name COLLATE NOCASE")
+    .prepare("SELECT id, name, website FROM companies ORDER BY name COLLATE NOCASE")
     .all()
-    .map((row) => ({ id: Number(row.id), name: String(row.name) }));
+    .map((row) => ({ id: Number(row.id), name: String(row.name), website: nullableText(row.website) }));
 }
 
 export function createApplication(db: DatabaseSync, input: ValidApplicationInput, clock: Clock): Application {
   return inTransaction(db, () => {
-    const companyId = findOrCreateCompany(db, input.companyName, clock.now);
+    const companyId = findOrCreateCompany(db, input.companyName, input.companyWebsite, clock.now);
     const dates = stageDates({ stage: input.stage, appliedOn: input.appliedOn, ...clock });
     const { lastInsertRowid } = db
       .prepare(
@@ -80,7 +80,7 @@ export function updateApplication(
     const previous = getApplication(db, id);
     if (!previous) return undefined;
 
-    const companyId = findOrCreateCompany(db, input.companyName, clock.now);
+    const companyId = findOrCreateCompany(db, input.companyName, input.companyWebsite, clock.now);
     const dates = stageDates({ previous, stage: input.stage, appliedOn: input.appliedOn, ...clock });
     db.prepare(
       `UPDATE applications
@@ -109,6 +109,21 @@ export function updateApplication(
     }
     return getApplication(db, id);
   });
+}
+
+/**
+ * Hides an application from the board, the table, and the counts, without changing anything else about it (spec 017, AC-1).
+ * Archiving one that is already archived keeps the first time. Returns undefined if it doesn't exist.
+ */
+export function archiveApplication(db: DatabaseSync, id: number, now: string): Application | undefined {
+  db.prepare("UPDATE applications SET archived_at = COALESCE(archived_at, ?) WHERE id = ?").run(now, id);
+  return getApplication(db, id);
+}
+
+/** Brings an archived application back in the stage it had (spec 017, AC-5). Returns undefined if it doesn't exist. */
+export function restoreApplication(db: DatabaseSync, id: number): Application | undefined {
+  db.prepare("UPDATE applications SET archived_at = NULL WHERE id = ?").run(id);
+  return getApplication(db, id);
 }
 
 /** Returns false if the application doesn't exist. */
@@ -151,11 +166,19 @@ export function getApplication(db: DatabaseSync, id: number): Application | unde
   return row ? toApplication(row) : undefined;
 }
 
-/** The company's name column ignores case, so "acme corp" finds "Acme Corp" (spec 002, AC-18). */
-function findOrCreateCompany(db: DatabaseSync, name: string, now: string): number {
+/**
+ * The company's name column ignores case, so "acme corp" finds "Acme Corp" (spec 002, AC-18). The website is set on
+ * the company either way, and an empty one clears it, so every application at the company shows the same one (spec 017, AC-7).
+ */
+function findOrCreateCompany(db: DatabaseSync, name: string, website: string | null, now: string): number {
   const existing = db.prepare("SELECT id FROM companies WHERE name = ?").get(name);
-  if (existing) return Number(existing.id);
-  const { lastInsertRowid } = db.prepare("INSERT INTO companies (name, created_at) VALUES (?, ?)").run(name, now);
+  if (existing) {
+    db.prepare("UPDATE companies SET website = ? WHERE id = ?").run(website, Number(existing.id));
+    return Number(existing.id);
+  }
+  const { lastInsertRowid } = db
+    .prepare("INSERT INTO companies (name, website, created_at) VALUES (?, ?, ?)")
+    .run(name, website, now);
   return Number(lastInsertRowid);
 }
 
@@ -176,6 +199,7 @@ function toApplication(row: Row): Application {
     id: Number(row.id),
     companyId: Number(row.company_id),
     companyName: String(row.company_name),
+    companyWebsite: nullableText(row.company_website),
     jobTitle: String(row.job_title),
     stage: row.stage as Stage,
     nextStep: nullableText(row.next_step),
@@ -195,6 +219,7 @@ function toApplication(row: Row): Application {
     salaryPeriod: nullableText(row.salary_period) as SalaryPeriod | null,
     source: nullableText(row.source),
     jobDescription: nullableText(row.job_description),
+    archivedAt: nullableText(row.archived_at),
   };
 }
 

@@ -82,6 +82,7 @@ describe("FilterDropdown (spec 012, AC-7, AC-8, AC-22)", () => {
     expect(screen.queryByRole("checkbox")).toBeNull();
 
     await user.click(button);
+    await user.tab(); // Select All
     await user.tab(); // Alpha
     await user.tab(); // Beta
     await user.tab(); // Gamma
@@ -94,8 +95,36 @@ describe("FilterDropdown (spec 012, AC-7, AC-8, AC-22)", () => {
     render(<Harness />);
     await user.tab();
     await user.keyboard("{Enter}");
+    await user.tab(); // Select All
     await user.tab();
     await user.keyboard(" ");
     expect(screen.getByRole("status").textContent).toBe("a");
+  });
+});
+
+describe("FilterDropdown Select All / Deselect All (spec 021, AC-5, AC-6)", () => {
+  it("selects every option, then clears them, keeping the list open", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={["b"]} />);
+    await user.click(screen.getByRole("button", { name: "Letters 1" }));
+
+    await user.click(screen.getByRole("button", { name: "Select All" }));
+    expect(screen.getByRole("status").textContent).toBe("a,b,c");
+    expect(screen.getAllByRole("checkbox")).toHaveLength(3);
+
+    await user.click(screen.getByRole("button", { name: "Deselect All" }));
+    expect(screen.getByRole("status").textContent).toBe("");
+    expect(screen.getByRole("button", { name: "Select All" })).toBeTruthy();
+  });
+
+  it("calls onDeselectAll instead of clearing when it is given", async () => {
+    const user = userEvent.setup();
+    let called = 0;
+    render(
+      <FilterDropdown label="Letters" options={options} selected={["a", "b", "c"]} onChange={() => undefined} onDeselectAll={() => (called += 1)} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Letters 3" }));
+    await user.click(screen.getByRole("button", { name: "Deselect All" }));
+    expect(called).toBe(1);
   });
 });

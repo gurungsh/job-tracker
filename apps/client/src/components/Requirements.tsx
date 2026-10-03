@@ -14,7 +14,11 @@ import { EntryActions } from "./EntryActions.tsx";
 import { SectionCard } from "./SectionCard.tsx";
 import "./Requirements.css";
 
-type RequirementsProps = { applicationId: number };
+type RequirementsProps = {
+  applicationId: number;
+  /** True for an archived application: everything shows, and nothing can be changed until it is restored (spec 017, AC-6). */
+  readOnly?: boolean;
+};
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; items: Requirement[] };
 
@@ -26,7 +30,7 @@ function sortItems(items: Requirement[]): Requirement[] {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** A posting's requirements, with a checkbox for each one I meet (spec 009), in a card of its own (spec 016). */
-export function Requirements({ applicationId }: RequirementsProps) {
+export function Requirements({ applicationId, readOnly = false }: RequirementsProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
   // Several rows can be edited at once, so opening one doesn't throw away what is typed in another (spec 016, edge cases).
@@ -121,7 +125,7 @@ export function Requirements({ applicationId }: RequirementsProps) {
   };
 
   // "+ Add" is hidden while the form is open, so there is never a second button with the same name (spec 016, AC-6).
-  const addButton = adding ? null : (
+  const addButton = adding || readOnly ? null : (
     <button
       ref={addToggle}
       type="button"
@@ -140,7 +144,7 @@ export function Requirements({ applicationId }: RequirementsProps) {
     <div className="requirements">
       {summary && <p className="requirements-summary">{summary}</p>}
 
-      {adding && (
+      {adding && !readOnly && (
         <RequirementForm
           heading="Add requirement"
           submitLabel="Save"
@@ -164,12 +168,14 @@ export function Requirements({ applicationId }: RequirementsProps) {
       )}
 
       {state.items.length === 0 ? (
-        <p className="requirements-status">No requirements yet. Use + Add to list the items from the posting.</p>
+        <p className="requirements-status">
+          {readOnly ? "No requirements." : "No requirements yet. Use + Add to list the items from the posting."}
+        </p>
       ) : (
         <ul className="requirements-list">
           {state.items.map((item) => (
             <li key={item.id} className="requirement">
-              {editingIds.includes(item.id) ? (
+              {!readOnly && editingIds.includes(item.id) ? (
                 <RequirementForm
                   heading="Edit requirement"
                   submitLabel="Save"
@@ -189,24 +195,26 @@ export function Requirements({ applicationId }: RequirementsProps) {
                     <input
                       type="checkbox"
                       checked={item.met}
-                      disabled={savingIds.includes(item.id)}
+                      disabled={readOnly || savingIds.includes(item.id)}
                       onChange={() => void toggle(item)}
                     />
                     <span className="requirement-text">{item.text}</span>
                   </label>
                   {/* Outside the label, so the checkbox keeps the requirement's own text as its name. */}
                   {item.kind === "preferred" && <span className="pill">Nice to have</span>}
-                  <EntryActions
-                    what="requirement"
-                    text={item.text}
-                    onEdit={() => {
-                      setActionError(null);
-                      setEditingIds((ids) => [...ids, item.id]);
-                    }}
-                    onDelete={() => {
-                      setDeleting(item);
-                    }}
-                  />
+                  {!readOnly && (
+                    <EntryActions
+                      what="requirement"
+                      text={item.text}
+                      onEdit={() => {
+                        setActionError(null);
+                        setEditingIds((ids) => [...ids, item.id]);
+                      }}
+                      onDelete={() => {
+                        setDeleting(item);
+                      }}
+                    />
+                  )}
                 </div>
               )}
             </li>

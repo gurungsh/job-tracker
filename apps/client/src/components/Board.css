@@ -15,7 +15,10 @@
   gap: 0.75rem;
   overflow-x: auto;
   padding-bottom: 0.5rem;
-  align-items: start;
+  align-items: stretch;
+  /* Columns fill the page below the header, view bar, and filters, and their cards scroll inside (spec 021, AC-10, AC-11). */
+  height: calc(100vh - var(--board-offset, 13rem));
+  min-height: 24rem;
 }
 
 .column {
@@ -23,6 +26,10 @@
   border-radius: var(--radius);
   padding: 0.5rem;
   min-height: 8rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  min-width: 0;
 }
 
 .column-header {
@@ -50,6 +57,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .column--drop-target {
@@ -67,4 +77,30 @@
   color: var(--danger);
   border: 1px solid var(--danger);
   border-radius: var(--radius);
+}
+
+.board-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.board-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Where the dragged card will land in the column it is over (spec 019, AC-2). */
+.card-placeholder {
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  box-sizing: border-box;
 }

@@ -45,6 +45,14 @@ export function formatDate(isoDate: string): string {
   );
 }
 
+/** "14:30" → "2:30 PM", the wall-clock time as entered, with no time zone (spec 017, AC-10). */
+export function formatTime(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number);
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" })
+    .format(new Date(2000, 0, 1, hours ?? 0, minutes ?? 0))
+    .replace(/\u202f/g, " ");
+}
+
 /** "2026-10-01T08:53:00.000Z" → "Oct 1, 2026, 4:53 AM", in this computer's time zone (spec 016, AC-10). */
 export function formatDateTime(timestamp: string): string {
   // Newer systems put a narrow no-break space before AM or PM. A plain space reads the same and is easier to match.

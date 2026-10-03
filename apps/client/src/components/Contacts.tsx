@@ -10,6 +10,8 @@ type ContactsProps = {
   companyId: number;
   /** Called after a contact is added, changed, or deleted, so a timeline that offers the contacts can reload (spec 013, AC-12). */
   onChange?: () => void;
+  /** True for an archived application: the people show, and can't be added, changed, or deleted from its page (spec 017, AC-6). */
+  readOnly?: boolean;
 };
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; contacts: Contact[] };
@@ -22,7 +24,7 @@ function sortContacts(contacts: Contact[]): Contact[] {
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** The people at an application's company, shared by every application there (spec 008), in a card of its own (spec 016). */
-export function Contacts({ companyId, onChange }: ContactsProps) {
+export function Contacts({ companyId, onChange, readOnly = false }: ContactsProps) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [loadCount, setLoadCount] = useState(0);
   // Several people can be edited at once, so opening one doesn't throw away what is typed in another (spec 016, edge cases).
@@ -103,7 +105,7 @@ export function Contacts({ companyId, onChange }: ContactsProps) {
   };
 
   // "+ Add" is hidden while the form is open, so there is never a second button with the same name (spec 016, AC-6).
-  const addButton = adding ? null : (
+  const addButton = adding || readOnly ? null : (
     <button
       ref={addToggle}
       type="button"
@@ -120,7 +122,7 @@ export function Contacts({ companyId, onChange }: ContactsProps) {
   return card(
     addButton,
     <div className="contacts">
-      {adding && (
+      {adding && !readOnly && (
         <ContactForm
           heading="Add contact"
           submitLabel="Save"
@@ -142,12 +144,14 @@ export function Contacts({ companyId, onChange }: ContactsProps) {
       )}
 
       {state.contacts.length === 0 ? (
-        <p className="contacts-status">Nobody recorded yet — add the recruiter or hiring manager you're talking to.</p>
+        <p className="contacts-status">
+          {readOnly ? "Nobody recorded yet." : "Nobody recorded yet — add the recruiter or hiring manager you're talking to."}
+        </p>
       ) : (
         <ul className="contacts-list">
           {state.contacts.map((contact) => (
             <li key={contact.id} className="contact">
-              {editingIds.includes(contact.id) ? (
+              {!readOnly && editingIds.includes(contact.id) ? (
                 <ContactForm
                   heading="Edit contact"
                   submitLabel="Save"
@@ -174,17 +178,19 @@ export function Contacts({ companyId, onChange }: ContactsProps) {
                     {contact.phone && <p className="contact-line">{contact.phone}</p>}
                     {contact.notes && <p className="contact-notes">{contact.notes}</p>}
                   </div>
-                  <EntryActions
-                    what="contact"
-                    text={contact.name}
-                    onEdit={() => {
-                      setActionError(null);
-                      setEditingIds((ids) => [...ids, contact.id]);
-                    }}
-                    onDelete={() => {
-                      setDeleting(contact);
-                    }}
-                  />
+                  {!readOnly && (
+                    <EntryActions
+                      what="contact"
+                      text={contact.name}
+                      onEdit={() => {
+                        setActionError(null);
+                        setEditingIds((ids) => [...ids, contact.id]);
+                      }}
+                      onDelete={() => {
+                        setDeleting(contact);
+                      }}
+                    />
+                  )}
                 </div>
               )}
             </li>

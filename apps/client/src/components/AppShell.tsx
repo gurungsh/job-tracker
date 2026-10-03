@@ -7,6 +7,7 @@ import { useApplicationsStore } from "../lib/useApplications.tsx";
 import { ApplicationDialog } from "./ApplicationDialog.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
+import { UserGuideLink } from "./UserGuideLink.tsx";
 import "./AppShell.css";
 
 const DRAWER_ID = "app-drawer";
@@ -88,7 +89,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link to="/">Job Tracker</Link>
           </h1>
         </div>
-        <ThemeToggle />
+        <div className="app-header-end">
+          <UserGuideLink compact={narrow} />
+          <ThemeToggle />
+        </div>
       </header>
       <div className="app-body">
         {!narrow && (

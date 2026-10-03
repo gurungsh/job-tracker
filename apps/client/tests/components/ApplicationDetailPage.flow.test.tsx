@@ -6,6 +6,7 @@ import { MemoryRouter, useNavigate } from "react-router";
 import { App } from "../../src/App.tsx";
 import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
+import { showAllStages } from "../support/stages.ts";
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -28,7 +29,7 @@ const screening = application({
 
 /** From the board: click the card to open the page, then Edit to open the form (spec 013, AC-1, AC-6). */
 async function openEditFromBoard(name: RegExp) {
-  await userEvent.click(await screen.findByRole("button", { name }));
+  await userEvent.click(await screen.findByRole("button", { name: (accessible) => name.test(accessible) && !/^(Archive|Restore|Move):/.test(accessible) }));
   await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
   return screen.findByRole("dialog", { name: "Edit application" });
 }
@@ -38,7 +39,7 @@ describe("opening an application from the board and editing it (spec 013)", () =
     installFakeServer([screening]);
     render(<AppAt />);
 
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ }));
 
     expect(await screen.findByRole("heading", { level: 2, name: "Engineer" })).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -60,10 +61,11 @@ describe("opening an application from the board and editing it (spec 013)", () =
   });
 
   it("shows the closed date of a closed application on its page (AC-3)", async () => {
+    showAllStages();
     installFakeServer([application({ companyName: "Globex", jobTitle: "Designer", stage: "rejected", closedOn: "2026-10-10" })]);
     render(<AppAt />);
 
-    await userEvent.click(await screen.findByRole("button", { name: /Globex/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Globex/ }));
 
     const details = await screen.findByRole("region", { name: "Details" });
     expect(within(details).getByText("Oct 10, 2026")).toBeTruthy();
@@ -81,7 +83,7 @@ describe("opening an application from the board and editing it (spec 013)", () =
     expect(await screen.findByRole("heading", { level: 2, name: "Staff Engineer" })).toBeTruthy();
     await userEvent.click(screen.getByRole("link", { name: "Back to board" }));
 
-    expect(await screen.findByRole("button", { name: /Staff Engineer/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Staff Engineer/ })).toBeTruthy();
     expect(server.requests.find((r) => r.method === "PUT")).toMatchObject({
       path: `/api/applications/${String(screening.id)}`,
       body: expect.objectContaining({ jobTitle: "Staff Engineer", stage: "screening" }) as unknown,
@@ -98,7 +100,7 @@ describe("opening an application from the board and editing it (spec 013)", () =
     await userEvent.click(await screen.findByRole("link", { name: "Back to board" }));
 
     const interviewing = await screen.findByRole("region", { name: "Interviewing" });
-    expect(await within(interviewing).findByRole("button", { name: /Acme Corp/ })).toBeTruthy();
+    expect(await within(interviewing).findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ })).toBeTruthy();
     expect(within(screen.getByRole("region", { name: "Screening" })).queryByRole("button")).toBeNull();
   });
 
@@ -116,13 +118,13 @@ describe("opening an application from the board and editing it (spec 013)", () =
   it("deletes from the page and the card is gone from the board (AC-7, AC-9)", async () => {
     installFakeServer([screening]);
     render(<AppAt />);
-    await userEvent.click(await screen.findByRole("button", { name: /Acme Corp/ }));
+    await userEvent.click(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ }));
     await userEvent.click(await screen.findByRole("button", { name: "Delete" }));
 
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("region", { name: "Screening" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Acme Corp/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ })).toBeNull();
   });
 
   it("goes back with the browser's Back button to the board or the table with its filters (AC-8, AC-9)", async () => {

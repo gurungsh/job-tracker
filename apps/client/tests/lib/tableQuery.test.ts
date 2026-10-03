@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { type TableQuery, parseTableQuery, toSearchParams } from "../../src/lib/tableQuery.ts";
 
-const empty: TableQuery = { search: "", stages: [], workModes: [], employmentTypes: [], sort: null };
+const empty: TableQuery = { search: "", stages: [], workModes: [], employmentTypes: [], archived: false, sort: null };
 
 describe("parseTableQuery (spec 012, AC-13, AC-14)", () => {
   it("is empty for an address with no parameters", () => {
@@ -15,6 +15,7 @@ describe("parseTableQuery (spec 012, AC-13, AC-14)", () => {
       stages: ["applied", "offer"],
       workModes: ["remote"],
       employmentTypes: ["contract"],
+      archived: false,
       sort: { column: "pay", direction: "desc" },
     });
   });
@@ -53,6 +54,7 @@ describe("toSearchParams", () => {
       stages: ["applied", "offer"],
       workModes: [],
       employmentTypes: ["contract"],
+      archived: false,
       sort: { column: "age", direction: "asc" },
     };
     const params = toSearchParams(query);
@@ -70,8 +72,24 @@ describe("toSearchParams", () => {
       stages: ["screening"],
       workModes: ["hybrid", "remote"],
       employmentTypes: ["full_time"],
+      archived: false,
       sort: { column: "next", direction: "desc" },
     };
     expect(parseTableQuery(new URLSearchParams(toSearchParams(query).toString()))).toEqual(query);
+  });
+});
+
+describe("the archived view in the address (spec 017, AC-4)", () => {
+  it("reads archived=1 and ignores any other value", () => {
+    expect(parseTableQuery(new URLSearchParams("archived=1")).archived).toBe(true);
+    expect(parseTableQuery(new URLSearchParams("archived=0")).archived).toBe(false);
+    expect(parseTableQuery(new URLSearchParams("archived=yes")).archived).toBe(false);
+  });
+
+  it("writes it only when it is set, and keeps the search and sort beside it", () => {
+    expect(toSearchParams(empty).toString()).toBe("");
+    const query = { ...empty, search: "acme", archived: true, sort: { column: "company" as const, direction: "asc" as const } };
+    expect(toSearchParams(query).toString()).toBe("q=acme&archived=1&sort=company&dir=asc");
+    expect(parseTableQuery(toSearchParams(query))).toEqual(query);
   });
 });

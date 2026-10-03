@@ -64,10 +64,17 @@ function useApplications() {
       const known = current.companies.some((company) => company.id === added.companyId);
       const companies = known
         ? current.companies
-        : [...current.companies, { id: added.companyId, name: added.companyName }].sort((a, b) =>
+        : [...current.companies, { id: added.companyId, name: added.companyName, website: added.companyWebsite }].sort((a, b) =>
             a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
           );
-      return { ...current, companies, applications: sortForBoard([...current.applications, added]) };
+      // Saving a website sets it for the whole company, so the suggestions and the company's other applications follow.
+      const withWebsite = companies.map((company) =>
+        company.id === added.companyId ? { ...company, website: added.companyWebsite } : company,
+      );
+      const applications = current.applications.map((a) =>
+        a.companyId === added.companyId ? { ...a, companyWebsite: added.companyWebsite } : a,
+      );
+      return { ...current, companies: withWebsite, applications: sortForBoard([...applications, added]) };
     });
   }, []);
 
@@ -97,7 +104,10 @@ export function useApplicationsStore(): ApplicationsStore {
 
 /** What the applications page hands to the board and the table. */
 export type ApplicationsContext = {
+  /** The ones that aren't archived, for the board and the table. */
   applications: Application[];
+  /** The archived ones, for the Archived table (spec 017, AC-4). */
+  archivedApplications: Application[];
   replaceApplication: (replacement: Application) => void;
 };
 

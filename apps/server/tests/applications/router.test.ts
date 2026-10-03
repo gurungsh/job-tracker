@@ -318,3 +318,135 @@ describe("moving a card by dragging (spec 006)", () => {
     });
   });
 });
+
+describe("company website (spec 017, AC-7, AC-8)", () => {
+  it("saves a website typed without a scheme, returns it everywhere, and clears it when empty", async () => {
+    const created = await create({ companyName: "Acme", jobTitle: "A", companyWebsite: " acme.com " });
+    expect(created.companyWebsite).toBe("https://acme.com");
+
+    const companies = (await (await fetch(`${baseUrl}/api/companies`)).json()) as Company[];
+    expect(companies).toEqual([{ id: created.companyId, name: "Acme", website: "https://acme.com" }]);
+    expect((await list())[0]?.companyWebsite).toBe("https://acme.com");
+
+    const cleared = await send("PUT", `/api/applications/${String(created.id)}`, { companyName: "Acme", jobTitle: "A", companyWebsite: "" });
+    expect(((await cleared.json()) as Application).companyWebsite).toBeNull();
+  });
+
+  it("rejects an address that isn't http or https, and saves nothing", async () => {
+    const response = await send("POST", "/api/applications", { companyName: "Acme", jobTitle: "A", companyWebsite: "ftp://acme.com" });
+
+    expect(response.status).toBe(400);
+    expect(((await response.json()) as ValidationErrorResponse).fields).toEqual({
+      companyWebsite: "Website must be a web address starting with http:// or https://",
+    });
+    expect(await list()).toEqual([]);
+  });
+});
+
+describe("archiving (spec 017)", () => {
+  const archive = (id: number) => send("POST", `/api/applications/${String(id)}/archive`);
+  const restore = (id: number) => send("POST", `/api/applications/${String(id)}/restore`);
+
+  it("archives without changing anything else, and still lists and returns it (AC-1, AC-3)", async () => {
+    const created = await create({ companyName: "Acme", jobTitle: "A", stage: "applied", nextStep: "Call", companyWebsite: "acme.com" });
+
+    const response = await archive(created.id);
+
+    expect(response.status).toBe(200);
+    const archived = (await response.json()) as Application;
+    expect(archived.archivedAt).toEqual(expect.any(String));
+    expect(archived).toEqual({ ...created, archivedAt: archived.archivedAt });
+    expect((await list())[0]).toEqual(archived);
+    expect(await (await fetch(`${baseUrl}/api/applications/${String(created.id)}`)).json()).toEqual(archived);
+  });
+
+  it("restores it in the same stage, with everything else as it was (AC-5)", async () => {
+    const created = await create({ companyName: "Acme", jobTitle: "A", stage: "interviewing" });
+    await archive(created.id);
+
+    const restored = (await (await restore(created.id)).json()) as Application;
+
+    expect(restored).toEqual(created);
+  });
+
+  it("does nothing the second time, and keeps the first archived time (AC-1, AC-5)", async () => {
+    const created = await create({ companyName: "Acme", jobTitle: "A" });
+    const first = (await (await archive(created.id)).json()) as Application;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const second = (await (await archive(created.id)).json()) as Application;
+
+    expect(second.archivedAt).toBe(first.archivedAt);
+    expect(((await (await restore(created.id)).json()) as Application).archivedAt).toBeNull();
+    expect(((await (await restore(created.id)).json()) as Application).archivedAt).toBeNull();
+  });
+
+  it("returns 404 for an application that doesn't exist or an id that isn't a number", async () => {
+    expect((await archive(999)).status).toBe(404);
+    expect((await restore(999)).status).toBe(404);
+    expect((await send("POST", "/api/applications/abc/archive")).status).toBe(404);
+    expect((await send("POST", "/api/applications/abc/restore")).status).toBe(404);
+  });
+});
+
+describe("an archived application is read-only (spec 017, AC-6)", () => {
+  async function archivedWithEntries() {
+    const created = await create({ companyName: "Acme", jobTitle: "A" });
+    const entry = (await (await send("POST", `/api/applications/${String(created.id)}/activities`, { type: "note", occurredOn: "2026-10-01", text: "x" })).json()) as { id: number };
+    const requirement = (await (await send("POST", `/api/applications/${String(created.id)}/requirements`, { text: "Go", kind: "required" })).json()) as { id: number };
+    await send("POST", `/api/applications/${String(created.id)}/archive`);
+    return { created, entry, requirement };
+  }
+  const applicationBody = { companyName: "Acme", jobTitle: "Changed" };
+
+  it("refuses to change it, its timeline, or its requirements, and says why", async () => {
+    const { created, entry, requirement } = await archivedWithEntries();
+    const id = String(created.id);
+    const attempts = [
+      send("PUT", `/api/applications/${id}`, applicationBody),
+      send("POST", `/api/applications/${id}/activities`, { type: "note", occurredOn: "2026-10-02", text: "y" }),
+      send("PUT", `/api/activities/${String(entry.id)}`, { occurredOn: "2026-10-02", text: "y" }),
+      send("DELETE", `/api/activities/${String(entry.id)}`),
+      send("POST", `/api/applications/${id}/requirements`, { text: "More", kind: "preferred" }),
+      send("PUT", `/api/requirements/${String(requirement.id)}`, { text: "Go", kind: "required", met: true }),
+      send("DELETE", `/api/requirements/${String(requirement.id)}`),
+    ];
+
+    for (const response of await Promise.all(attempts)) {
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: "Application is archived" });
+    }
+    expect((await list())[0]?.jobTitle).toBe("A");
+    expect(db.prepare("SELECT COUNT(*) AS n FROM activities").get()).toEqual({ n: 2 });
+    expect(db.prepare("SELECT COUNT(*) AS n FROM requirements").get()).toEqual({ n: 1 });
+  });
+
+  it("still lets me read it, restore it, and delete it", async () => {
+    const { created } = await archivedWithEntries();
+    const id = String(created.id);
+
+    expect((await fetch(`${baseUrl}/api/applications/${id}/activities`)).status).toBe(200);
+    expect((await fetch(`${baseUrl}/api/applications/${id}/requirements`)).status).toBe(200);
+    expect((await send("DELETE", `/api/applications/${id}`)).status).toBe(204);
+  });
+
+  it("allows every change again after it is restored", async () => {
+    const { created, entry, requirement } = await archivedWithEntries();
+    const id = String(created.id);
+    await send("POST", `/api/applications/${id}/restore`);
+
+    expect((await send("PUT", `/api/applications/${id}`, applicationBody)).status).toBe(200);
+    expect((await send("PUT", `/api/activities/${String(entry.id)}`, { occurredOn: "2026-10-02", text: "y" })).status).toBe(200);
+    expect((await send("PUT", `/api/requirements/${String(requirement.id)}`, { text: "Go", kind: "required", met: true })).status).toBe(200);
+  });
+
+  it("doesn't hold back contacts, which belong to the company, and answers 404 for ids that don't exist", async () => {
+    const { created } = await archivedWithEntries();
+
+    const contact = await send("POST", `/api/companies/${String(created.companyId)}/contacts`, { name: "Sam" });
+    expect(contact.status).toBe(201);
+    expect((await send("PUT", "/api/applications/999", applicationBody)).status).toBe(404);
+    expect((await send("PUT", "/api/activities/999", { occurredOn: "2026-10-02", text: "y" })).status).toBe(404);
+    expect((await send("DELETE", "/api/requirements/999")).status).toBe(404);
+  });
+});

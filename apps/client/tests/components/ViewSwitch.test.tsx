@@ -34,10 +34,10 @@ describe("ViewSwitch (spec 012, AC-1, AC-2, AC-15)", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: "Table" }).getAttribute("aria-current")).toBe("page");
-    expect(screen.getByRole("link", { name: "Kanban" }).getAttribute("aria-current")).toBeNull();
-    expect(screen.getByRole("link", { name: "Kanban" }).getAttribute("href")).toBe("/?q=acme&stage=applied");
-    expect(screen.getByRole("link", { name: "Table" }).getAttribute("href")).toBe("/table?q=acme&stage=applied");
+    expect(screen.getByRole("link", { name: "Table View" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Kanban View" }).getAttribute("aria-current")).toBeNull();
+    expect(screen.getByRole("link", { name: "Kanban View" }).getAttribute("href")).toBe("/?q=acme&stage=applied");
+    expect(screen.getByRole("link", { name: "Table View" }).getAttribute("href")).toBe("/table?q=acme&stage=applied");
   });
 
   it("starts on Kanban at the main address (AC-1)", async () => {
@@ -46,7 +46,7 @@ describe("ViewSwitch (spec 012, AC-1, AC-2, AC-15)", () => {
     render(<AppAt />);
 
     expect(await screen.findByRole("region", { name: "Wishlist" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Kanban" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Kanban View" }).getAttribute("aria-current")).toBe("page");
   });
 
   it("switches views, and Back returns to the previous one (AC-2)", async () => {
@@ -62,18 +62,18 @@ describe("ViewSwitch (spec 012, AC-1, AC-2, AC-15)", () => {
     );
     await screen.findByRole("region", { name: "Wishlist" });
 
-    await user.click(screen.getByRole("link", { name: "Table" }));
+    await user.click(screen.getByRole("link", { name: "Table View" }));
     expect(screen.queryByRole("region", { name: "Wishlist" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Table" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Table View" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("status").textContent).toBe("/table");
 
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(await screen.findByRole("region", { name: "Wishlist" })).toBeTruthy();
     expect(screen.getByRole("status").textContent).toBe("/");
 
-    await user.click(screen.getByRole("link", { name: "Table" }));
-    await user.click(screen.getByRole("link", { name: "Kanban" }));
+    await user.click(screen.getByRole("link", { name: "Table View" }));
+    await user.click(screen.getByRole("link", { name: "Kanban View" }));
     expect(await screen.findByRole("region", { name: "Wishlist" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Kanban" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Kanban View" }).getAttribute("aria-current")).toBe("page");
   });
 });

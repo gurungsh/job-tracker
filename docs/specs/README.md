@@ -49,3 +49,8 @@ Copy `plan.md` from the template only after the spec is approved. Copy `tasks.md
 | 014 | [App shell and sidebar](014-app-shell-sidebar/) | Implemented | `feature/app-shell-sidebar` |
 | 015 | [Add button in the sidebar](015-add-button-sidebar/) | Implemented | `feature/add-button-sidebar` |
 | 016 | [Detail page redesign](016-detail-page-redesign/) | Implemented | `feature/detail-page-redesign` |
+| 017 | [Archive, company website, and entry times](017-archive-website-entry-times/) | Implemented | `feature/archive-website-entry-times` |
+| 018 | [Board stage filter and card menu](018-board-stage-filter-card-menu/) | Implemented | `feature/board-stage-filter-card-menu` |
+| 019 | [Drag preview](019-drag-preview/) | Implemented | `feature/drag-preview` |
+| 020 | [User guide](020-user-guide/) | Implemented | `feature/user-guide` |
+| 021 | [UI tweaks](021-ui-tweaks/) | In Progress | `feature/ui-tweaks` |

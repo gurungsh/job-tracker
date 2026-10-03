@@ -4,6 +4,7 @@ import type { Application, ApplicationInput } from "@job-tracker/shared";
 export function applicationToInput(application: Application, changes: Partial<ApplicationInput> = {}): ApplicationInput {
   return {
     companyName: application.companyName,
+    companyWebsite: application.companyWebsite,
     jobTitle: application.jobTitle,
     stage: application.stage,
     nextStep: application.nextStep,
@@ -34,4 +35,9 @@ export function sortForBoard(applications: Application[]): Application[] {
     if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
     return b.id - a.id;
   });
+}
+
+/** Where `moved` would sit among `cards` (a column without it) in board order (spec 019, AC-2, AC-5). */
+export function boardIndex(cards: Application[], moved: Application): number {
+  return sortForBoard([...cards, moved]).findIndex((a) => a.id === moved.id);
 }

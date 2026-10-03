@@ -421,7 +421,7 @@ describe("editing and deleting from the page (spec 013, AC-6, AC-7, AC-8)", () =
     const search = await screen.findByRole<HTMLInputElement>("searchbox", { name: "Search company or job title" });
     expect(search.value).toBe("glo");
     expect(server.applications).toEqual([other]);
-    expect(screen.getByRole("link", { name: "Table" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Table View" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("button", { name: "Designer" })).toBeTruthy();
   });
 
@@ -434,7 +434,7 @@ describe("editing and deleting from the page (spec 013, AC-6, AC-7, AC-8)", () =
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("region", { name: "Applied" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Staff Engineer/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore|Move).*Staff Engineer/ })).toBeNull();
   });
 
   it("stays on the page with an error when deleting fails (AC-7)", async () => {
@@ -464,7 +464,7 @@ describe("the detail page's header (spec 016, AC-2)", () => {
     expect(document.querySelector(".detail-company .company-avatar")).not.toBeNull();
     expect(document.querySelector(".detail-company")?.textContent).toContain("Acme Corp");
     const actions = document.querySelector(".detail-actions") as HTMLElement;
-    expect([...actions.children].map((child) => child.getAttribute("aria-label") ?? child.textContent)).toEqual(["Stage", "Edit", "Delete"]);
+    expect([...actions.children].map((child) => child.getAttribute("aria-label") ?? child.textContent)).toEqual(["Stage", "Edit", "Archive", "Delete"]);
     expect(within(actions).getByRole<HTMLSelectElement>("combobox", { name: "Stage" }).value).toBe("interviewing");
     expect(within(actions).getByRole("button", { name: "Delete" }).classList.contains("danger")).toBe(true);
   });

@@ -12,6 +12,9 @@
 }
 
 .view-switch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.35rem 0.9rem;
   color: var(--text);
   text-decoration: none;

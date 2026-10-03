@@ -10,10 +10,12 @@ import express, { type Request, type Response, type Router } from "express";
 import { localDate } from "../localDate.ts";
 import {
   type Clock,
+  archiveApplication,
   createApplication,
   deleteApplication,
   getApplication,
   listApplications,
+  restoreApplication,
   updateApplication,
 } from "./store.ts";
 
@@ -47,6 +49,20 @@ export function applicationsRouter(db: DatabaseSync): Router {
     if (!input) return;
     const updated = updateApplication(db, id, input, clockFor(req));
     if (updated) res.json(updated);
+    else notFound(res);
+  });
+
+  router.post("/:id/archive", (req, res) => {
+    const id = parseId(req.params.id);
+    const archived = id === undefined ? undefined : archiveApplication(db, id, new Date().toISOString());
+    if (archived) res.json(archived);
+    else notFound(res);
+  });
+
+  router.post("/:id/restore", (req, res) => {
+    const id = parseId(req.params.id);
+    const restored = id === undefined ? undefined : restoreApplication(db, id);
+    if (restored) res.json(restored);
     else notFound(res);
   });
 

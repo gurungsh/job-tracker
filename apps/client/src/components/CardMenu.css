@@ -1,0 +1,65 @@
+/* On a card, the button sits over its top right corner, left of the Archive button, and shows on the same terms. */
+.card-wrap > .card-menu {
+  position: absolute;
+  top: 0.25rem;
+  right: 2.25rem;
+}
+
+@media (hover: hover) {
+  .card-wrap > .card-menu:not(:focus-within) .card-menu-button {
+    opacity: 0;
+  }
+
+  .card-wrap:hover > .card-menu .card-menu-button,
+  .card-wrap:focus-within > .card-menu .card-menu-button {
+    opacity: 1;
+  }
+}
+
+button.card-menu-button:hover {
+  color: var(--text);
+  background: var(--column-bg);
+}
+
+.card-menu-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 11rem;
+  padding: 0.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgb(16 24 40 / 0.18);
+}
+
+.card-menu-heading {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.card-menu-list button[role="menuitem"] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: none;
+}
+
+.card-menu-list button[role="menuitem"] svg {
+  color: var(--stage);
+}
+
+.card-menu-list button[role="menuitem"]:hover,
+.card-menu-list button[role="menuitem"]:focus-visible {
+  background: var(--stage-soft);
+}

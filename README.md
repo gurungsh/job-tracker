@@ -8,17 +8,19 @@ A personal tracker for job applications, built with spec-driven development.
 
 ## What it does
 
-- A board with one column per stage: Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, and Withdrawn. Drag a card to another column to change its stage.
-- A table view of the same applications that you can search, filter by stage, work mode, and employment type, and sort by any column. The search, filters, and sort are kept in the page address, so a view survives a reload and can be bookmarked. A Kanban/Table switch moves between the two views.
-- A sidebar on every screen that lists each stage with its live count. Click a stage to open the table filtered to it.
+- A board with one column per stage: Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, and Withdrawn. Drag a card to another column to change its stage: a copy of the card follows the pointer, and a dashed placeholder shows where it will land. A card's Actions menu has a **Move to** list for changing the stage without dragging, and a stage filter in the toolbar chooses which columns show (the closed stages start hidden, and the choice is kept in this browser).
+- A table view of the same applications that you can search, filter by stage, work mode, and employment type, and sort by any column. The search, filters, and sort are kept in the page address, so a view survives a reload and can be bookmarked. Each filter has a Select All and Deselect All button, and the Kanban View and Table View buttons move between the two views.
+- A sidebar on every screen with an **Add application** button at the top, an All applications entry, and each stage with its live count. Click a stage to open the table filtered to it. On a narrow screen it folds behind a menu button.
+- **Archive:** hide an application from the board, the table, and the counts with its Archive button, on its page, on a card, or on a table row. Find it under **Archived** in the sidebar, where each row has a Restore button. An archived application stays readable, but can't be edited until it is restored. It can still be deleted.
 - A detail page for each application (`/applications/:id`) with its job details, a timeline, and a requirements checklist.
-- **Timeline:** log notes, emails, calls, and interviews, each with a date and optionally the contact involved. The app adds an entry itself when an application is added and whenever its stage changes.
+- **Timeline:** log notes, emails, calls, and interviews, each with a date, an optional time of day, and optionally the contact involved. The app adds an entry itself when an application is added and whenever its stage changes.
 - **Contacts:** keep people at a company, such as a recruiter or hiring manager, with a role, email, phone, and notes. Contacts belong to the company, so one person can be reused across every application there.
 - **Requirements:** list what a job requires or prefers and check each off as you meet it. The checklist shows a summary such as "2/3 required met".
-- Light and dark themes, with a toggle in the header.
-- Add, edit, and delete applications in a side panel. Each has a company, a job title, a stage, and a next step with a due date. Overdue next steps are highlighted.
+- Light and dark themes, with a sun and moon switch in the header. It starts from the device's setting.
+- **User Guide:** a built-in walkthrough of every screen, opened from the header (`/guide`), with a contents list. The button is highlighted on the guide, and choosing it again takes you back to where you were.
+- Add and edit applications in a dialog, and delete them from the application's page. Each has a company, a job title, a stage, and a next step with a due date. Overdue next steps are highlighted.
 - The applied date, the closed date, and the time in the current stage are recorded automatically.
-- Company names are suggested as you type and are matched regardless of case.
+- Company names are suggested as you type and are matched regardless of case. A company can have a website, set in the application's form and shared by its applications, and the company name on the application's page links to it.
 - Each application can keep its job details: link (with an "Open posting" shortcut), location, work mode, employment type and contract length, salary range in USD, source, and description. Salary amounts can be typed as "140,000" or "140k", and links without `https://` get it added.
 - Logs every API request and server event to the terminal and to daily log files, reports browser errors to the same logs, and shows a "Something went wrong" screen instead of a blank page if the app crashes.
 
@@ -105,7 +107,7 @@ flowchart TB
     direction TB
     M["main.tsx<br/>error reporting, router"]
     A["App.tsx<br/>ApplicationsProvider, AppShell, routes"]
-    P["Pages<br/>Board /, Table /table,<br/>Detail /applications/:id"]
+    P["Pages<br/>Board /, Table /table,<br/>Detail /applications/:id,<br/>Guide /guide"]
     API["lib/api.ts<br/>fetch wrapper"]
     M --> A --> P --> API
   end
@@ -121,6 +123,18 @@ Contacts belong to a company, not to one application, so the same person can sho
 
 ```mermaid
 erDiagram
+  COMPANY {
+    text name
+    text website "optional"
+  }
+  APPLICATION {
+    text stage
+    text archived_at "set when archived"
+  }
+  ACTIVITY {
+    text occurred_on "date"
+    text occurred_time "optional, HH:MM"
+  }
   COMPANY ||--o{ APPLICATION : "has (delete blocked)"
   COMPANY ||--o{ CONTACT : "has (delete blocked)"
   APPLICATION ||--o{ ACTIVITY : "timeline (deleted with application)"
@@ -194,16 +208,18 @@ The client talks to a small JSON API under `/api`:
 | `GET /api/applications/:id` | Returns one application |
 | `POST /api/applications` | Creates an application |
 | `PUT /api/applications/:id` | Replaces an application's editable fields |
+| `POST /api/applications/:id/archive` | Archives an application, changing nothing else about it. Archiving one that is already archived does nothing |
+| `POST /api/applications/:id/restore` | Brings an archived application back in the stage it had |
 | `DELETE /api/applications/:id` | Deletes an application, along with its timeline and requirements |
 | `GET /api/applications/:id/activities` | Lists an application's timeline entries |
-| `POST /api/applications/:id/activities` | Logs an entry: `type` (`note`, `email`, `call`, or `interview`), `occurredOn`, `text`, and an optional `contactId` |
+| `POST /api/applications/:id/activities` | Logs an entry: `type` (`note`, `email`, `call`, or `interview`), `occurredOn`, `text`, and an optional `occurredTime` (`HH:MM`, 24-hour) and `contactId` |
 | `PUT /api/activities/:id` | Changes an entry |
 | `DELETE /api/activities/:id` | Deletes an entry |
 | `GET /api/applications/:id/requirements` | Lists an application's requirements |
 | `POST /api/applications/:id/requirements` | Adds a requirement: `text`, `kind` (`required` or `preferred`), and `met` |
 | `PUT /api/requirements/:id` | Changes a requirement |
 | `DELETE /api/requirements/:id` | Deletes a requirement |
-| `GET /api/companies` | Lists companies by name |
+| `GET /api/companies` | Lists companies by name, with each one's `website` |
 | `GET /api/companies/:id/contacts` | Lists a company's contacts |
 | `POST /api/companies/:id/contacts` | Adds a contact: `name`, and optional `role`, `email`, `phone`, and `notes` |
 | `PUT /api/contacts/:id` | Changes a contact |
@@ -214,7 +230,9 @@ Writes accept an optional `X-Time-Zone` header with an IANA time zone, such as `
 
 Invalid input returns `400` with `{ "error": "...", "fields": { "<field>": "<message>" } }`. An unexpected error returns `500` with `{ "error": "Internal server error", "requestId": "..." }`.
 
-Application fields are `companyName`, `jobTitle`, `stage`, `nextStep`, `nextStepDue`, and `appliedOn`, plus the optional job details: `jobLink`, `location`, `workMode` (`onsite`, `hybrid`, or `remote`), `employmentType` (`full_time`, `contract`, or `part_time`), `contractLengthMonths`, `salaryMin`, `salaryMax`, `salaryPeriod` (`annual` or `hourly`), `source`, and `jobDescription`. Salary amounts can be numbers or text such as `"140k"`.
+An archived application can be read, restored, or deleted. A change to it, or to its timeline entries or requirements, returns `409` with `{ "error": "Application is archived" }`. Contacts belong to the company, so they aren't held back.
+
+Application fields are `companyName`, an optional `companyWebsite` (set on the company, with `https://` added when missing), `jobTitle`, `stage`, `nextStep`, `nextStepDue`, and `appliedOn`, plus the optional job details: `jobLink`, `location`, `workMode` (`onsite`, `hybrid`, or `remote`), `employmentType` (`full_time`, `contract`, or `part_time`), `contractLengthMonths`, `salaryMin`, `salaryMax`, `salaryPeriod` (`annual` or `hourly`), `source`, and `jobDescription`. Salary amounts can be numbers or text such as `"140k"`.
 
 ## Layout
 

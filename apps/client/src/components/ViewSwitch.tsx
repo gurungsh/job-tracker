@@ -1,3 +1,4 @@
+import { Columns3, Table2 } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 import "./ViewSwitch.css";
 
@@ -7,9 +8,13 @@ export function ViewSwitch() {
   return (
     <nav className="view-switch" aria-label="View">
       <NavLink to={{ pathname: "/", search }} end>
-        Kanban
+        <Columns3 size={16} aria-hidden="true" />
+        Kanban View
       </NavLink>
-      <NavLink to={{ pathname: "/table", search }}>Table</NavLink>
+      <NavLink to={{ pathname: "/table", search }}>
+        <Table2 size={16} aria-hidden="true" />
+        Table View
+      </NavLink>
     </nav>
   );
 }

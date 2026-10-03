@@ -10,6 +10,8 @@ export type TableQuery = {
   stages: Stage[];
   workModes: WorkMode[];
   employmentTypes: EmploymentType[];
+  /** True for the Archived view, which lists only archived applications (spec 017, AC-4). */
+  archived: boolean;
   sort: { column: SortColumn; direction: SortDirection } | null;
 };
 
@@ -27,6 +29,7 @@ export function parseTableQuery(params: URLSearchParams): TableQuery {
     stages: chosen(params, "stage", STAGES),
     workModes: chosen(params, "mode", WORK_MODES),
     employmentTypes: chosen(params, "type", EMPLOYMENT_TYPES),
+    archived: params.get("archived") === "1",
     sort: column ? { column, direction: params.get("dir") === "desc" ? "desc" : "asc" } : null,
   };
 }
@@ -38,6 +41,7 @@ export function toSearchParams(query: TableQuery): URLSearchParams {
   for (const stage of query.stages) params.append("stage", stage);
   for (const mode of query.workModes) params.append("mode", mode);
   for (const type of query.employmentTypes) params.append("type", type);
+  if (query.archived) params.set("archived", "1");
   if (query.sort) {
     params.set("sort", query.sort.column);
     params.set("dir", query.sort.direction);

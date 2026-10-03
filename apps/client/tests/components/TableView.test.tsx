@@ -48,6 +48,7 @@ describe("TableView rows and columns (spec 012, AC-3, AC-4, AC-5)", () => {
       "Pay",
       "Next step",
       "Time in stage",
+      "Actions",
     ]);
     expect(bodyRows()).toHaveLength(2);
   });
@@ -76,7 +77,7 @@ describe("TableView rows and columns (spec 012, AC-3, AC-4, AC-5)", () => {
 
     const [bare, acme] = bodyRows().map(cells);
     // Stage order puts Wishlist first.
-    expect(bare?.map((cell) => cell.textContent.trim())).toEqual(["Bare", "Analyst", "Wishlist", "–", "–", "–", "–", "–", "Today"]);
+    expect(bare?.map((cell) => cell.textContent.trim())).toEqual(["Bare", "Analyst", "Wishlist", "–", "–", "–", "–", "–", "Today", ""]);
     expect(acme?.map((cell) => cell.textContent.trim())).toEqual([
       "Acme",
       "Engineer",
@@ -87,6 +88,7 @@ describe("TableView rows and columns (spec 012, AC-3, AC-4, AC-5)", () => {
       "$140k–$170k/yr",
       "Phone screenOverdue Oct 5, 2026",
       "5 days",
+      "",
     ]);
     expect(acme?.[2]?.querySelector("[data-stage='interviewing']")).toBeTruthy();
   });
@@ -289,9 +291,9 @@ describe("TableView search and filters (spec 012, AC-6 to AC-10, AC-13, AC-14, A
     openTableWithAddress("/table?q=acme&stage=offer");
     await screen.findByRole("table");
 
-    await user.click(screen.getByRole("link", { name: "Kanban" }));
+    await user.click(screen.getByRole("link", { name: "Kanban View" }));
     expect(await screen.findByRole("region", { name: "Wishlist" })).toBeTruthy();
-    await user.click(screen.getByRole("link", { name: "Table" }));
+    await user.click(screen.getByRole("link", { name: "Table View" }));
 
     expect(await screen.findByRole("table")).toBeTruthy();
     expect(companies()).toEqual(["Globex"]);
@@ -447,5 +449,53 @@ describe("TableView opens the application's page (spec 013, AC-1, AC-8)", () => 
     await screen.findByRole("table");
     expect(screen.getByTestId("where").textContent).toBe("/table?stage=applied");
     expect(companies()).toEqual(["Acme Corp"]);
+  });
+});
+
+describe("TableView archived view (spec 017, AC-3, AC-4)", () => {
+  const archivedAt = "2026-10-02T09:00:00.000Z";
+  const sample = () => [
+    application({ companyName: "Acme", jobTitle: "Engineer", stage: "applied" }),
+    application({ companyName: "Wonka", jobTitle: "Chocolatier", stage: "rejected", archivedAt }),
+    application({ companyName: "Stark", jobTitle: "Welder", stage: "withdrawn", archivedAt }),
+  ];
+  const titles = () => bodyRows().map((row) => cells(row)[1]?.textContent);
+
+  it("leaves archived applications out of the table, and lists only them under archived=1", async () => {
+    installFakeServer(sample());
+    await openTable();
+    expect(titles()).toEqual(["Engineer"]);
+  });
+
+  it("lists only the archived ones in the archived view, with the same search and stage filter", async () => {
+    installFakeServer(sample());
+    await openTable("/table?archived=1");
+    expect(titles().sort()).toEqual(["Chocolatier", "Welder"]);
+
+    await userEvent.type(screen.getByRole("searchbox", { name: "Search company or job title" }), "wonka");
+    expect(titles()).toEqual(["Chocolatier"]);
+  });
+
+  it("says nothing is archived when nothing is, and still says it when the others have applications", async () => {
+    installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer" })]);
+    render(<AppAt path="/table?archived=1" />);
+
+    expect(await screen.findByText("Nothing is archived.")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
+  it("keeps the archived view in the address when searching and sorting", async () => {
+    installFakeServer(sample());
+    render(
+      <MemoryRouter initialEntries={["/table?archived=1"]}>
+        <App />
+        <Where />
+      </MemoryRouter>,
+    );
+    await screen.findByRole("table");
+
+    await userEvent.click(screen.getByRole("button", { name: "Company" }));
+
+    expect(screen.getByTestId("where").textContent).toBe("/table?archived=1&sort=company&dir=asc");
   });
 });

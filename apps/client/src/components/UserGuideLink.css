@@ -1,0 +1,19 @@
+.user-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.3rem;
+  padding: 0 0.75rem;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.user-guide-link:hover,
+.user-guide-link--active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--column-bg);
+  font-weight: 600;
+}

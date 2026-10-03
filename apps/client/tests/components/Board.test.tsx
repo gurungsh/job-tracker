@@ -4,6 +4,7 @@ import { STAGE_LABELS, STAGES } from "@job-tracker/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
+import { showAllStages } from "../support/stages.ts";
 
 beforeEach(() => {
   // Freeze "today" at Oct. 1, 2026, without freezing timers the UI relies on.
@@ -21,6 +22,7 @@ function column(stage: string) {
 
 describe("Board", () => {
   it("shows the eight stage columns in order, with counts and narrower closed columns (AC-1)", async () => {
+    showAllStages();
     installFakeServer([
       application({ companyName: "Acme", jobTitle: "Engineer", stage: "applied" }),
       application({ companyName: "Globex", jobTitle: "Designer", stage: "applied" }),
@@ -37,6 +39,16 @@ describe("Board", () => {
     expect(closed.map((region) => region.getAttribute("aria-label"))).toEqual(["Accepted", "Rejected", "Withdrawn"]);
   });
 
+  it("starts with the closed stages hidden (spec 018, AC-1)", async () => {
+    installFakeServer([application({ companyName: "Initech", jobTitle: "Analyst", stage: "rejected" })]);
+
+    render(<AppAt />);
+
+    const regions = await screen.findAllByRole("region");
+    expect(regions.map((region) => region.getAttribute("aria-label"))).toEqual(["Wishlist", "Applied", "Screening", "Interviewing", "Offer"]);
+    expect(screen.queryByRole("region", { name: "Rejected" })).toBeNull();
+  });
+
   it("invites me to add an application when there are none (AC-2)", async () => {
     installFakeServer();
 
@@ -46,7 +58,8 @@ describe("Board", () => {
     expect(message.textContent).not.toMatch(/board/i);
     // The button it points to is really in the sidebar (spec 015, AC-7).
     expect(screen.getByRole("button", { name: "Add application" }).closest(".app-sidebar")).not.toBeNull();
-    expect(screen.getAllByRole("region")).toHaveLength(8);
+    // The closed stages are hidden to start (spec 018, AC-1).
+    expect(screen.getAllByRole("region")).toHaveLength(5);
   });
 
   it("shows the company, title, next step, and due date on a card, and marks it overdue (AC-3)", async () => {
@@ -57,13 +70,13 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    const overdue = await screen.findByRole("button", { name: /Acme/ });
+    const overdue = await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ });
     expect(overdue.textContent).toContain("Engineer");
     expect(overdue.textContent).toContain("Send portfolio");
     expect(overdue.textContent).toContain("Sep 30, 2026");
     expect(within(overdue).getByText("Overdue")).toBeTruthy();
 
-    const dueToday = screen.getByRole("button", { name: /Globex/ });
+    const dueToday = screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Globex/ });
     expect(dueToday.textContent).toContain("Oct 1, 2026");
     expect(within(dueToday).queryByText("Overdue")).toBeNull();
   });
@@ -76,8 +89,8 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    await screen.findByRole("button", { name: /First/ });
-    const cards = within(column("Wishlist")).getAllByRole("button");
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*First/ });
+    const cards = within(column("Wishlist")).getAllByRole("button", { name: (accessible) => !/^(Archive|Restore|Move):/.test(accessible) });
     expect(cards.map((card) => card.textContent)).toEqual([expect.stringContaining("First"), expect.stringContaining("Second")]);
   });
 
@@ -94,11 +107,12 @@ describe("Board", () => {
     server.setOffline(false);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("button", { name: /Acme/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeTruthy();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("shows each column's stage icon, name, and count in the stage's own color (spec 011, AC-1)", async () => {
+    showAllStages();
     installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "offer" })]);
 
     render(<AppAt />);
@@ -118,8 +132,8 @@ describe("Board", () => {
 
     render(<AppAt />);
 
-    const card = await screen.findByRole("button", { name: /Acme/ });
-    expect(within(column("Screening")).getByRole("button", { name: /Acme/ })).toBe(card);
+    const card = await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ });
+    expect(within(column("Screening")).getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBe(card);
     expect(card.querySelector(".stage-badge")).toBeNull();
     expect(within(card).queryByText("Screening")).toBeNull();
   });

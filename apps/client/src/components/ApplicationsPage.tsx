@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Outlet } from "react-router";
+import { activeApplications, archivedApplications } from "../lib/archived.ts";
 import { type ApplicationsContext, useApplicationsStore } from "../lib/useApplications.tsx";
 import { ViewSwitch } from "./ViewSwitch.tsx";
 import "./Board.css";
@@ -26,7 +27,11 @@ export function ApplicationsPage() {
     );
   }
 
-  const context: ApplicationsContext = { applications: state.applications, replaceApplication };
+  const context: ApplicationsContext = {
+    applications: activeApplications(state.applications),
+    archivedApplications: archivedApplications(state.applications),
+    replaceApplication,
+  };
 
   return (
     <>

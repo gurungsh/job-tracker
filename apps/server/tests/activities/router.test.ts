@@ -267,3 +267,66 @@ describe("deleting an entry", () => {
     expect((await send("GET", `/api/applications/${String(id)}/activities`)).status).toBe(404);
   });
 });
+
+describe("entry times (spec 017)", () => {
+  it("saves an optional time, and an entry without one stays date-only (AC-9, AC-10)", async () => {
+    const { id } = await createApplication();
+
+    const timed = (await (await log(id, { ...call, occurredTime: "14:30" })).json()) as Activity;
+    const untimed = (await (await log(id, call)).json()) as Activity;
+    const emptied = (await (await log(id, { ...call, occurredTime: "" })).json()) as Activity;
+
+    expect(timed.occurredTime).toBe("14:30");
+    expect(untimed.occurredTime).toBeNull();
+    expect(emptied.occurredTime).toBeNull();
+    expect((await timeline(id)).find((e) => e.id === timed.id)?.occurredTime).toBe("14:30");
+  });
+
+  it("changes and clears a time when editing (AC-9)", async () => {
+    const { id } = await createApplication();
+    const entry = (await (await log(id, call)).json()) as Activity;
+
+    const set = await send("PUT", `/api/activities/${String(entry.id)}`, { ...call, occurredTime: "09:15" });
+    expect(((await set.json()) as Activity).occurredTime).toBe("09:15");
+
+    const cleared = await send("PUT", `/api/activities/${String(entry.id)}`, { ...call, occurredTime: null });
+    expect(((await cleared.json()) as Activity).occurredTime).toBeNull();
+  });
+
+  it.each(["25:00", "12:60", "9:30", "noon"])("rejects the time %j with a message on the field (AC-9)", async (time) => {
+    const { id } = await createApplication();
+    const entry = (await (await log(id, call)).json()) as Activity;
+
+    for (const response of [await log(id, { ...call, occurredTime: time }), await send("PUT", `/api/activities/${String(entry.id)}`, { ...call, occurredTime: time })]) {
+      expect(response.status).toBe(400);
+      expect(((await response.json()) as ValidationErrorResponse).fields).toEqual({ occurredTime: "Time must be a valid time" });
+    }
+  });
+
+  it("lists newest date first, then timed before untimed with the later time first, then newest added (AC-11)", async () => {
+    const { id } = await createApplication();
+    const added = async (occurredOn: string, occurredTime?: string) =>
+      ((await (await log(id, { ...call, occurredOn, occurredTime })).json()) as Activity).id;
+    const a = await added("2026-10-05");
+    const b = await added("2026-10-05", "09:00");
+    const c = await added("2026-10-05");
+    const d = await added("2026-10-05", "15:30");
+    const e = await added("2026-10-06");
+    const f = await added("2026-10-04", "23:00");
+
+    const ids = (await timeline(id)).map((entry) => entry.id);
+
+    // The application's own "Added to Wishlist" entry is dated today, so look only at these six.
+    expect(ids.filter((entryId) => [a, b, c, d, e, f].includes(entryId))).toEqual([e, d, b, c, a, f]);
+  });
+
+  it("gives the automatic entries no time (AC-10)", async () => {
+    const { id } = await createApplication();
+    await send("PUT", `/api/applications/${String(id)}`, { companyName: "Acme", jobTitle: "Engineer", stage: "applied" });
+
+    const entries = await timeline(id);
+
+    expect(entries.filter((entry) => entry.type === "stage_change")).toHaveLength(2);
+    expect(entries.every((entry) => entry.occurredTime === null)).toBe(true);
+  });
+});
