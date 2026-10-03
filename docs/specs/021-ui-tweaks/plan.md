@@ -3,7 +3,7 @@
 | Field   | Value                    |
 | ------- | ------------------------ |
 | Spec    | [spec.md](spec.md)       |
-| Status  | Approved                    |
+| Status  | Implemented                    |
 | Updated | 2026-10-02               |
 
 > The plan covers **how**. Every section should trace back to acceptance criteria (AC-n) in the spec.
@@ -78,4 +78,4 @@ None.
 - [x] **T6:** Update the guide text for the changes (AC-13)
 - [x] **T7:** Full-height bordered columns that scroll inside; add a drop-on-empty-space test (AC-10, AC-11, AC-12)
 - [x] **T8:** Docs: spec status, index row in `docs/specs/README.md`, roadmap line, root `README.md` if a line is no longer true
-- [ ] **T9:** Final checks: `npm test`, `npm run lint`, `npm run typecheck` one after another, then one smoke script on the production build in one theme (all ACs)
+- [x] **T9:** Final checks: `npm test`, `npm run lint`, `npm run typecheck` one after another, then one smoke script on the production build in one theme (all ACs). The three checks passed. The browser check was done by the owner by hand, not by a script.

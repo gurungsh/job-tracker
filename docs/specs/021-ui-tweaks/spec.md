@@ -2,7 +2,7 @@
 
 | Field   | Value                                                  |
 | ------- | ------------------------------------------------------ |
-| Status  | In Progress                                                  |
+| Status  | Implemented                                                  |
 | Branch  | `feature/ui-tweaks`                                    |
 | Created | 2026-10-02                                             |
 | Updated | 2026-10-02                                             |
@@ -109,3 +109,4 @@ A few screens are harder to use than they need to be. Stage colors in the sideba
 ## Changelog
 
 - 2026-10-02: Draft created.
+- 2026-10-02: Implemented.
