@@ -12,7 +12,7 @@ Pick the smallest tier that fits, and say which one in your first reply. If a tw
 | 2. Feature | New or changed behavior, or new stored data, in about ten tasks or fewer. | `spec.md`, then one `plan.md` that ends with a Tasks checklist | The spec, then the plan and tasks together, then the merge |
 | 3. Large feature | A data migration, or more than about ten tasks. | `spec.md`, `plan.md`, and `tasks.md` | Each document, then the merge |
 
-Documents live in `docs/specs/NNN-short-name/`. Specs 000 to 016 follow the Tier 3 shape and stay as they are.
+Documents live in `docs/specs/NNN-short-name/`. Specs 000 to 017 follow the Tier 3 shape and stay as they are.
 
 ## Rules for the assistant
 
