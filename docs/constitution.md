@@ -91,8 +91,9 @@ A spec is `Implemented` when:
 - [ ] `npm test`, `npm run lint`, and `npm run typecheck` pass from the repo root, run one after another.
 - [ ] The spec and plan (and tasks) match what was built.
 - [ ] The spec status and `docs/specs/README.md` index are updated.
+- [ ] The root `README.md` is updated if the change affects what it describes.
 - [ ] The owner has reviewed the branch.
 
-A tweak (Tier 1) is done when the tests for what changed pass, the three checks above pass, and the owner has reviewed the branch.
+A tweak (Tier 1) is done when the tests for what changed pass, the three checks above pass, the root `README.md` is updated if the change affects what it describes, and the owner has reviewed the branch.
 
 **Before `development` is merged into `main`**, also run the browser smoke scripts in both themes, and against a freshly built Docker image.
