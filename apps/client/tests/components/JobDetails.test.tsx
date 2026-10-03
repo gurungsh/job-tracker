@@ -17,7 +17,7 @@ const acme = application({ companyName: "Acme Corp", jobTitle: "Engineer" });
 
 /** Opens the application's page from its card, then its edit dialog (spec 013, AC-1, AC-6). */
 async function openCard(name: RegExp) {
-  await userEvent.click(await screen.findByRole("button", { name: (accessible) => name.test(accessible) && !/^(Archive|Restore):/.test(accessible) }));
+  await userEvent.click(await screen.findByRole("button", { name: (accessible) => name.test(accessible) && !/^(Archive|Restore|Move):/.test(accessible) }));
   return openEditDialog();
 }
 
@@ -211,7 +211,7 @@ describe("board cards", () => {
     ]);
     render(<AppAt />);
 
-    const card = await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+    const card = await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     expect(card.textContent).toContain("Acme CorpEngineer");
     expect(card.textContent).toContain("Austin, TX • Remote • Contract · 6 mo");

@@ -31,7 +31,7 @@ button.archive-button:hover {
   background: var(--column-bg);
 }
 
-/* The button covers the card's top right corner, so the company name stops short of it. */
+/* The Move and Archive buttons cover the card's top right corner, so the company name stops short of them (spec 018). */
 .card-wrap .card-header {
-  padding-right: 1.75rem;
+  padding-right: 4rem;
 }

@@ -50,3 +50,4 @@ Copy `plan.md` from the template only after the spec is approved. Copy `tasks.md
 | 015 | [Add button in the sidebar](015-add-button-sidebar/) | Implemented | `feature/add-button-sidebar` |
 | 016 | [Detail page redesign](016-detail-page-redesign/) | Implemented | `feature/detail-page-redesign` |
 | 017 | [Archive, company website, and entry times](017-archive-website-entry-times/) | Implemented | `feature/archive-website-entry-times` |
+| 018 | [Board stage filter and card menu](018-board-stage-filter-card-menu/) | Implemented | `feature/board-stage-filter-card-menu` |

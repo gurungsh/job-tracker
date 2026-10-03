@@ -56,7 +56,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 015 | Add button in the sidebar | *(Implemented)* Add an application from the top of the left sidebar on every screen, including the table and an application's page. The button leaves the board's toolbar. | 014 |
 | 016 | Detail page redesign | *(Implemented)* Read an application's page as a set of clean cards, with a header of pills and actions. Every requirement, timeline entry, and person has its own Edit and ✕, and a ✕ asks before deleting. The app header gets a logo and a sun/moon theme switch. Nothing is stored differently. | 013–015 |
 | 017 | Archive, company website, and entry times | *(Implemented)* Archive an application to hide it from the board, table, and counts, and find it under an Archived sidebar entry. Give a company a website, so its name links to it. Record the time of day on timeline entries as well as the date. | 016 |
-| 018 | Board stage filter and card menu | Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
+| 018 | Board stage filter and card menu | *(Implemented)* Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
 | 019 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 018 |
 | 020 | User guide | Open a built-in walkthrough of every screen from the header. | 010–019 |
 
@@ -96,6 +96,7 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: The User Guide button in the header waits for the guide spec (020).
 - 2026-10-02: Spec 014 builds the left column with the stage list, and a later navigation bar joins that same column. The Add application button moves into it in that later spec, so 014 leaves it in the board's toolbar.
 - 2026-10-02: The sidebar starts with an "All applications" entry and the total. A stage entry opens the table with only that stage and clears its other filters. The app name in the header links to the board. On a narrow screen the sidebar folds behind a menu button.
+- 2026-10-02: The board's stage choice is a per-browser setting kept in local storage, with the closed stages hidden to start. The card menu only moves a card, and a card moved to a hidden stage leaves the board with a short message (spec 018).
 - 2026-10-02: Still out of scope for specs 010 to 020: currencies other than USD, fetching company logos from the internet, and accounts or a profile menu.
 - 2026-10-02: Requirements are managed in a Requirements tab in the side panel. Each has text, a required or preferred kind, and a met checkbox. They list required first, then preferred, in the order added. A count shows at the top of the tab, not on cards.
 
@@ -127,3 +128,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Added specs 016 (detail page redesign) and 017 (archive, company website, and entry times) right after 015, and renumbered the specs after them (018–020).
 - 2026-10-02: Marked 016 implemented.
 - 2026-10-02: Marked 017 implemented.
+- 2026-10-02: Marked 018 implemented.

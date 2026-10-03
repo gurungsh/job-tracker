@@ -18,6 +18,7 @@ describe("Archive button on a card (spec 017, AC-2)", () => {
         today="2026-10-13"
         onOpen={onOpen}
         onArchive={onArchive}
+        onMove={() => undefined}
         dragging={false}
         draggable
         onDragStart={() => undefined}
@@ -74,8 +75,8 @@ describe("archiving from the board (spec 017, AC-2, AC-3)", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Archive: Engineer at Acme" }));
 
-    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /^(?!Archive|Restore).*Globex/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Globex/ })).toBeTruthy();
     expect(screen.getByTestId("where").textContent).toBe("/");
     await waitFor(() => {
       expect(server.requests.some((r) => r.method === "POST" && r.path.endsWith("/archive"))).toBe(true);
@@ -94,7 +95,7 @@ describe("archiving from the board (spec 017, AC-2, AC-3)", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn't archive Engineer");
-    expect(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeTruthy();
   });
 });
 

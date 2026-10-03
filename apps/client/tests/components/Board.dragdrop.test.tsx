@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppAt } from "../support/render.tsx";
 import { application, installFakeServer } from "../support/fakeServer.ts";
+import { showAllStages } from "../support/stages.ts";
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -23,7 +24,7 @@ function dataTransfer() {
 }
 
 async function card(name: RegExp) {
-  return screen.findByRole("button", { name: (accessible) => name.test(accessible) && !/^(Archive|Restore):/.test(accessible) });
+  return screen.findByRole("button", { name: (accessible) => name.test(accessible) && !/^(Archive|Restore|Move):/.test(accessible) });
 }
 
 function updates(server: ReturnType<typeof installFakeServer>) {
@@ -47,7 +48,7 @@ describe("Board drag and drop", () => {
     await waitFor(() => {
       expect(updates(server)).toHaveLength(1);
     });
-    const cards = within(column("Applied")).getAllByRole("button", { name: (accessible) => !/^(Archive|Restore):/.test(accessible) });
+    const cards = within(column("Applied")).getAllByRole("button", { name: (accessible) => !/^(Archive|Restore|Move):/.test(accessible) });
     expect(cards.map((c) => c.textContent)).toEqual([
       expect.stringContaining("Early"),
       expect.stringContaining("Moving"),
@@ -59,12 +60,13 @@ describe("Board drag and drop", () => {
     expect(updates(server)[0]?.body).toMatchObject({ companyName: "Moving", jobTitle: "C", stage: "applied", nextStep: "Call", nextStepDue: "2026-11-01" });
     expect(server.applications[2]?.stage).toBe("applied");
     // The card sits in the new column, and its time in stage starts again (spec 011, AC-10).
-    const moved = within(column("Applied")).getByRole("button", { name: /^(?!Archive|Restore).*Moving/ });
+    const moved = within(column("Applied")).getByRole("button", { name: /^(?!Archive|Restore|Move).*Moving/ });
     expect(moved.querySelector(".card-age")?.textContent.trim()).toBe("Today");
     expect(moved.querySelector(".stage-badge")).toBeNull();
   });
 
   it.each(["Accepted", "Rejected", "Withdrawn"])("saves a drop into %s without asking (AC-6)", async (label) => {
+    showAllStages();
     const server = installFakeServer([application({ companyName: "Acme", jobTitle: "Engineer", stage: "offer" })]);
     render(<AppAt />);
 
@@ -75,7 +77,7 @@ describe("Board drag and drop", () => {
       expect(updates(server)).toHaveLength(1);
     });
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(within(column(label)).getByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeTruthy();
+    expect(within(column(label)).getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeTruthy();
   });
 
   it("highlights the column under the card and dims the card, then clears both (AC-3)", async () => {
@@ -93,7 +95,7 @@ describe("Board drag and drop", () => {
 
     fireEvent.dragEnd(dragged);
     expect(column("Applied").classList.contains("column--drop-target")).toBe(false);
-    expect(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme/ }).classList.contains("card--dragging")).toBe(false);
+    expect(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ }).classList.contains("card--dragging")).toBe(false);
   });
 
   it("clears the highlight when the drop completes (AC-3)", async () => {
@@ -123,7 +125,7 @@ describe("Board drag and drop", () => {
 
     expect(updates(server)).toHaveLength(0);
     expect(column("Offer").classList.contains("column--drop-target")).toBe(false);
-    expect(within(column("Applied")).getByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeTruthy();
+    expect(within(column("Applied")).getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeTruthy();
   });
 
   it("puts the card back and explains when the save fails, until dismissed (AC-5)", async () => {
@@ -138,7 +140,7 @@ describe("Board drag and drop", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn't move Engineer to Applied");
     expect(alert.textContent).toContain("Can't reach the server");
-    expect(within(column("Wishlist")).getByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeTruthy();
+    expect(within(column("Wishlist")).getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeTruthy();
     expect(within(column("Applied")).queryByRole("button")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: "Dismiss" }));
@@ -156,13 +158,13 @@ describe("Board drag and drop", () => {
     await screen.findByRole("alert");
 
     server.setOffline(false);
-    fireEvent.dragStart(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme/ }), { dataTransfer: dataTransfer() });
+    fireEvent.dragStart(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ }), { dataTransfer: dataTransfer() });
     fireEvent.drop(column("Applied"), { dataTransfer: dataTransfer() });
 
     await waitFor(() => {
       expect(screen.queryByRole("alert")).toBeNull();
     });
-    expect(within(column("Applied")).getByRole("button", { name: /^(?!Archive|Restore).*Acme/ })).toBeTruthy();
+    expect(within(column("Applied")).getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ })).toBeTruthy();
   });
 
   it("can't drag a card again while it is being saved (edge case)", async () => {
@@ -182,13 +184,13 @@ describe("Board drag and drop", () => {
     fireEvent.dragStart(await card(/Acme/), { dataTransfer: dataTransfer() });
     fireEvent.drop(column("Applied"), { dataTransfer: dataTransfer() });
 
-    expect(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme/ }).getAttribute("draggable")).toBe("false");
+    expect(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ }).getAttribute("draggable")).toBe("false");
     await act(async () => {
       finish();
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme/ }).getAttribute("draggable")).toBe("true");
+      expect(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme/ }).getAttribute("draggable")).toBe("true");
     });
   });
 });

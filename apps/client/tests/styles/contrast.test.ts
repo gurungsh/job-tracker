@@ -87,6 +87,12 @@ describe.each([
     expect(contrast(text, theme["--column-bg"] as string), `${stage} ${text} on the column`).toBeGreaterThanOrEqual(4.5);
   });
 
+  it.each(STAGES)("keeps --text readable on %s's tint, where a Move to entry is hovered or focused (spec 018, AC-7)", (stage) => {
+    const soft = stageColors(stage).soft[index];
+
+    expect(contrast(theme["--text"] as string, soft), `--text on ${stage}'s tint`).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("gives every stage its own color (AC-1)", () => {
     const colors = STAGES.map((stage) => stageColors(stage).stage[index].toLowerCase());
 
@@ -305,11 +311,38 @@ describe("the archive styles", () => {
     expect(source).toMatch(/\.card-wrap:hover > \.archive-button/);
   });
 
-  it("keeps the company name from running under the button on a card", () => {
-    expect(read("components/ArchiveButton.css")).toMatch(/\.card-wrap \.card-header\s*{[^}]*padding-right:\s*1\.75rem/);
+  it("keeps the company name from running under the buttons on a card", () => {
+    expect(read("components/ArchiveButton.css")).toMatch(/\.card-wrap \.card-header\s*{[^}]*padding-right:\s*4rem/);
   });
 
   it("uses the 2rem icon button size, a target large enough for a phone", () => {
     expect(read("styles/global.css")).toMatch(/button\.icon-button\s*{[^}]*width:\s*2rem[^}]*height:\s*2rem/);
+  });
+});
+
+describe("the board's stage filter and card menu styles (spec 018)", () => {
+  const read = (file: string) => fs.readFileSync(path.join(import.meta.dirname, "..", "..", "src", "components", file), "utf8");
+
+  it.each(["CardMenu.css", "Board.css"])("%s uses only color tokens", (file) => {
+    expect(read(file)).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it("sets the menu's text only in checked colors, on --surface", () => {
+    const used = [...read("CardMenu.css").matchAll(/(?<![-\w])color:\s*var\((--[\w-]+)\)/g)].map((match) => match[1] as string);
+
+    expect(used.length).toBeGreaterThan(0);
+    for (const token of used) expect(["--text", "--text-muted", "--stage"], token).toContain(token);
+    expect(read("CardMenu.css")).toMatch(/\.card-menu-list\s*{[^}]*background:\s*var\(--surface\)/);
+  });
+
+  it("hides the button on a card only where there is hover, so it is always there on a touch screen and on keyboard focus", () => {
+    const source = read("CardMenu.css");
+
+    expect(source).toMatch(/@media \(hover: hover\)\s*{[^@]*opacity:\s*0/);
+    expect(source).toMatch(/:focus-within/);
+  });
+
+  it("gives each entry a target of at least 2rem", () => {
+    expect(read("CardMenu.css")).toMatch(/button\[role="menuitem"\]\s*{[^}]*min-height:\s*2\.25rem/);
   });
 });

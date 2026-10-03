@@ -1,9 +1,10 @@
-import type { Application } from "@job-tracker/shared";
+import type { Application, Stage } from "@job-tracker/shared";
 import { Clock } from "lucide-react";
 import { daysInStage, formatDate, isOverdue, shortTimeInStage } from "../lib/dates.ts";
 import { jobSummary } from "../lib/jobSummary.ts";
 import { compactSalary } from "../lib/salary.ts";
 import { ArchiveButton } from "./ArchiveButton.tsx";
+import { CardMenu } from "./CardMenu.tsx";
 import { CompanyAvatar } from "./CompanyAvatar.tsx";
 import "./Card.css";
 
@@ -13,6 +14,8 @@ type CardProps = {
   onOpen: (application: Application) => void;
   /** Archives the application without opening it (spec 017, AC-2). */
   onArchive: (application: Application) => void;
+  /** Moves the application to another stage from the card's menu (spec 018, AC-8). */
+  onMove: (application: Application, stage: Stage) => void;
   /** Whether the card is being dragged right now (spec 006, AC-3). */
   dragging: boolean;
   /** False while a move is being saved. */
@@ -21,7 +24,7 @@ type CardProps = {
   onDragEnd: () => void;
 };
 
-export function Card({ application, today, onOpen, onArchive, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
+export function Card({ application, today, onOpen, onArchive, onMove, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
   const { companyName, jobTitle, nextStep, nextStepDue } = application;
   const overdue = nextStepDue !== null && isOverdue(nextStepDue, today);
   const details = jobSummary(application);
@@ -67,6 +70,7 @@ export function Card({ application, today, onOpen, onArchive, dragging, draggabl
         </span>
       </span>
     </button>
+    <CardMenu application={application} onMove={onMove} disabled={!draggable} />
     <ArchiveButton application={application} onClick={onArchive} />
     </div>
   );

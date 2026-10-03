@@ -20,6 +20,7 @@ function renderCard(fields: Parameters<typeof application>[0], handlers: { onOpe
       today="2026-10-13"
       onOpen={handlers.onOpen ?? (() => undefined)}
       onArchive={handlers.onArchive ?? (() => undefined)}
+      onMove={() => undefined}
       dragging={false}
       draggable
       onDragStart={() => undefined}

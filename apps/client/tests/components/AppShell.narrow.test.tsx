@@ -26,7 +26,7 @@ async function renderNarrow(narrow = true) {
       <Where />
     </MemoryRouter>,
   );
-  await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+  await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
   return media;
 }
 
@@ -157,7 +157,7 @@ describe("the sidebar on a narrow screen (spec 014, AC-8, AC-9, AC-10)", () => {
     expect(drawer()).toBeNull();
     expect(screen.queryByRole("navigation", { name: "Stages" })).toBeNull();
     expect(menuButton().getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ })).toBeTruthy();
   });
 });
 
@@ -206,7 +206,7 @@ describe("adding from the narrow drawer (spec 015, AC-6)", () => {
     await userEvent.type(within(dialog).getByLabelText("Job title"), "Analyst");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore).*Initech/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Initech/ })).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(menuButton());
     expect(screen.getByTestId("where").textContent).toBe("/");

@@ -45,7 +45,7 @@ describe("the app shell (spec 014)", () => {
   it("has a logo tile beside the app name, which is still the link to the board (spec 016, AC-11)", async () => {
     installFakeServer([acme]);
     renderAt("/");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     const logo = document.querySelector(".app-logo") as HTMLElement;
     expect(logo.querySelector("svg")).not.toBeNull();
@@ -59,7 +59,7 @@ describe("the app shell (spec 014)", () => {
   it("puts the sidebar beside the page's main area, not inside it", async () => {
     installFakeServer([acme]);
     renderAt("/");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     const main = screen.getByRole("main");
     expect(main.contains(stages())).toBe(false);
@@ -93,7 +93,7 @@ describe("the app shell (spec 014)", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
     expect(screen.getByRole("dialog", { name: "Add application" })).toBeTruthy();
     await userEvent.keyboard("{Escape}");
-    await userEvent.click(screen.getByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ }));
+    await userEvent.click(screen.getByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ }));
 
     expect(await screen.findByRole("heading", { level: 2, name: "Engineer" })).toBeTruthy();
     expect(within(stages()).getAllByRole("link")).toHaveLength(10);
@@ -102,7 +102,7 @@ describe("the app shell (spec 014)", () => {
   it("reaches the app name, the theme toggle, and every sidebar entry with Tab (AC-10)", async () => {
     installFakeServer([acme]);
     renderAt("/");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     const reached = new Set<Element>();
     for (let i = 0; i < 20; i += 1) {
@@ -118,7 +118,7 @@ describe("the app shell (spec 014)", () => {
   it("opens an entry's table with Enter (AC-10)", async () => {
     installFakeServer([acme]);
     renderAt("/");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     within(stages()).getByRole("link", { name: /^Applied/ }).focus();
     await userEvent.keyboard("{Enter}");

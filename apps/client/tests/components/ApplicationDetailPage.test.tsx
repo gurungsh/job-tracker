@@ -434,7 +434,7 @@ describe("editing and deleting from the page (spec 013, AC-6, AC-7, AC-8)", () =
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Delete" }));
 
     expect(await screen.findByRole("region", { name: "Applied" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore).*Staff Engineer/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^(?!Archive|Restore|Move).*Staff Engineer/ })).toBeNull();
   });
 
   it("stays on the page with an error when deleting fails (AC-7)", async () => {

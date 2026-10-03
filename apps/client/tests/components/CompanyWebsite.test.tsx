@@ -101,7 +101,7 @@ describe("the Website field in the application form (spec 017, AC-7)", () => {
 
     await userEvent.type(within(dialog).getByLabelText("Job title"), "Designer");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Designer/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Designer/ });
     expect(server.applications.at(-1)?.companyWebsite).toBe("https://globex.example");
   });
 });

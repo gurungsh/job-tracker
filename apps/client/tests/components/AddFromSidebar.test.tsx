@@ -57,7 +57,7 @@ describe("the one Add application button (spec 015, AC-1, AC-2)", () => {
   it("has left the board's toolbar", async () => {
     installFakeServer([acme()]);
     renderAt("/");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Acme Corp/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     expect(document.querySelector(".board-toolbar")).toBeNull();
     expect(within(screen.getByRole("main")).queryByRole("button", { name: "Add application" })).toBeNull();
@@ -108,7 +108,7 @@ describe("saving a new application and keeping my place (spec 015, AC-4)", () =>
     await userEvent.click(addButtons()[0] as HTMLElement);
     await fillAndSave("Initech", "Analyst", "applied");
 
-    expect(await within(screen.getByRole("region", { name: "Applied" })).findByRole("button", { name: /^(?!Archive|Restore).*Initech/ })).toBeTruthy();
+    expect(await within(screen.getByRole("region", { name: "Applied" })).findByRole("button", { name: /^(?!Archive|Restore|Move).*Initech/ })).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(count("Applied")).toBe("2");
     expect(stages().getByRole("link", { name: /^All applications/ }).textContent).toContain("3");
@@ -166,7 +166,7 @@ describe("saving a new application and keeping my place (spec 015, AC-4)", () =>
     });
     await userEvent.click(addButtons()[0] as HTMLElement);
     await fillAndSave("Initech", "Analyst");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Initech/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Initech/ });
 
     await userEvent.click(addButtons()[0] as HTMLElement);
 
@@ -221,7 +221,7 @@ describe("closing the form (spec 015, AC-5)", () => {
     await userEvent.click(button);
 
     await fillAndSave("Initech", "Analyst");
-    await screen.findByRole("button", { name: /^(?!Archive|Restore).*Initech/ });
+    await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Initech/ });
 
     expect(document.activeElement).toBe(button);
   });
@@ -240,7 +240,7 @@ describe("adding while the list is loading or has failed (spec 015, AC-9)", () =
     await userEvent.type(within(dialog).getByLabelText("Job title"), "Analyst");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore).*Initech/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Initech/ })).toBeTruthy();
     await waitFor(() => {
       expect(count("Wishlist")).toBe("1");
     });
@@ -263,7 +263,7 @@ describe("adding while the list is loading or has failed (spec 015, AC-9)", () =
     down = false;
     await fillAndSave("Initech", "Analyst");
 
-    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore).*Initech/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Initech/ })).toBeTruthy();
     await waitFor(() => {
       expect(document.querySelectorAll(".sidebar-count")).toHaveLength(10);
     });
