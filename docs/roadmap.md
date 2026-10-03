@@ -58,7 +58,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 017 | Archive, company website, and entry times | *(Implemented)* Archive an application to hide it from the board, table, and counts, and find it under an Archived sidebar entry. Give a company a website, so its name links to it. Record the time of day on timeline entries as well as the date. | 016 |
 | 018 | Board stage filter and card menu | *(Implemented)* Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
 | 019 | Drag preview | *(Implemented)* See a copy of the card under the pointer while dragging, and a placeholder where it will land in the column it is over. | 018 |
-| 020 | User guide | Open a built-in walkthrough of every screen from the header. | 010–019 |
+| 020 | User guide | *(Implemented)* Open a built-in walkthrough of every screen from the header. | 010–019 |
 
 ## Later, maybe
 
@@ -131,3 +131,4 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 018 implemented.
 - 2026-10-02: Spec 019 narrowed to the drag preview. Keyboard dragging dropped.
 - 2026-10-02: Marked 019 implemented.
+- 2026-10-02: Marked 020 implemented.

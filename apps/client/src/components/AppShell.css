@@ -25,6 +25,12 @@
   background: var(--surface);
 }
 
+.app-header-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .app-header-start {
   display: flex;
   align-items: center;

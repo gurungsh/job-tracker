@@ -19,3 +19,16 @@ export function readOrigin(state: unknown): ViewOrigin {
   if (from === "/" || from.startsWith("/?")) return { path: from, label: "Back to board" };
   return BOARD;
 }
+
+/** Where the guide's back link goes: the board, the table, or an application's page (spec 020, AC-6). */
+export type GuideOrigin = { path: string; label: "Back to board" | "Back to table" | "Back to application" };
+
+/**
+ * Reads the state the header's guide link passes. Only the board, the table, or an application's page is accepted, so
+ * anything else, including no state at all as when the guide is opened directly, goes to the board (spec 020, AC-6).
+ */
+export function readGuideOrigin(state: unknown): GuideOrigin {
+  const from = typeof state === "object" && state !== null && "from" in state ? state.from : undefined;
+  if (typeof from === "string" && /^\/applications\/\d+$/.test(from)) return { path: from, label: "Back to application" };
+  return readOrigin(state);
+}
