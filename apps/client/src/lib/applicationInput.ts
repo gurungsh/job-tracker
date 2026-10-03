@@ -36,3 +36,8 @@ export function sortForBoard(applications: Application[]): Application[] {
     return b.id - a.id;
   });
 }
+
+/** Where `moved` would sit among `cards` (a column without it) in board order (spec 019, AC-2, AC-5). */
+export function boardIndex(cards: Application[], moved: Application): number {
+  return sortForBoard([...cards, moved]).findIndex((a) => a.id === moved.id);
+}

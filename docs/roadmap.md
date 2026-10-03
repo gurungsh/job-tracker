@@ -57,7 +57,7 @@ Each spec is usable on its own once it's done. The numbers are reserved in this 
 | 016 | Detail page redesign | *(Implemented)* Read an application's page as a set of clean cards, with a header of pills and actions. Every requirement, timeline entry, and person has its own Edit and ✕, and a ✕ asks before deleting. The app header gets a logo and a sun/moon theme switch. Nothing is stored differently. | 013–015 |
 | 017 | Archive, company website, and entry times | *(Implemented)* Archive an application to hide it from the board, table, and counts, and find it under an Archived sidebar entry. Give a company a website, so its name links to it. Record the time of day on timeline entries as well as the date. | 016 |
 | 018 | Board stage filter and card menu | *(Implemented)* Choose which stages the board shows, with the closed ones hidden to start, and move a card to another stage from its menu. | 011 |
-| 019 | Keyboard drag and drag preview | Move cards with the keyboard as well as the mouse, and see the card move live while dragging. | 018 |
+| 019 | Drag preview | *(Implemented)* See a copy of the card under the pointer while dragging, and a placeholder where it will land in the column it is over. | 018 |
 | 020 | User guide | Open a built-in walkthrough of every screen from the header. | 010–019 |
 
 ## Later, maybe
@@ -88,7 +88,7 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Stage icons come from an icon library, which spec 011 adds as a dependency.
 - 2026-10-02: Clicking a card opens the application on its own page instead of the side panel, so spec 013 replaces the panel for existing applications. It comes after the table view because it needs the router that spec 012 adds.
 - 2026-10-02: Spec 013 removes the side panel entirely. Cards and rows open the application's page, adding and editing use a dialog, and the timeline, contacts, and requirements are sections of the page. The page's back link and delete go back to the view it was opened from, and to the board when that is unknown.
-- 2026-10-02: Keyboard dragging is in scope from spec 019, which changes spec 006's "mouse only" decision.
+- 2026-10-02: Keyboard dragging is dropped from spec 019, which is now only the drag preview. The card menu from spec 018 stays the keyboard way to move a card.
 - 2026-10-02: The Add application button moves to the top of the left sidebar, above the stage list, on every screen (spec 015). It comes out of the board's toolbar.
 - 2026-10-02: Saving a new application keeps me where I was, and the screen and the sidebar's counts update. The Add form always starts on Wishlist. On a narrow screen the Add button is only at the top of the menu drawer. There is no keyboard shortcut for adding in spec 015.
 - 2026-10-02: The detail page is restyled to match the owner's screenshots in spec 016, with no data changes. Requirements, timeline entries, and people each get Edit and ✕, and every ✕ asks before deleting. Requirements have no section-level Edit and no reordering. Delete keeps the app's red. The app header gets a logo tile and a sun/moon theme switch.
@@ -129,3 +129,5 @@ These ideas aren't scheduled. They will get a number only when they're picked up
 - 2026-10-02: Marked 016 implemented.
 - 2026-10-02: Marked 017 implemented.
 - 2026-10-02: Marked 018 implemented.
+- 2026-10-02: Spec 019 narrowed to the drag preview. Keyboard dragging dropped.
+- 2026-10-02: Marked 019 implemented.

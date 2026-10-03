@@ -89,3 +89,14 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* The copy carried under the pointer while dragging (spec 019, AC-1). It sits off screen until the browser has copied it. */
+.card-drag-image {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  pointer-events: none;
+  rotate: 2deg;
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.3);
+}

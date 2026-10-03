@@ -87,3 +87,10 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
+
+/* Where the dragged card will land in the column it is over (spec 019, AC-2). */
+.card-placeholder {
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  box-sizing: border-box;
+}

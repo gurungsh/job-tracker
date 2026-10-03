@@ -1,5 +1,6 @@
 import type { Application, Stage } from "@job-tracker/shared";
 import { Clock } from "lucide-react";
+import type { DragEvent } from "react";
 import { daysInStage, formatDate, isOverdue, shortTimeInStage } from "../lib/dates.ts";
 import { jobSummary } from "../lib/jobSummary.ts";
 import { compactSalary } from "../lib/salary.ts";
@@ -20,9 +21,28 @@ type CardProps = {
   dragging: boolean;
   /** False while a move is being saved. */
   draggable: boolean;
-  onDragStart: (application: Application) => void;
+  /** Reports the card's height so the board can size the placeholder (spec 019, AC-2). */
+  onDragStart: (application: Application, height: number) => void;
   onDragEnd: () => void;
 };
+
+/** Gives the browser a styled copy of the card to carry under the pointer (spec 019, AC-1). */
+function showDragCopy(event: DragEvent<HTMLElement>) {
+  // jsdom and some browsers have no setDragImage; they keep the default image.
+  if (typeof event.dataTransfer.setDragImage !== "function") return;
+  const card = event.currentTarget;
+  const box = card.getBoundingClientRect();
+  const copy = card.cloneNode(true) as HTMLElement;
+  copy.classList.add("card-drag-image");
+  copy.classList.remove("card--dragging");
+  copy.style.width = `${String(box.width)}px`;
+  document.body.appendChild(copy);
+  event.dataTransfer.setDragImage(copy, event.clientX - box.left, event.clientY - box.top);
+  // The browser takes its snapshot during the event, so the clone can go right after.
+  setTimeout(() => {
+    copy.remove();
+  }, 0);
+}
 
 export function Card({ application, today, onOpen, onArchive, onMove, dragging, draggable, onDragStart, onDragEnd }: CardProps) {
   const { companyName, jobTitle, nextStep, nextStepDue } = application;
@@ -40,7 +60,8 @@ export function Card({ application, today, onOpen, onArchive, onMove, dragging, 
         event.dataTransfer.effectAllowed = "move";
         // Firefox won't start a drag without some data.
         event.dataTransfer.setData("text/plain", String(application.id));
-        onDragStart(application);
+        showDragCopy(event);
+        onDragStart(application, event.currentTarget.getBoundingClientRect().height);
       }}
       onDragEnd={onDragEnd}
       onClick={() => {

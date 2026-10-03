@@ -1,7 +1,7 @@
 import { type Application, STAGE_LABELS, STAGES, type Stage, isClosedStage } from "@job-tracker/shared";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { api } from "../lib/api.ts";
-import { applicationToInput } from "../lib/applicationInput.ts";
+import { applicationToInput, boardIndex } from "../lib/applicationInput.ts";
 import { useArchiveActions } from "../lib/useArchiveActions.ts";
 import { STAGE_ICONS } from "../lib/stageIcons.ts";
 import { useApplicationsContext } from "../lib/useApplications.tsx";
@@ -19,6 +19,8 @@ export function Board() {
   // Drag and drop (spec 006): the card being dragged, the column it's over, applications being saved, and the last failure.
   const [dragging, setDragging] = useState<number | null>(null);
   const [overStage, setOverStage] = useState<Stage | null>(null);
+  // The dragged card's height, so the placeholder is the size of the card (spec 019, AC-2).
+  const [dragHeight, setDragHeight] = useState(0);
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [moveError, setMoveError] = useState<string | null>(null);
   // Says where a card went when it left the board for a hidden stage (spec 018, AC-9).
@@ -106,6 +108,8 @@ export function Board() {
           // The server sends applications already in board order (spec 002, AC-4).
           const cards = applications.filter((application) => application.stage === stage);
           const label = STAGE_LABELS[stage];
+          // Where the dragged card would land in this column, while it is over it (spec 019, AC-2, AC-3).
+          const slot = overStage === stage && draggedApplication ? boardIndex(cards, draggedApplication) : -1;
           const StageIcon = STAGE_ICONS[stage];
           return (
             <section
@@ -145,9 +149,10 @@ export function Board() {
                 <span className="column-count">{cards.length}</span>
               </h2>
               <div className="column-cards">
-                {cards.map((application) => (
+                {cards.map((application, index) => (
+                  <Fragment key={application.id}>
+                  {index === slot && <div className="card-placeholder" aria-hidden="true" style={{ height: dragHeight }} />}
                   <Card
-                    key={application.id}
                     application={application}
                     today={today}
                     onOpen={openApplication}
@@ -161,12 +166,15 @@ export function Board() {
                     }}
                     dragging={dragging === application.id}
                     draggable={!pendingIds.includes(application.id)}
-                    onDragStart={(dragged) => {
+                    onDragStart={(dragged, height) => {
                       setDragging(dragged.id);
+                      setDragHeight(height);
                     }}
                     onDragEnd={endDrag}
                   />
+                  </Fragment>
                 ))}
+                {slot === cards.length && <div className="card-placeholder" aria-hidden="true" style={{ height: dragHeight }} />}
               </div>
             </section>
           );

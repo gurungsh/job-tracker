@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Card } from "../../src/components/Card.tsx";
 import { application } from "../support/fakeServer.ts";
@@ -140,5 +140,42 @@ describe("Card", () => {
     expect(card.querySelector(".card-company")).toBeTruthy();
     expect(card.querySelector(".card-title")).toBeTruthy();
     expect(card.querySelector(".card-details")).toBeTruthy();
+  });
+});
+
+describe("Card drag copy (spec 019, AC-1)", () => {
+  function dataTransfer(setDragImage?: (element: Element, x: number, y: number) => void) {
+    return { effectAllowed: "", setData: vi.fn(), setDragImage };
+  }
+
+  it("hands the browser a styled copy with the card's content, then removes it", async () => {
+    const { card } = renderCard({ companyName: "Acme", jobTitle: "Staff Engineer" });
+    let copy: Element | undefined;
+    const setDragImage = vi.fn((element: Element) => {
+      copy = element;
+      expect(document.body.contains(element)).toBe(true);
+    });
+
+    fireEvent.dragStart(card, { dataTransfer: dataTransfer(setDragImage), clientX: 5, clientY: 7 });
+
+    expect(setDragImage).toHaveBeenCalledTimes(1);
+    expect(copy?.classList.contains("card-drag-image")).toBe(true);
+    expect(copy?.textContent).toContain("Staff Engineer");
+    expect(copy).not.toBe(card);
+    await waitFor(() => {
+      expect(document.body.contains(copy ?? null)).toBe(false);
+    });
+  });
+
+  it("still starts the drag where the browser has no setDragImage", () => {
+    const onDragStart = vi.fn();
+    const app = application({ companyName: "Acme", jobTitle: "Engineer" });
+    const { container } = render(
+      <Card application={app} today="2026-10-13" onOpen={() => undefined} onArchive={() => undefined} onMove={() => undefined} dragging={false} draggable onDragStart={onDragStart} onDragEnd={() => undefined} />,
+    );
+
+    fireEvent.dragStart(container.querySelector(".card") as HTMLElement, { dataTransfer: dataTransfer() });
+
+    expect(onDragStart).toHaveBeenCalledWith(app, expect.any(Number));
   });
 });
