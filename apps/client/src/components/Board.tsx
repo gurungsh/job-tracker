@@ -1,4 +1,5 @@
 import { type Application, STAGE_LABELS, STAGES, type Stage, isClosedStage } from "@job-tracker/shared";
+import { Columns3 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { api } from "../lib/api.ts";
 import { applicationToInput, boardIndex } from "../lib/applicationInput.ts";
@@ -93,11 +94,12 @@ export function Board() {
         </div>
       )}
       {applications.length === 0 && (
-        <p className="board-empty">No applications yet. Use the Add application button in the sidebar to add your first one.</p>
+        <p className="board-empty">No applications yet. Use the Add Application button in the sidebar to add your first one.</p>
       )}
       <div className="board-filters">
         <FilterDropdown
           label="Stages"
+          icon={Columns3}
           options={STAGES.map((stage) => ({ value: stage, label: STAGE_LABELS[stage] }))}
           selected={shownStages}
           onChange={setShownStages}

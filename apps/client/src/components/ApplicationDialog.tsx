@@ -46,7 +46,7 @@ export function ApplicationDialog({ application, companies, onSaved, onClose }: 
       <div className="dialog-backdrop">
         <div className="application-dialog" {...focus} role="dialog" aria-modal="true" aria-labelledby={titleId}>
           <header className="application-dialog-header">
-            <h2 id={titleId}>{application ? "Edit application" : "Add application"}</h2>
+            <h2 id={titleId}>{application ? "Edit application" : "Add Application"}</h2>
             <button type="button" onClick={requestClose} aria-label="Close">
               ×
             </button>

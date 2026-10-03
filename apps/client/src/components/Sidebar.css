@@ -1,4 +1,4 @@
-/* The Add application button above the stage list, as wide as the sidebar (spec 015, AC-1). */
+/* The Add Application button above the stage list, as wide as the sidebar (spec 015, AC-1). */
 .sidebar {
   display: flex;
   flex-direction: column;

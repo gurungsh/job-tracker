@@ -47,7 +47,7 @@ const SECTIONS: GuideSection[] = [
       <>
         <p>The sidebar is on every screen. On a narrow screen it folds behind the menu button in the header.</p>
         <ul>
-          <li>Add application opens the form to add one, whichever screen you are on. It always starts on Wishlist.</li>
+          <li>Add Application opens the form to add one, whichever screen you are on. It always starts on Wishlist.</li>
           <li>All applications opens the table with no filters.</li>
           <li>Each stage shows how many applications it holds and opens the table filtered to that stage. The stages, in order, are {STAGE_NAMES}. The last three close an application.</li>
           <li>Archived opens the applications you have archived.</li>

@@ -25,22 +25,21 @@
 }
 
 .card-company {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .card-title {
+  font-size: 0.9rem;
   font-weight: 600;
+  color: var(--text);
 }
 
 .card-next {
   display: flex;
   flex-direction: column;
   margin-top: 0.3rem;
-  font-size: 0.85rem;
-}
-
-.card-due {
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -63,16 +62,12 @@
   min-width: 0;
 }
 
+/* Secondary lines share one muted color and size, so the company and job title lead (the overdue badge keeps its own color). */
 .card-details,
 .card-pay {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   overflow-wrap: anywhere;
-}
-
-.card-pay {
-  font-weight: 600;
-  color: var(--text);
 }
 
 .card-footer {

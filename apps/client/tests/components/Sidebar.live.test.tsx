@@ -47,8 +47,8 @@ describe("the sidebar's counts stay live (spec 014, AC-3)", () => {
     renderAt("/");
     await waitForCounts({ "All applications": "2", Wishlist: "1", Applied: "1" });
 
-    await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    await userEvent.click(await screen.findByRole("button", { name: "Add Application" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     await userEvent.type(within(dialog).getByLabelText("Company"), "Initech");
     await userEvent.type(within(dialog).getByLabelText("Job title"), "Analyst");
     await userEvent.selectOptions(within(dialog).getByLabelText("Stage"), "interviewing");

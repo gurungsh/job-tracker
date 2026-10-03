@@ -91,8 +91,8 @@ describe("the Website field in the application form (spec 017, AC-7)", () => {
   it("is in the Add application form too, and follows a known company typed there", async () => {
     const { server } = setup();
     render(<AppAt />);
-    await userEvent.click(await screen.findByRole("button", { name: "Add application" }));
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    await userEvent.click(await screen.findByRole("button", { name: "Add Application" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     const website = within(dialog).getByLabelText<HTMLInputElement>("Website");
     expect(website.value).toBe("");
 
