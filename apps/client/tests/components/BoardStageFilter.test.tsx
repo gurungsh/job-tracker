@@ -65,4 +65,18 @@ describe("Board stage filter (spec 018)", () => {
 
     expect(shownColumns()).toEqual(["Applied", "Screening", "Interviewing", "Offer", "Withdrawn"]);
   });
+
+  it("shows every stage with Select All, and resets to the default with Deselect All (spec 021, AC-7)", async () => {
+    installFakeServer();
+    render(<AppAt />);
+    const list = await openFilter();
+
+    await userEvent.click(within(list).getByRole("button", { name: "Select All" }));
+    expect(shownColumns()).toEqual(STAGES.map((s) => STAGE_LABELS[s]));
+
+    await userEvent.click(within(list).getByRole("button", { name: "Deselect All" }));
+    expect(shownColumns()).toEqual(["Wishlist", "Applied", "Screening", "Interviewing", "Offer"]);
+    expect(window.localStorage.getItem(BOARD_STAGES_KEY)).toBe('["wishlist","applied","screening","interviewing","offer"]');
+    expect(within(list).getByRole("button", { name: "Select All" })).toBeTruthy();
+  });
 });

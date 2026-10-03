@@ -27,8 +27,8 @@ function storeBoardStages(stages: readonly Stage[]): void {
   }
 }
 
-/** The stages the board shows, and a setter that saves them and never leaves the board with none (AC-4, AC-5). */
-export function useBoardStages(): [readonly Stage[], (stages: readonly Stage[]) => void] {
+/** The stages the board shows, a setter that saves them and never leaves the board with none (AC-4, AC-5), and a reset to the default (spec 021, AC-7). */
+export function useBoardStages(): [readonly Stage[], (stages: readonly Stage[]) => void, () => void] {
   const [stages, setStages] = useState(readBoardStages);
   const choose = useCallback((next: readonly Stage[]) => {
     if (next.length === 0) return;
@@ -36,5 +36,9 @@ export function useBoardStages(): [readonly Stage[], (stages: readonly Stage[]) 
     setStages(ordered);
     storeBoardStages(ordered);
   }, []);
-  return [stages, choose];
+  const reset = useCallback(() => {
+    setStages(DEFAULT_BOARD_STAGES);
+    storeBoardStages(DEFAULT_BOARD_STAGES);
+  }, []);
+  return [stages, choose, reset];
 }

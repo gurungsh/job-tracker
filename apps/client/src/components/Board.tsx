@@ -26,7 +26,7 @@ export function Board() {
   // Says where a card went when it left the board for a hidden stage (spec 018, AC-9).
   const [notice, setNotice] = useState<string | null>(null);
   // The stages the board shows, remembered in the browser (spec 018, AC-1, AC-5).
-  const [shownStages, setShownStages] = useBoardStages();
+  const [shownStages, setShownStages, resetShownStages] = useBoardStages();
 
   // Moves a card now and saves it, putting it back if the save fails (spec 006, AC-1, AC-5).
   // Resolves to whether the save worked, so a caller can say where the card went (spec 018, AC-9).
@@ -101,6 +101,7 @@ export function Board() {
           options={STAGES.map((stage) => ({ value: stage, label: STAGE_LABELS[stage] }))}
           selected={shownStages}
           onChange={setShownStages}
+          onDeselectAll={resetShownStages}
         />
       </div>
       <div className="board">

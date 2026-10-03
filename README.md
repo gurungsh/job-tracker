@@ -9,7 +9,7 @@ A personal tracker for job applications, built with spec-driven development.
 ## What it does
 
 - A board with one column per stage: Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, and Withdrawn. Drag a card to another column to change its stage: a copy of the card follows the pointer, and a dashed placeholder shows where it will land. A card's Actions menu has a **Move to** list for changing the stage without dragging, and a stage filter in the toolbar chooses which columns show (the closed stages start hidden, and the choice is kept in this browser).
-- A table view of the same applications that you can search, filter by stage, work mode, and employment type, and sort by any column. The search, filters, and sort are kept in the page address, so a view survives a reload and can be bookmarked. A Kanban/Table switch moves between the two views.
+- A table view of the same applications that you can search, filter by stage, work mode, and employment type, and sort by any column. The search, filters, and sort are kept in the page address, so a view survives a reload and can be bookmarked. Each filter has a Select All and Deselect All button, and the Kanban View and Table View buttons move between the two views.
 - A sidebar on every screen with an **Add application** button at the top, an All applications entry, and each stage with its live count. Click a stage to open the table filtered to it. On a narrow screen it folds behind a menu button.
 - **Archive:** hide an application from the board, the table, and the counts with its Archive button, on its page, on a card, or on a table row. Find it under **Archived** in the sidebar, where each row has a Restore button. An archived application stays readable, but can't be edited until it is restored. It can still be deleted.
 - A detail page for each application (`/applications/:id`) with its job details, a timeline, and a requirements checklist.
@@ -17,7 +17,7 @@ A personal tracker for job applications, built with spec-driven development.
 - **Contacts:** keep people at a company, such as a recruiter or hiring manager, with a role, email, phone, and notes. Contacts belong to the company, so one person can be reused across every application there.
 - **Requirements:** list what a job requires or prefers and check each off as you meet it. The checklist shows a summary such as "2/3 required met".
 - Light and dark themes, with a sun and moon switch in the header. It starts from the device's setting.
-- **User Guide:** a built-in walkthrough of every screen, opened from the header (`/guide`), with a contents list and a link back to where you were.
+- **User Guide:** a built-in walkthrough of every screen, opened from the header (`/guide`), with a contents list. The button is highlighted on the guide, and choosing it again takes you back to where you were.
 - Add and edit applications in a dialog, and delete them from the application's page. Each has a company, a job title, a stage, and a next step with a due date. Overdue next steps are highlighted.
 - The applied date, the closed date, and the time in the current stage are recorded automatically.
 - Company names are suggested as you type and are matched regardless of case. A company can have a website, set in the application's form and shared by its applications, and the company name on the application's page links to it.

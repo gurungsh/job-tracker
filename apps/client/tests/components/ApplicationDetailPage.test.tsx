@@ -421,7 +421,7 @@ describe("editing and deleting from the page (spec 013, AC-6, AC-7, AC-8)", () =
     const search = await screen.findByRole<HTMLInputElement>("searchbox", { name: "Search company or job title" });
     expect(search.value).toBe("glo");
     expect(server.applications).toEqual([other]);
-    expect(screen.getByRole("link", { name: "Table" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Table View" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("button", { name: "Designer" })).toBeTruthy();
   });
 

@@ -50,11 +50,7 @@
   overflow-wrap: anywhere;
 }
 
-/* A stage's icon and name take its color (spec 011), and a count stays quiet. */
-.sidebar-entry[data-stage] {
-  color: var(--stage);
-}
-
+/* Stage entries use the normal text color (spec 021, AC-1), and a count stays quiet. */
 .sidebar-count {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;

@@ -291,9 +291,9 @@ describe("TableView search and filters (spec 012, AC-6 to AC-10, AC-13, AC-14, A
     openTableWithAddress("/table?q=acme&stage=offer");
     await screen.findByRole("table");
 
-    await user.click(screen.getByRole("link", { name: "Kanban" }));
+    await user.click(screen.getByRole("link", { name: "Kanban View" }));
     expect(await screen.findByRole("region", { name: "Wishlist" })).toBeTruthy();
-    await user.click(screen.getByRole("link", { name: "Table" }));
+    await user.click(screen.getByRole("link", { name: "Table View" }));
 
     expect(await screen.findByRole("table")).toBeTruthy();
     expect(companies()).toEqual(["Globex"]);

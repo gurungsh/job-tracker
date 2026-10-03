@@ -41,38 +41,35 @@ describe("the User Guide link in the header (spec 020)", () => {
     expect(link.getAttribute("aria-label")).toBe("User Guide");
   });
 
-  it("opens the guide from the board, and the back link returns to it (AC-2, AC-6)", async () => {
+  it("opens the guide from the board, and choosing the highlighted button again returns to it (spec 021, AC-8, AC-9)", async () => {
     renderAt("/");
     await userEvent.click(await screen.findByRole("link", { name: "User Guide" }));
 
     expect(await screen.findByRole("heading", { level: 2, name: "User Guide" })).toBeTruthy();
-    await userEvent.click(screen.getByRole("link", { name: "Back to board" }));
-    expect(await screen.findByRole("link", { name: "User Guide" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /^Back to/ })).toBeNull();
+    expect(screen.getByRole("link", { name: "User Guide" }).getAttribute("aria-current")).toBe("page");
+
+    await userEvent.click(screen.getByRole("link", { name: "User Guide" }));
+    expect(await screen.findByRole("region", { name: "Wishlist" })).toBeTruthy();
     expect(screen.queryByRole("heading", { level: 2, name: "User Guide" })).toBeNull();
+    expect(screen.getByRole("link", { name: "User Guide" }).getAttribute("aria-current")).toBeNull();
   });
 
-  it("leads back to the table with its filters, and to an application's page (AC-6)", async () => {
+  it("returns to the table with its filters (AC-9)", async () => {
     renderAt("/table?q=acme");
     await userEvent.click(await screen.findByRole("link", { name: "User Guide" }));
-    expect((await screen.findByRole("link", { name: "Back to table" })).getAttribute("href")).toBe("/table?q=acme");
+    expect(screen.getByRole("link", { name: "User Guide" }).getAttribute("href")).toBe("/table?q=acme");
   });
 
-  it("leads back to an application's page", async () => {
+  it("returns to an application's page (AC-9)", async () => {
     renderAt(`/applications/${String(acme.id)}`);
     await userEvent.click(await screen.findByRole("link", { name: "User Guide" }));
-    expect((await screen.findByRole("link", { name: "Back to application" })).getAttribute("href")).toBe(
-      `/applications/${String(acme.id)}`,
-    );
+    expect(screen.getByRole("link", { name: "User Guide" }).getAttribute("href")).toBe(`/applications/${String(acme.id)}`);
   });
 
-  it("is the current page on the guide, and choosing it there keeps the way back (AC-7, AC-6)", async () => {
-    renderAt("/table?q=acme");
-    await userEvent.click(await screen.findByRole("link", { name: "User Guide" }));
-    const link = screen.getByRole("link", { name: "User Guide" });
-    expect(link.getAttribute("aria-current")).toBe("page");
-
-    await userEvent.click(link);
-    expect(screen.getByRole("link", { name: "Back to table" }).getAttribute("href")).toBe("/table?q=acme");
+  it("goes to the board when the guide was opened directly (AC-9)", async () => {
+    renderAt("/guide");
+    expect((await screen.findByRole("link", { name: "User Guide" })).getAttribute("href")).toBe("/");
   });
 
   it("is not marked as the current page elsewhere (AC-7)", async () => {

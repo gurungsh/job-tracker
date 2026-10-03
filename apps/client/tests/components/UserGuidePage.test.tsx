@@ -89,28 +89,19 @@ describe("the user guide page (spec 020)", () => {
   });
 });
 
-describe("the guide's back link (spec 020, AC-6)", () => {
-  it.each([
-    ["the table with its query", "/table?q=acme&sort=pay", "Back to table", "Acme"],
-    ["the board", "/", "Back to board", "Wishlist"],
-  ])("goes back to %s", async (_name, from, label) => {
-    renderGuide({ pathname: "/guide", state: { from } });
-    const back = await screen.findByRole("link", { name: label });
+describe("the guide's text and back link (spec 021, AC-8, AC-13)", () => {
+  it("has no back link", async () => {
+    renderGuide({ pathname: "/guide", state: { from: "/table" } });
+    await screen.findByRole("heading", { level: 2, name: "User Guide" });
 
-    expect(back.getAttribute("href")).toBe(from);
+    expect(screen.queryByRole("link", { name: /^Back to/ })).toBeNull();
   });
 
-  it("goes back to an application's page", async () => {
-    renderGuide({ pathname: "/guide", state: { from: `/applications/${String(acme.id)}` } });
+  it("describes Select All, Deselect All, and the view buttons", async () => {
+    renderGuide();
+    await screen.findByRole("heading", { level: 2, name: "User Guide" });
 
-    const back = await screen.findByRole("link", { name: "Back to application" });
-    expect(back.getAttribute("href")).toBe(`/applications/${String(acme.id)}`);
-  });
-
-  it("goes to the board when opened directly or after a reload (edge case)", async () => {
-    renderGuide("/guide");
-
-    const back = await screen.findByRole("link", { name: "Back to board" });
-    expect(back.getAttribute("href")).toBe("/");
+    expect(screen.getAllByText(/Select All/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/Kanban View and Table View/)).toBeTruthy();
   });
 });

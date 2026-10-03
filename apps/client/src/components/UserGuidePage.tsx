@@ -1,7 +1,5 @@
 import { STAGES, STAGE_LABELS } from "@job-tracker/shared";
 import { type MouseEvent, type ReactNode } from "react";
-import { Link, useLocation } from "react-router";
-import { readGuideOrigin } from "../lib/viewOrigin.ts";
 import "./UserGuidePage.css";
 
 type GuideSection = { id: string; title: string; body: ReactNode };
@@ -18,10 +16,10 @@ const SECTIONS: GuideSection[] = [
         <p>The board is the main screen. It has one column per stage, and each application is a card in its stage's column.</p>
         <ul>
           <li>Click a card to open that application's page.</li>
-          <li>Drag a card to another column to change its stage. A copy of the card follows the pointer, and a dashed placeholder shows where it will land.</li>
+          <li>Drag a card to another column, dropping it anywhere in that column, to change its stage. A copy of the card follows the pointer, and a dashed placeholder shows where it will land.</li>
           <li>Open a card's Actions menu and choose Move to to change the stage without dragging.</li>
-          <li>Use the stage filter in the toolbar to choose which columns show. The closed stages (Accepted, Rejected, and Withdrawn) are hidden to start. The choice is kept in this browser.</li>
-          <li>Use the switch at the top to go between the board and the table.</li>
+          <li>Use the stage filter in the toolbar to choose which columns show. The closed stages (Accepted, Rejected, and Withdrawn) are hidden to start. Select All shows every stage, and Deselect All goes back to the default. The choice is kept in this browser.</li>
+          <li>Use Kanban View and Table View at the top to go between the board and the table.</li>
         </ul>
       </>
     ),
@@ -34,7 +32,7 @@ const SECTIONS: GuideSection[] = [
         <p>The table lists every application in one place.</p>
         <ul>
           <li>Search by company or job title.</li>
-          <li>Filter by stage, work mode, and employment type.</li>
+          <li>Filter by stage, work mode, and employment type. Each filter has a Select All and Deselect All button.</li>
           <li>Click a column heading to sort by it, and click again to reverse the order.</li>
           <li>Your search, filters, and sort are kept in the page address, so you can reload or bookmark a filtered view.</li>
           <li>Click a row to open that application's page.</li>
@@ -113,10 +111,8 @@ const SECTIONS: GuideSection[] = [
   },
 ];
 
-/** The built-in guide: a contents list and one section per screen, with a way back to where I came from (spec 020). */
+/** The built-in guide: a contents list and one section per screen, reached and left with the header's User Guide button (spec 020, spec 021). */
 export function UserGuidePage() {
-  const origin = readGuideOrigin(useLocation().state);
-
   function goTo(event: MouseEvent<HTMLAnchorElement>, id: string) {
     event.preventDefault();
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -124,9 +120,6 @@ export function UserGuidePage() {
 
   return (
     <div className="guide-page">
-      <Link to={origin.path} className="guide-back">
-        {origin.label}
-      </Link>
       <h2>User Guide</h2>
       <nav aria-label="Contents" className="guide-contents">
         <ol>

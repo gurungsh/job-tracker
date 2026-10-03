@@ -138,7 +138,7 @@ describe("the sidebar's counts stay live (spec 014, AC-3)", () => {
     await screen.findByRole("region", { name: "Applied" });
     expect(counts()).toMatchObject({ Wishlist: "0", Applied: "2" });
 
-    await userEvent.click(screen.getByRole("link", { name: "Table" }));
+    await userEvent.click(screen.getByRole("link", { name: "Table View" }));
     await screen.findByRole("table");
     expect(counts()).toMatchObject({ Wishlist: "0", Applied: "2" });
   });
