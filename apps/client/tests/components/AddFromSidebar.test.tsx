@@ -22,20 +22,20 @@ function renderAt(path = "/") {
 const acme = () => application({ companyName: "Acme Corp", jobTitle: "Engineer", stage: "applied" });
 const globex = () => application({ companyName: "Globex", jobTitle: "Designer", stage: "wishlist" });
 
-const addButtons = () => screen.getAllByRole("button", { name: "Add application" });
+const addButtons = () => screen.getAllByRole("button", { name: "Add Application" });
 const stages = () => within(screen.getByRole("navigation", { name: "Stages" }));
 const count = (stage: string) =>
   stages().getByRole("link", { name: new RegExp(`^${stage}`) }).querySelector(".sidebar-count")?.textContent;
 
 async function fillAndSave(company: string, title: string, stage?: string) {
-  const dialog = await screen.findByRole("dialog", { name: "Add application" });
+  const dialog = await screen.findByRole("dialog", { name: "Add Application" });
   await userEvent.type(within(dialog).getByLabelText("Company"), company);
   await userEvent.type(within(dialog).getByLabelText("Job title"), title);
   if (stage) await userEvent.selectOptions(within(dialog).getByLabelText("Stage"), stage);
   await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 }
 
-describe("the one Add application button (spec 015, AC-1, AC-2)", () => {
+describe("the one Add Application button (spec 015, AC-1, AC-2)", () => {
   it.each([
     ["the board", "/"],
     ["the table", "/table"],
@@ -60,7 +60,7 @@ describe("the one Add application button (spec 015, AC-1, AC-2)", () => {
     await screen.findByRole("button", { name: /^(?!Archive|Restore|Move).*Acme Corp/ });
 
     expect(document.querySelector(".board-toolbar")).toBeNull();
-    expect(within(screen.getByRole("main")).queryByRole("button", { name: "Add application" })).toBeNull();
+    expect(within(screen.getByRole("main")).queryByRole("button", { name: "Add Application" })).toBeNull();
   });
 });
 
@@ -78,7 +78,7 @@ describe("opening the form from every screen (spec 015, AC-3)", () => {
 
     await userEvent.click(addButtons()[0] as HTMLElement);
 
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     expect(within(dialog).getByLabelText<HTMLSelectElement>("Stage").value).toBe("wishlist");
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
   });
@@ -93,7 +93,7 @@ describe("opening the form from every screen (spec 015, AC-3)", () => {
     await userEvent.keyboard("{Enter}");
     await userEvent.dblClick(button).catch(() => undefined);
 
-    expect(screen.getAllByRole("dialog", { name: "Add application" })).toHaveLength(1);
+    expect(screen.getAllByRole("dialog", { name: "Add Application" })).toHaveLength(1);
   });
 });
 
@@ -170,7 +170,7 @@ describe("saving a new application and keeping my place (spec 015, AC-4)", () =>
 
     await userEvent.click(addButtons()[0] as HTMLElement);
 
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     const list = document.getElementById(within(dialog).getByLabelText("Company").getAttribute("list") ?? "");
     expect([...(list?.querySelectorAll("option") ?? [])].map((o) => o.getAttribute("value"))).toEqual(["Acme Corp", "Initech"]);
   });
@@ -183,13 +183,13 @@ describe("closing the form (spec 015, AC-5)", () => {
     await stages().findByText("All applications");
     const button = addButtons()[0] as HTMLElement;
     await userEvent.click(button);
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     await userEvent.type(within(dialog).getByLabelText("Company"), "Initech");
 
     await userEvent.keyboard("{Escape}");
     const confirm = screen.getByRole("alertdialog", { name: "Discard changes?" });
     await userEvent.click(within(confirm).getByRole("button", { name: "Cancel" }));
-    expect(screen.getByRole("dialog", { name: "Add application" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Add Application" })).toBeTruthy();
 
     await userEvent.keyboard("{Escape}");
     await userEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Discard" }));
@@ -204,7 +204,7 @@ describe("closing the form (spec 015, AC-5)", () => {
     await screen.findByRole("table");
     const button = addButtons()[0] as HTMLElement;
     await userEvent.click(button);
-    await screen.findByRole("dialog", { name: "Add application" });
+    await screen.findByRole("dialog", { name: "Add Application" });
 
     await userEvent.keyboard("{Escape}");
 
@@ -233,7 +233,7 @@ describe("adding while the list is loading or has failed (spec 015, AC-9)", () =
     renderAt("/");
 
     await userEvent.click(addButtons()[0] as HTMLElement);
-    const dialog = await screen.findByRole("dialog", { name: "Add application" });
+    const dialog = await screen.findByRole("dialog", { name: "Add Application" });
     const list = document.getElementById(within(dialog).getByLabelText("Company").getAttribute("list") ?? "");
     expect(list?.querySelectorAll("option") ?? []).toHaveLength(0);
     await userEvent.type(within(dialog).getByLabelText("Company"), "Initech");

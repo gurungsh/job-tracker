@@ -215,7 +215,7 @@ describe("Sidebar's selected entry (spec 014, AC-5)", () => {
   });
 });
 
-describe("Sidebar's Add application button (spec 015, AC-1, AC-8, AC-10)", () => {
+describe("Sidebar's Add Application button (spec 015, AC-1, AC-8, AC-10)", () => {
   function renderWithAdd(onAdd = vi.fn()) {
     installFakeServer(SAMPLE());
     render(
@@ -227,7 +227,7 @@ describe("Sidebar's Add application button (spec 015, AC-1, AC-8, AC-10)", () =>
     );
     return onAdd;
   }
-  const addButton = () => screen.getByRole("button", { name: "Add application" });
+  const addButton = () => screen.getByRole("button", { name: "Add Application" });
 
   it("is the first thing in the sidebar, above All applications, and outside the Stages navigation (AC-1)", () => {
     renderWithAdd();
@@ -246,7 +246,7 @@ describe("Sidebar's Add application button (spec 015, AC-1, AC-8, AC-10)", () =>
 
     expect(addButton().querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     expect(addButton().classList.contains("primary")).toBe(true);
-    expect(addButton().textContent).toBe("Add application");
+    expect(addButton().textContent).toBe("Add Application");
   });
 
   it("calls onAdd when I click it, or press Enter or Space on it (AC-8)", async () => {

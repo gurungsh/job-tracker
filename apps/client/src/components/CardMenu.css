@@ -1,7 +1,7 @@
-/* On a card, the button sits over its top right corner, left of the Archive button, and shows on the same terms. */
+/* On a card, the button sits over its bottom right corner, left of the Archive button, and shows on the same terms. */
 .card-wrap > .card-menu {
   position: absolute;
-  top: 0.25rem;
+  bottom: 0.3rem;
   right: 2.25rem;
 }
 
@@ -24,7 +24,7 @@ button.card-menu-button:hover {
 .card-menu-list {
   position: absolute;
   z-index: 20;
-  top: calc(100% + 0.25rem);
+  bottom: calc(100% + 0.25rem);
   right: 0;
   display: flex;
   flex-direction: column;

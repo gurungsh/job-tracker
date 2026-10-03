@@ -66,7 +66,7 @@ describe("ThemeToggle", () => {
     const children = [...header.children].map((child) => child.textContent);
     expect(children[0]).toBe("Job Tracker");
     expect(children[1]).toContain("Dark theme");
-    expect(await screen.findByRole("button", { name: "Add application" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Add Application" })).toBeTruthy();
   });
 
   it("shows a sun and a moon in a pill, with the current theme on the filled disc (spec 016, AC-11)", async () => {

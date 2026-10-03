@@ -1,8 +1,11 @@
+import type { LucideIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import "./FilterDropdown.css";
 
 type FilterDropdownProps<T extends string> = {
   label: string;
+  /** An icon shown in front of the label. */
+  icon?: LucideIcon;
   options: readonly { value: T; label: string }[];
   selected: readonly T[];
   onChange: (selected: T[]) => void;
@@ -11,7 +14,7 @@ type FilterDropdownProps<T extends string> = {
 };
 
 /** A button that opens a list of checkboxes, one per value (spec 012, AC-7, AC-8, AC-22), with a Select All / Deselect All button (spec 021, AC-5, AC-6). */
-export function FilterDropdown<T extends string>({ label, options, selected, onChange, onDeselectAll }: FilterDropdownProps<T>) {
+export function FilterDropdown<T extends string>({ label, icon: Icon, options, selected, onChange, onDeselectAll }: FilterDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -69,6 +72,7 @@ export function FilterDropdown<T extends string>({ label, options, selected, onC
           setOpen((current) => !current);
         }}
       >
+        {Icon && <Icon size={16} aria-hidden="true" />}
         {label}
         {selected.length > 0 && (
           <>

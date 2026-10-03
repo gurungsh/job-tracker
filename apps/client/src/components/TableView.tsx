@@ -161,7 +161,7 @@ export function TableView() {
     return query.archived ? (
       <p className="board-empty">Nothing is archived.</p>
     ) : (
-      <p className="board-empty">No applications yet. Use the Add application button in the sidebar to add your first one.</p>
+      <p className="board-empty">No applications yet. Use the Add Application button in the sidebar to add your first one.</p>
     );
   }
 
