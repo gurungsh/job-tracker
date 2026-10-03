@@ -6,9 +6,29 @@ A personal tracker for job applications, built with spec-driven development.
 - Process: every feature starts as a spec in `docs/specs/`. See `docs/specs/README.md`.
 - Plan: the planned features and their order are in `docs/roadmap.md`.
 
+## Screenshots
+
+The board, in the light and dark themes:
+
+![The board in the light theme](docs/images/board-light.png)
+
+![The board in the dark theme](docs/images/board-dark.png)
+
+Drag a card to another column to change its stage:
+
+![Dragging a card from Applied to Screening](docs/images/drag-and-drop.gif)
+
+The table view, and an application's page with its requirements, timeline, and contacts:
+
+![The table view](docs/images/table-view.png)
+
+![An application's page](docs/images/application-detail.png)
+
+The screenshots show made-up sample applications.
+
 ## What it does
 
-- A board with one column per stage: Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, and Withdrawn. Drag a card to another column to change its stage: a copy of the card follows the pointer, and a dashed placeholder shows where it will land. A card's Actions menu has a **Move to** list for changing the stage without dragging, and a stage filter in the toolbar chooses which columns show (the closed stages start hidden, and the choice is kept in this browser).
+- A board with one column per stage: Wishlist, Applied, Screening, Interviewing, Offer, Accepted, Rejected, and Withdrawn. Drag a card to another column to change its stage: a copy of the card follows the pointer, and a dashed placeholder shows where it will land. A card's ⋯ menu has a **Move to** list for changing the stage without dragging, and a **Stages** dropdown above the board chooses which columns show (the closed stages start hidden, and the choice is kept in this browser).
 - A table view of the same applications that you can search, filter by stage, work mode, and employment type, and sort by any column. The search, filters, and sort are kept in the page address, so a view survives a reload and can be bookmarked. Each filter has a Select All and Deselect All button, and the Kanban View and Table View buttons move between the two views.
 - A sidebar on every screen with an **Add Application** button at the top, an All applications entry, and each stage with its live count. Click a stage to open the table filtered to it. On a narrow screen it folds behind a menu button.
 - **Archive:** hide an application from the board, the table, and the counts with its Archive button, on its page, on a card, or on a table row. Find it under **Archived** in the sidebar, where each row has a Restore button. An archived application stays readable, but can't be edited until it is restored. It can still be deleted.
@@ -92,29 +112,21 @@ In Docker, the database and logs live in `data/docker/` instead, kept apart from
 
 ```mermaid
 flowchart TB
-  S["packages/shared<br/>types, Zod schemas, stage and label constants"]
+  subgraph client["apps/client"]
+    direction LR
+    M["main.tsx<br/>error reporting,<br/>router"] --> A["App.tsx<br/>provider, shell,<br/>routes"] --> P["Pages<br/>Board, Table,<br/>Detail, Guide"] --> API["lib/api.ts<br/>fetch wrapper"]
+  end
 
   subgraph server["apps/server"]
-    direction TB
-    APP["app.ts<br/>request log, JSON body, error handler"]
-    R["Routers<br/>applications, activities, contacts,<br/>requirements, companies, health, client-errors"]
-    ST["Stores<br/>SQL for each resource"]
-    D["db.ts and migrate.ts<br/>SQLite, forward-only migrations"]
-    APP --> R --> ST --> D
+    direction LR
+    APP["app.ts<br/>request log,<br/>error handler"] --> R["Routers<br/>one per resource"] --> ST["Stores<br/>SQL for each<br/>resource"] --> D["db.ts, migrate.ts<br/>SQLite and<br/>migrations"]
   end
 
-  subgraph client["apps/client"]
-    direction TB
-    M["main.tsx<br/>error reporting, router"]
-    A["App.tsx<br/>ApplicationsProvider, AppShell, routes"]
-    P["Pages<br/>Board /, Table /table,<br/>Detail /applications/:id,<br/>Guide /guide"]
-    API["lib/api.ts<br/>fetch wrapper"]
-    M --> A --> P --> API
-  end
+  S["packages/shared<br/>types, Zod schemas, stage and label constants"]
 
-  API -->|"JSON over /api"| APP
+  client -->|JSON over /api| server
+  S -.->|imported by both| client
   S -.-> server
-  S -.-> client
 ```
 
 ### How the data fits together
@@ -246,7 +258,7 @@ apps/client              React app built with Vite
   src/lib/               API calls, hooks, and helpers
   tests/                 Component and helper tests, mirroring src/
 packages/shared          Types and validation shared by the API and web app
-docs/                    Constitution, roadmap, and feature specs
+docs/                    Constitution, roadmap, feature specs, and the README's images (docs/images/)
 ```
 
 ## Testing

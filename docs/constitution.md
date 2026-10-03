@@ -74,13 +74,13 @@ Draft → Approved → In Progress → Implemented
 ```
 main          ← stable; merged from development after owner approval
 development   ← integration; feature branches merge here after review
-feature/<short-name>  ← one per spec, branched from development
+feature/<short-name>  ← one per spec or tweak, branched from development
 ```
 
 - All work happens on `feature/<short-name>`.
 - Commits are small, and each one leaves the build green where practical.
 - **Merges need the owner's approval.** The assistant may merge a reviewed feature branch into `development`, or `development` into `main`, only after the owner explicitly approves that merge. It uses `--no-ff` and never deletes branches.
-- Git is local-only for now, so review happens with `git diff development...feature/<short-name>`.
+- The repository is on GitHub, but review happens locally with `git diff development...feature/<short-name>`. Nothing is merged without the owner's approval.
 
 ## 6. Definition of Done
 
